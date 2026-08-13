@@ -190,7 +190,7 @@ if (PUNTATORE && !CALMO) (function(){
     requestAnimationFrame(giro);
   })();
   document.addEventListener('pointerover', function(e){
-    var t = e.target.closest('a,button,.scena,.torcia');
+    var t = e.target.closest('a,button');
     b.classList.toggle('grande', !!t);
   });
 })();
@@ -302,17 +302,53 @@ var Maschere = (function(){
      testo, e mentre passa il testo deve restare testo */
   var TINTE = ['#1B3BFF','#1B3BFF','#1B3BFF','#3A1BFF','#0A18A8','#0B0E1C'];
   /* il costo di una maschera e' un backdrop-filter senza sfocatura — una
-     operazione per pixel, non un blur — quindi se ne reggono parecchie.
-     Sui dispositivi dichiaratamente deboli si scende comunque. */
-  var POOL  = LEGGERO ? 5 : 11;
+     operazione per pixel, non un blur. Ma ora sono grandi e restano in scena
+     a lungo, quindi il gruppo e' piccolo: quattro-cinque insieme bastano a
+     riempire lo schermo, e sei lo coprirebbero. */
+  var POOL  = LEGGERO ? 3 : 5;
   var liberi = [], attive = [];
 
+  /* clip-path: path() non c'e' ovunque. Dove manca si torna al border-radius,
+     che e' piu' tondo ma vivo. */
+  var RITAGLIO = window.CSS && CSS.supports && CSS.supports('clip-path','path("M0,0 L1,0 Z")');
+
+  /* il gruppo di maschere esiste dall'inizio e si riusa: crearle e buttarle a
+     ogni lancio farebbe lavorare il compositore per niente */
   for (var i=0;i<POOL;i++){
-    var el = document.createElement('div');
-    el.className = 'maschera';
-    el.setAttribute('aria-hidden','true');
-    document.body.appendChild(el);
-    liberi.push(el);
+    var el0 = document.createElement('div');
+    el0.className = 'maschera';
+    el0.setAttribute('aria-hidden','true');
+    document.body.appendChild(el0);
+    liberi.push(el0);
+  }
+
+  /* --- la forma ----------------------------------------------------------
+     Non una goccia tonda: un giro di punti a raggio irregolare, raccordati
+     con delle cubiche. Ne servono tre per maschera, con lo stesso numero di
+     segmenti, perche' l'animazione possa passare dall'una all'altra. */
+  function orlo(pt){
+    var n = pt.length;
+    var d = 'M' + pt[0][0].toFixed(1) + ',' + pt[0][1].toFixed(1);
+    for (var i=0;i<n;i++){
+      var p0 = pt[(i-1+n)%n], p1 = pt[i], p2 = pt[(i+1)%n], p3 = pt[(i+2)%n];
+      d += 'C' + (p1[0]+(p2[0]-p0[0])/6).toFixed(1) + ',' + (p1[1]+(p2[1]-p0[1])/6).toFixed(1)
+         + ' '  + (p2[0]-(p3[0]-p1[0])/6).toFixed(1) + ',' + (p2[1]-(p3[1]-p1[1])/6).toFixed(1)
+         + ' '  + p2[0].toFixed(1) + ',' + p2[1].toFixed(1);
+    }
+    return d + 'Z';
+  }
+  function forma(w, h, punti, irr, giro){
+    var pt = [];
+    for (var i=0;i<punti;i++){
+      var a = (i/punti)*Math.PI*2 + giro;
+      /* raggio diverso a ogni punto, e i due assi indipendenti: e' quello che
+         toglie la simmetria e la fa sembrare una cosa e non una figura */
+      var r = 1 - irr*Math.random();
+      var q = 1 - irr*.6*Math.random();
+      pt.push([ w/2 + Math.cos(a)*(w/2)*r*.98,
+                h/2 + Math.sin(a)*(h/2)*q*.98 ]);
+    }
+    return 'path("' + orlo(pt) + '")';
   }
 
   function lancia(centro){
@@ -320,25 +356,40 @@ var Maschere = (function(){
     if (!el) return false;
     var vw = window.innerWidth;
     var base = Math.min(vw, 820);
-    /* la curva tiene basse le misure: tante piccole, ogni tanto una grande.
-       Se fossero tutte grandi si coprirebbe lo schermo, e una maschera che
-       copre tutto non e' piu' una maschera, e' un cambio di tema. */
-    var q  = Math.pow(Math.random(), 1.9);
-    var s  = base * (0.09 + q * 0.46);
+    /* grandi: la curva alza il minimo invece di tenerlo giu' */
+    var q  = Math.pow(Math.random(), 1.25);
+    var s  = base * (0.30 + q * 0.52);
+    var h  = s * (1.02 + Math.random()*0.34);
     var x0 = (centro === undefined ? 30 + Math.random()*(vw-60)
-                                   : centro + (Math.random()*2-1) * vw * .19);
-    x0 = clamp(x0, -s*.2, vw + s*.2);
-    var x1 = x0 + (Math.random()*2-1) * vw * .30;
-    /* le piccole salgono un po' piu' svelte: e' quello che fanno le bolle */
-    var d  = 5.2 + q*6.5 + Math.random()*2.6;
+                                   : centro + (Math.random()*2-1) * vw * .34);
+    x0 = clamp(x0, -s*.25, vw + s*.25);
+    var x1 = x0 + (Math.random()*2-1) * vw * .34;
+    /* lente: fra i dodici e i venticinque secondi per attraversare. Chi scorre
+       le vede accelerare, chi sta fermo le vede salire piano. */
+    var d  = 12 + q*8 + Math.random()*5;
 
     el.style.setProperty('--s',  s.toFixed(0)+'px');
+    el.style.setProperty('--h',  h.toFixed(0)+'px');
     el.style.setProperty('--x0', x0.toFixed(0)+'px');
     el.style.setProperty('--x1', x1.toFixed(0)+'px');
     el.style.setProperty('--d',  d.toFixed(2)+'s');
-    el.style.setProperty('--dm', (d/2.3).toFixed(2)+'s');
-    el.style.setProperty('--r',  ((Math.random()*2-1)*44).toFixed(0)+'deg');
+    el.style.setProperty('--dm', (d/2.6).toFixed(2)+'s');
+    el.style.setProperty('--r',  ((Math.random()*2-1)*40).toFixed(0)+'deg');
     el.style.setProperty('--tinta', TINTE[(Math.random()*TINTE.length)|0]);
+
+    if (RITAGLIO){
+      var n = 9 + (Math.random()*4|0), irr = .30 + Math.random()*.22;
+      var g = Math.random()*Math.PI*2;
+      var f1 = forma(s,h,n,irr,g), f2 = forma(s,h,n,irr,g), f3 = forma(s,h,n,irr,g);
+      el.classList.remove('tonda');
+      el.style.clipPath = f1;
+      el.morfa = el.animate(
+        [{clipPath:f1},{clipPath:f2},{clipPath:f3},{clipPath:f1}],
+        { duration: d*1000/2.6, iterations: Infinity, easing:'ease-in-out' }
+      );
+    } else {
+      el.classList.add('tonda');
+    }
 
     /* il reflow forzato serve: senza, riaggiungere la classe nello stesso
        frame in cui e' stata tolta non fa ripartire l'animazione */
@@ -352,6 +403,8 @@ var Maschere = (function(){
       if (e.animationName !== 'msale') return;
       el.removeEventListener('animationend', fine);
       el.classList.remove('sale');
+      if (el.morfa){ el.morfa.cancel(); el.morfa = null; }
+      el.style.clipPath = '';
       el.anim = null;
       var j = attive.indexOf(el); if (j >= 0) attive.splice(j,1);
       liberi.push(el);
@@ -359,10 +412,10 @@ var Maschere = (function(){
     return true;
   }
 
-  /* un gruppo: due-cinque maschere che escono vicine, sfalsate, di misure
+  /* un gruppo: due-tre maschere che escono vicine, sfalsate, di misure
      diverse. Sparse, non in fila. */
   function gruppo(quante){
-    var n = quante || (2 + (Math.random()*4|0));
+    var n = quante || (2 + (Math.random()*2|0));
     var cx = 30 + Math.random()*(window.innerWidth - 60);
     for (var k=0;k<n;k++){
       (function(k){ setTimeout(function(){ lancia(cx); }, k*(110 + Math.random()*260)); })(k);
@@ -403,14 +456,14 @@ var Maschere = (function(){
     setTimeout(function(){
       if (!document.hidden) gruppo();
       programma();
-    }, 2200 + Math.random()*4200);
+    }, 5200 + Math.random()*7000);
   })();
 
   /* le prime si vedono subito: appena il sipario si alza ce n'e' gia' un
      gruppo in mezzo alla copertina, se no il motivo si scopre solo scorrendo */
   document.addEventListener('entrati', function(){
-    gruppo(LEGGERO ? 2 : 4);
-    setTimeout(function(){ gruppo(LEGGERO ? 2 : 3); }, 2800);
+    gruppo(2);
+    setTimeout(function(){ gruppo(LEGGERO ? 1 : 2); }, 5200);
   });
 
   return { lancia: lancia, gruppo: gruppo, sciame: sciame };
@@ -597,7 +650,7 @@ var Sequenza = (function(){
     }
 
     /* lo sciame arriva una volta sola per passaggio, sull'ultima tappa */
-    if (p > .68 && !sciamato){ sciamato = true; Maschere.gruppo(LEGGERO ? 3 : 5); }
+    if (p > .68 && !sciamato){ sciamato = true; Maschere.gruppo(LEGGERO ? 2 : 3); }
     if (p < .5) sciamato = false;
 
     document.body.classList.toggle('notte', p > .02 && p < .985);
@@ -786,196 +839,7 @@ var Sequenza = (function(){
       if (v.isIntersecting) setTimeout(function(){ Maschere.gruppo(2); }, 420);
     });
   }, { threshold:.35 });
-  [$('#ascolta'), $('#caleido'), $('#contatti')].forEach(function(s){ if(s) oss.observe(s); });
-})();
-
-/* --------------------------------------------------------------------------
-   caleidoscopio
-   Lo stesso fotogramma ripetuto a spicchi, specchiato uno si' e uno no.
-   Si trascina: orizzontale gira, verticale cambia il numero di specchi.
-   -------------------------------------------------------------------------- */
-(function(){
-  var scena = $('#scena'), cv = $('#cvCal'), video = $('#vCal');
-  var nOut = $('#calN'), rOut = $('#calR');
-  var ctx = cv.getContext('2d');
-  var W=0,H=0,DPR=1, segmenti = 8, rot = 0, vel = .0016, dentro = false, pronto = false;
-
-  function misura(){
-    DPR = Math.min(window.devicePixelRatio || 1, 2);
-    W = cv.clientWidth; H = cv.clientHeight;
-    cv.width = Math.round(W*DPR); cv.height = Math.round(H*DPR);
-    ctx.setTransform(DPR,0,0,DPR,0,0);
-  }
-  window.addEventListener('resize', function(){ alFrame(misura); });
-
-  var ultimoTentativo = 0;
-  function disegna(){
-    if (!dentro){ return; }
-    requestAnimationFrame(disegna);
-    /* se il video si e' fermato per conto suo — cambio di scheda, risparmio
-       energetico, permesso negato — si riparte da soli */
-    if (video.paused && Date.now() - ultimoTentativo > 900){
-      ultimoTentativo = Date.now(); tentativi = 0; avvia();
-    }
-    if (!pronto || video.readyState < 2 || !W) return;
-
-    var R = Math.hypot(W,H)*0.55;
-    var cx = W/2, cy = H/2;
-    var vw = video.videoWidth, vh = video.videoHeight;
-    if (!vw) return;
-
-    ctx.fillStyle = '#05070F';
-    ctx.fillRect(0,0,W,H);
-
-    rot += vel;
-    var passo = Math.PI*2/segmenti;
-
-    /* Uno spicchio e' un triangolo largo 2R·tan(π/N) e alto R: il ritaglio
-       del fotogramma deve avere esattamente quelle proporzioni, altrimenti
-       o resta del nero fuori o si finisce dentro a una zona bruciata.
-       La fascia scorre lentamente lungo il verticale: e' quello che fa
-       cambiare il disegno mentre lo si guarda. */
-    var tanA = Math.tan(Math.PI/segmenti);
-    var dw = R, dh = 2*R*tanA;
-    var ar = dw/dh;
-    /* Il ritaglio prende tutta la larghezza del fotogramma: e' l'unico modo
-       per essere certi che dentro allo spicchio ci finisca la colonna nera e
-       non solo il bianco che le sta intorno. A muoversi e' la fascia
-       verticale, ed e' quello che fa cambiare il disegno mentre lo guardi. */
-    var sw = vw, sh = sw/ar;
-    if (sh > vh){ sh = vh; sw = sh*ar; }
-    var deriva = (Math.sin(rot*.5) * .5 + .5);
-    var sx = (vw - sw)/2;
-    var sy = (vh - sh) * (0.12 + deriva*0.76);
-
-    for (var i=0;i<segmenti;i++){
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.rotate(i*passo + rot);
-      if (i % 2) ctx.scale(1,-1);
-      ctx.beginPath();
-      ctx.moveTo(0,0);
-      ctx.arc(0,0,R,-passo/2, passo/2);
-      ctx.closePath();
-      ctx.clip();
-      /* la fascia si ripete due volte lungo il raggio, la seconda specchiata:
-         e' quello che in un caleidoscopio vero fa il tubo lungo, e qui serve a
-         non lasciare mezzo spicchio vuoto quando la colonna nera sta tutta da
-         una parte del fotogramma */
-      var passoR = dw/2;
-      for (var r=0;r<2;r++){
-        ctx.save();
-        ctx.translate(r*passoR, 0);
-        if (r === 1){ ctx.translate(passoR,0); ctx.scale(-1,1); }
-        ctx.drawImage(video, sx, sy, sw, sh, 0, -dh/2, passoR, dh);
-        ctx.restore();
-      }
-      ctx.restore();
-    }
-
-    /* un velo blu sottilissimo tiene insieme il caleidoscopio e il sito */
-    ctx.globalCompositeOperation = 'overlay';
-    ctx.fillStyle = 'rgba(27,59,255,.13)';
-    ctx.fillRect(0,0,W,H);
-    ctx.globalCompositeOperation = 'source-over';
-
-    rOut.textContent = ('00'+Math.round((rot*180/Math.PI)%360+360)%360).slice(-3)+'°';
-  }
-
-  /* play() subito dopo load() viene abortito dal browser: si chiede solo di
-     partire, e se il permesso non arriva si ritenta — anche al primo tocco,
-     che e' il gesto che sblocca l'autoplay dove e' negato. */
-  var tentativi = 0;
-  function avvia(){
-    if (!dentro) return;
-    var p = video.play();
-    if (p && p.catch) p.catch(function(){
-      if (tentativi++ < 6) setTimeout(avvia, 350);
-    });
-  }
-  document.addEventListener('pointerdown', function(){ tentativi = 0; avvia(); }, {once:false, passive:true});
-
-  var oss = new IntersectionObserver(function(vs){
-    var v = vs[0].isIntersecting;
-    dentro = v;
-    if (v){
-      if (!pronto){ pronto = true; misura(); }
-      tentativi = 0; avvia();
-      requestAnimationFrame(disegna);
-    } else { video.pause(); }
-  }, { threshold:.12 });
-  oss.observe(scena);
-  document.addEventListener('visibilitychange', function(){
-    if (!document.hidden && dentro){ tentativi = 0; avvia(); }
-  });
-
-  /* trascinamento */
-  var giu = false, px = 0, py = 0;
-  scena.addEventListener('pointerdown', function(e){
-    giu = true; px = e.clientX; py = e.clientY;
-    scena.classList.add('tocca-via');
-    scena.setPointerCapture && scena.setPointerCapture(e.pointerId);
-  });
-  scena.addEventListener('pointermove', function(e){
-    if (!giu) return;
-    var dx = e.clientX - px, dy = e.clientY - py;
-    px = e.clientX; py = e.clientY;
-    rot += dx * .006;
-    if (Math.abs(dy) > 14){
-      segmenti = clamp(segmenti + (dy < 0 ? 2 : -2), 4, 16);
-      nOut.textContent = ('0'+segmenti).slice(-2);
-      py = e.clientY;
-    }
-  });
-  ['pointerup','pointercancel','pointerleave'].forEach(function(t){
-    scena.addEventListener(t, function(){ giu = false; });
-  });
-  /* lo scroll fa girare piano anche senza toccare */
-  window.addEventListener('scroll', function(){
-    if (!dentro) return;
-    vel = .0016 + Math.min(Math.abs(window.scrollY - (window._sy||0))*.00012, .012);
-    window._sy = window.scrollY;
-  }, {passive:true});
-  setInterval(function(){ vel = lerp(vel, .0016, .3); }, 120);
-})();
-
-/* --------------------------------------------------------------------------
-   il ritratto a raggi X
-   Due lastre sovrapposte: quella piena si vede solo dentro al cerchio.
-   -------------------------------------------------------------------------- */
-(function(){
-  var box = $('#torcia'); if (!box) return;
-  var attivo = false, t0 = performance.now();
-
-  function metti(x,y,r){
-    box.style.setProperty('--x', x+'px');
-    box.style.setProperty('--y', y+'px');
-    if (r) box.style.setProperty('--r', r+'px');
-  }
-  function raggio(){ return clamp(box.clientWidth*.34, 70, 190); }
-
-  function muovi(e){
-    var b = box.getBoundingClientRect();
-    var p = e.touches ? e.touches[0] : e;
-    attivo = true;
-    metti((p.clientX-b.left).toFixed(0), (p.clientY-b.top).toFixed(0), raggio().toFixed(0));
-  }
-  box.addEventListener('pointermove', muovi, {passive:true});
-  box.addEventListener('touchmove',  muovi, {passive:true});
-  box.addEventListener('pointerleave', function(){ attivo = false; t0 = performance.now(); });
-
-  /* se nessuno tocca, la torcia gira da sola: sul telefono e' l'unico modo
-     perche' l'effetto si mostri senza istruzioni */
-  (function giro(t){
-    requestAnimationFrame(giro);
-    if (attivo || CALMO) return;
-    var k = (t - t0)/1000;
-    var w = box.clientWidth, h = box.clientHeight;
-    if (!w) return;
-    metti((w*(.5 + Math.sin(k*.42)*.29)).toFixed(0),
-          (h*(.44 + Math.cos(k*.31)*.26)).toFixed(0),
-          raggio().toFixed(0));
-  })(t0);
+  [$('#ascolta'), $('#contatti')].forEach(function(s){ if(s) oss.observe(s); });
 })();
 
 /* --------------------------------------------------------------------------
@@ -1030,9 +894,7 @@ var Sequenza = (function(){
 (function(){
   var attese = [
     immagine('assets/media/copertina.jpg'),
-    immagine('assets/media/ritratto-vuoto.jpg'),
-    immagine('assets/media/ritratto-pieno.jpg'),
-    immagine('assets/media/copertina.jpg')
+    immagine('assets/media/profilo.jpg')
   ];
   if (document.fonts && document.fonts.ready) attese.push(document.fonts.ready);
   var v = $('#vCop');

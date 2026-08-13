@@ -9,7 +9,7 @@
    Ordine del file:
      00 variabili · 01 base · 02 tipografia · 03 strati fissi · 04 caricamento
      05 testata · 06 copertina · 07 nastro · 09 il singolo · 10 ascolta
-     11 caleidoscopio · 12 chi e' · 13 contatti · 14 piede
+     12 chi e' · 13 contatti · 14 piede
      15 movimento ridotto
    =========================================================================== */
 
@@ -211,24 +211,27 @@ body.notte #righe{background:repeating-linear-gradient(180deg,
   /* sopra alla testata: una maschera che si ferma davanti alla barra fissa
      si vede che si ferma */
   position:fixed;left:0;top:0;z-index:115;pointer-events:none;
-  width:var(--s);height:calc(var(--s) * 1.16);margin-left:calc(var(--s) / -2);
+  width:var(--s);height:var(--h,calc(var(--s) * 1.16));margin-left:calc(var(--s) / -2);
   background:var(--tinta,#1B3BFF);
   mix-blend-mode:screen;
   -webkit-backdrop-filter:grayscale(1) invert(1);
   backdrop-filter:grayscale(1) invert(1);
+  /* la forma vera la mette il copione con un clip-path irregolare; questo
+     border-radius e' solo la rete se clip-path: path() non c'e' */
   border-radius:62% 38% 46% 54% / 55% 48% 52% 45%;
   transform:translate3d(0,130vh,0);
-  will-change:transform,border-radius;
+  will-change:transform,clip-path;
 }
 /* dove backdrop-filter non c'e', la forma fa comunque il suo mestiere:
    inverte e basta, senza tinta */
 @supports not ((backdrop-filter:grayscale(1) invert(1)) or (-webkit-backdrop-filter:grayscale(1) invert(1))){
   .maschera{background:#FFFFFF;mix-blend-mode:difference}
 }
-.maschera.sale{
-  animation:msale var(--d) cubic-bezier(.36,.02,.28,1) forwards,
-            mmorfa var(--dm) ease-in-out infinite;
-}
+.maschera.sale{animation:msale var(--d) cubic-bezier(.36,.02,.28,1) forwards}
+/* la deformazione: dove il ritaglio irregolare non c'e', si torna al
+   border-radius che almeno respira */
+.maschera.tonda.sale{animation:msale var(--d) cubic-bezier(.36,.02,.28,1) forwards,
+                               mmorfa var(--dm) ease-in-out infinite}
 @keyframes msale{
   from{transform:translate3d(var(--x0),128vh,0) rotate(0deg) scale(.78)}
   to  {transform:translate3d(var(--x1),-58vh,0) rotate(var(--r)) scale(1.08)}
@@ -490,41 +493,6 @@ body.oltre #testata .marchio{opacity:1;transform:none;pointer-events:auto}
 .piatt a:hover,.piatt a:active{color:var(--acc);padding-inline:.5rem}
 .piatt a:hover .fr,.piatt a:active .fr{color:var(--acc);transform:translateX(5px)}
 
-/* --- 11 caleidoscopio ---------------------------------------------------- */
-#caleido{position:relative;background:var(--nero);color:var(--osso);
-  padding-block:clamp(60px,12vw,110px);overflow:hidden}
-#caleido .scena{
-  position:relative;margin-top:clamp(22px,5vw,44px);aspect-ratio:1/1.15;
-  max-height:78svh;background:var(--nero-2);overflow:hidden;
-  touch-action:pan-y;cursor:grab;
-}
-@media(min-width:900px){#caleido .scena{aspect-ratio:16/10}}
-#caleido .scena:active{cursor:grabbing}
-#caleido canvas{width:100%;height:100%}
-/* la sorgente resta nel documento, minuscola e invisibile: un <video> tolto
-   dal flusso o nascosto del tutto smette di decodificare */
-#caleido .sorgente{position:absolute;left:0;top:0;width:2px;height:2px;
-  opacity:.01;pointer-events:none}
-#caleido .ctr{position:absolute;left:1rem;bottom:1rem;right:1rem;display:flex;
-  justify-content:space-between;align-items:flex-end;gap:1rem;pointer-events:none}
-#caleido .ctr .mono{color:var(--osso);background:rgba(5,7,15,.68);
-  padding:.42rem .6rem;backdrop-filter:blur(5px);-webkit-backdrop-filter:blur(5px)}
-#caleido .ctr b{color:var(--blu-l);font-weight:400}
-#caleido .tocca{
-  position:absolute;inset:0;display:grid;place-items:start center;
-  padding-top:1.1rem;pointer-events:none;transition:opacity .5s;
-}
-#caleido .tocca span{
-  font-family:var(--mono);font-size:.7rem;letter-spacing:.24em;text-transform:uppercase;
-  border:1px solid var(--blu);background:rgba(11,14,28,.72);color:var(--osso);
-  backdrop-filter:blur(4px);padding:.7rem 1.1rem;
-  animation:respiro 2.6s var(--e) infinite;
-}
-@keyframes respiro{0%,100%{opacity:.45}50%{opacity:1}}
-#caleido .scena.tocca-via .tocca{opacity:0}
-#caleido .tit{color:var(--osso)}
-#caleido .occhiello{border-color:rgba(242,239,232,.2)}
-
 /* --- 12 chi e' ----------------------------------------------------------- */
 /* Tre righe grandi e basta. Dietro, il respiro: la stessa scena d'acqua del
    singolo, che entra dal lato quando la sezione arriva. Non e' una
@@ -572,30 +540,18 @@ body.oltre #testata .marchio{opacity:1;transform:none;pointer-events:auto}
   gap:clamp(34px,7vw,64px);align-items:start;margin-top:clamp(24px,5vw,44px)}
 @media(min-width:820px){#contatti .fila{grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr)}}
 
-/* il ritratto a raggi X: due gradazioni dello stesso fotogramma, sovrapposte
-   al pixel. La torcia scopre quella piena dentro a un cerchio. */
-.torcia{position:relative;aspect-ratio:9/12;overflow:hidden;background:var(--nero-2);
-  touch-action:pan-y;border:1px solid rgba(242,239,232,.16)}
-.torcia img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
-  /* niente invert: il girato e' gia' un duotone, e rovesciarlo tirava fuori
-     un verde oliva che nella palette non c'e'. Il ritratto resta chiaro
-     dentro alla sezione scura, e fa da blocco. */
-  filter:contrast(1.06)}
-.torcia .piena{
-  -webkit-mask-image:radial-gradient(circle var(--r,120px) at var(--x,50%) var(--y,44%),
-    #000 0%,#000 58%,rgba(0,0,0,.35) 78%,transparent 100%);
-  mask-image:radial-gradient(circle var(--r,120px) at var(--x,50%) var(--y,44%),
-    #000 0%,#000 58%,rgba(0,0,0,.35) 78%,transparent 100%);
+/* la silhouette: un blocco fermo, non una cosa da toccare. Invertita, il
+   nero del girato diventa la figura chiara dentro alla sezione scura; i due
+   bordi sfumano per non lasciare in mezzo un rettangolo. */
+.silhouette{
+  /* un ritaglio, non il fotogramma intero: verticale per intero era un
+     blocco alto due terzi di schermo che si mangiava la sezione */
+  width:100%;aspect-ratio:5/6;object-fit:cover;object-position:66% 14%;display:block;
+  filter:invert(1) contrast(1.28) brightness(.94);opacity:.9;
+  -webkit-mask-image:linear-gradient(0deg,transparent 0,#000 14%,#000 88%,transparent 100%);
+  mask-image:linear-gradient(0deg,transparent 0,#000 14%,#000 88%,transparent 100%);
 }
-.torcia .anello{
-  position:absolute;width:calc(var(--r,120px) * 2);height:calc(var(--r,120px) * 2);
-  left:var(--x,50%);top:var(--y,44%);margin:calc(var(--r,120px) * -1);
-  border:1px solid var(--blu-l);border-radius:50%;opacity:.6;pointer-events:none;
-}
-.torcia .scanl{position:absolute;left:0;right:0;height:1px;background:var(--blu-l);
-  opacity:.5;animation:scan2 4.2s linear infinite;pointer-events:none}
-@keyframes scan2{0%{top:-1px}100%{top:100%}}
-#contatti .mail{margin-top:.2em}
+
 #contatti .in{position:relative;z-index:2}
 #contatti .occhiello{border-color:rgba(242,239,232,.2)}
 #contatti .tit{color:var(--osso)}

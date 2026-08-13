@@ -38,7 +38,7 @@ servito da un server statico.
 
 ## Da sapere prima di toccare
 
-- Le sezioni sono sei e numerate 01→06 nei commenti di `index.html`. Il
+- Le sezioni sono cinque e numerate 01→05 nei commenti di `index.html`. Il
   manifesto non esiste più: la sua frase è diventata le tre righe di `#chi`.
 - La sequenza dell'acqua è **una sola** (`Sequenza` in `sito.js`), caricata
   una volta e disegnata da due canvas: la scena del singolo e il respiro
@@ -54,8 +54,11 @@ servito da un server statico.
   tiene basse le dimensioni (tante piccole, ogni tanto una grande). La spinta
   dello scroll passa dal `playbackRate` dell'animazione: **non** dalla durata,
   che cambiandola farebbe ripartire tutto da capo.
-- Il **caleidoscopio** legge `colonna.mp4`, non un girato già specchiato:
-  rispecchiare una cosa già specchiata restituisce una macchia.
+- La forma delle maschere è generata dal copione (`forma()` in `sito.js`) e
+  animata con la Web Animations API, non con un `@keyframes`: servono tre
+  ritagli con lo **stesso numero di segmenti**, altrimenti il passaggio
+  dall'uno all'altro non interpola. Il `border-radius` nel CSS è solo la rete
+  per dove `clip-path: path()` non c'è.
 
 ## Pubblicazione
 

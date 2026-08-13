@@ -47,10 +47,9 @@ caricano aprendo il file con doppio clic.
 |---|---|---|
 | 01 | **Copertina** | il nome, il caleidoscopio del girato |
 | 02 | **Ascolta** | subito sotto il nome: le uscite e le piattaforme |
-| 03 | **Il singolo** | la scena d'acqua come sfondo di tre cose da dire |
-| 04 | **Specchi** | il caleidoscopio che si trascina |
-| 05 | **Chi è** | tre righe grandi, e dietro il respiro |
-| 06 | **Scrivi** | booking, con il ritratto a raggi X |
+| 03 | **Il singolo** | la scena d'acqua come sfondo di due cose da dire |
+| 04 | **Chi è** | tre righe grandi, e dietro il respiro |
+| 05 | **Scrivi** | booking, e la silhouette |
 
 ## ⚠ Cosa manca per pubblicarlo
 
@@ -107,26 +106,21 @@ Nessuna libreria. Scroll, `IntersectionObserver` e due canvas.
   è diventato bianco. Il `grayscale` non è un vezzo: senza, il blu del sito
   rovesciato diventa giallo, e il giallo qui dentro non esiste. Una forma nera
   al posto del blu dà l'inversione pura.
-  Escono a **gruppi sparsi** di due-cinque, di misure diverse dentro allo
-  stesso gruppo, ogni due-sei secondi. **Mentre si scorre accelerano**: non si
-  tocca la durata (la cambierebbe farebbe ripartire l'animazione da capo), si
-  alza il `playbackRate` dell'animazione già in corso, che va da 1 a circa 4.6
-  a seconda di quanto si scorre veloce.
-- **Specchi** — caleidoscopio interattivo su canvas 2D. Ogni spicchio è un
-  triangolo: il ritaglio del fotogramma ha esattamente quelle proporzioni, e si
-  ripete due volte lungo il raggio (la seconda specchiata) come in un
-  caleidoscopio vero. Si trascina in orizzontale per girare, in verticale per
-  cambiare il numero di specchi.
+  La forma **non è tonda**: è un giro di nove-dodici punti a raggio irregolare
+  raccordati con delle cubiche, generato diverso per ogni maschera e morfato
+  fra tre versioni — quindi grande, molle e asimmetrica, non una goccia.
+  Escono a **gruppi sparsi** di due-tre, sfalsate di un paio di secondi l'una
+  dall'altra perché non salgano tutte alla stessa altezza, e ci mettono dai
+  dodici ai venticinque secondi ad attraversare. **Mentre si scorre
+  accelerano**: non si tocca la durata (cambiarla farebbe ripartire
+  l'animazione da capo), si alza il `playbackRate` dell'animazione già in
+  corso, che va da 1 a circa 4.6.
 - **Chi è** — il respiro dietro alle righe. Lo sfondo è la stessa sequenza del
   singolo (nessun byte in più: le immagini sono caricate una volta sola e
   disegnate da due canvas), e **non compare in dissolvenza: si apre da destra
   come un taglio**, e solo quando la sezione è arrivata davvero. È la
   differenza fra «c'era già e non l'avevi visto» e «è appena successo». Le tre
   righe entrano da sinistra, ognuna dentro alla sua feritoia, sfalsate.
-- **Ritratto a raggi X** — nei contatti. Due gradazioni dello stesso
-  fotogramma, sovrapposte al pixel: la torcia scopre quella piena dentro a un
-  cerchio. Se nessuno tocca, la torcia gira da sola — sul telefono è l'unico
-  modo perché l'effetto si mostri senza istruzioni.
 - **Movimento ridotto** — con `prefers-reduced-motion` le maschere spariscono,
   la scena si accorcia e la sequenza segue il dito senza smorzamento.
 

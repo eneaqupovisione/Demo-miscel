@@ -23,7 +23,7 @@
 <!-- il ?v= serve: GitHub Pages tiene i file in cache dieci minuti, e chi
      ha gia' aperto il sito continuerebbe a vedere la versione vecchia.
      Si alza il numero a ogni pubblicazione. -->
-<link rel="stylesheet" href="assets/css/sito.css?v=5">
+<link rel="stylesheet" href="assets/css/sito.css?v=7">
 </head>
 <body>
 
@@ -74,7 +74,6 @@
   <nav>
     <a href="#ascolta" data-va>Ascolta</a>
     <a href="#imm" data-va>Singolo</a>
-    <a href="#caleido" data-va>Specchi</a>
     <a href="#chi" data-va>Chi è</a>
     <a href="#contatti" data-va>Scrivi</a>
   </nav>
@@ -156,28 +155,7 @@
   </div>
 </section>
 
-<!-- ========================== 04 · SPECCHI ========================== -->
-<section id="caleido">
-  <div class="wrap">
-    <div class="occhiello rev">
-      <span class="mono n">04</span><span class="mono">Caleidoscopio</span>
-    </div>
-    <h2 class="tit" data-adatta data-max="180"><span class="gx" data-t="Specchi">Specchi</span></h2>
-    <div class="scena" id="scena">
-      <canvas id="cvCal"></canvas>
-      <video id="vCal" muted loop playsinline preload="metadata" class="sorgente" aria-hidden="true">
-        <source src="assets/media/colonna.mp4" type="video/mp4">
-      </video>
-      <div class="tocca"><span>Trascina</span></div>
-      <div class="ctr">
-        <span class="mono">Specchi <b id="calN">08</b></span>
-        <span class="mono">Rotazione <b id="calR">000°</b></span>
-      </div>
-    </div>
-  </div>
-</section>
-
-<!-- ========================== 05 · CHI È ==========================
+<!-- ========================== 04 · CHI È ==========================
      Poche righe grandi. Dietro, il respiro: la stessa scena d'acqua, che
      entra dal lato quando la sezione arriva e si muove con lo scroll. -->
 <section id="chi" class="sez">
@@ -188,7 +166,7 @@
 
   <div class="wrap in">
     <div class="occhiello rev">
-      <span class="mono n">05</span><span class="mono">Chi è</span>
+      <span class="mono n">04</span><span class="mono">Chi è</span>
     </div>
 
     <p class="dire" data-righe>
@@ -206,11 +184,11 @@
   <div class="scorre" id="nastro2"></div>
 </div>
 
-<!-- ========================== 06 · SCRIVI ========================== -->
+<!-- ========================== 05 · SCRIVI ========================== -->
 <section id="contatti">
   <div class="wrap in">
     <div class="occhiello rev">
-      <span class="mono n">06</span><span class="mono">Booking</span>
+      <span class="mono n">05</span><span class="mono">Booking</span>
     </div>
     <h2 class="tit" data-adatta data-max="180"><span class="gx" data-t="Scrivi">Scrivi</span></h2>
 
@@ -225,11 +203,8 @@
         </ul>
       </div>
 
-      <div class="col-b torcia rev" id="torcia">
-        <img class="vuota" src="assets/media/ritratto-vuoto.jpg" alt="Michelle, di profilo, sott'acqua">
-        <img class="piena" src="assets/media/ritratto-pieno.jpg" alt="" aria-hidden="true">
-        <span class="anello" aria-hidden="true"></span>
-        <span class="scanl" aria-hidden="true"></span>
+      <div class="col-b rev">
+        <img class="silhouette" src="assets/media/profilo.jpg" alt="Michelle, di profilo, sott'acqua">
       </div>
     </div>
 
@@ -247,6 +222,6 @@
   </div>
 </footer>
 
-<script src="assets/js/sito.js?v=5"></script>
+<script src="assets/js/sito.js?v=7"></script>
 </body>
 </html>

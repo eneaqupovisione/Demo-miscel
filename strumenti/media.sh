@@ -49,14 +49,10 @@ fermo () { # nome  istante  [filtro extra]
 echo "clip:"
 # copertina — il caleidoscopio di mani con cui il girato si apre
 clip copertina   1.4  5.2  30
-# la colonna a raggi X: figura specchiata, bolle che salgono. Texture pura.
-clip colonna    38.2  7.6  30
 
 echo "fermi immagine:"
-# il ritratto, in due gradazioni perfettamente sovrapposte: la lastra vuota
-# e quella piena. La torcia dei "raggi X" passa dall'una all'altra.
-fermo ritratto-vuoto 15.6 "eq=contrast=0.46:brightness=0.20,gblur=sigma=1.0"
-fermo ritratto-pieno 15.6 "eq=contrast=1.14"
+# la colonna a raggi X: e' la miniatura della lastra che si apre sulle uscite
+fermo colonna        41.0
 # il profilo netto, per i contatti
 fermo profilo        68.0
 
