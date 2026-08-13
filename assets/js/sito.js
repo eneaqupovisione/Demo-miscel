@@ -308,8 +308,8 @@ var Maschere = (function(){
   /* solo tinte su cui il bianco resta leggibile: una maschera passa sopra al
      testo, e mentre passa il testo deve restare testo */
   var TINTE = ['#1B3BFF','#1B3BFF','#1B3BFF','#3A1BFF','#0A18A8','#0B0E1C'];
-  /* ognuna costa un backdrop-filter a tutto schermo: poche, e mai tutte
-     insieme, altrimenti il telefono lo si sente */
+  /* ognuna costa un backdrop-filter a tutto schermo: il numero del gruppo e'
+     il tetto di quante possono stare a galla insieme */
   var POOL  = LEGGERO ? 2 : 4;
   var liberi = [];
 
@@ -325,10 +325,14 @@ var Maschere = (function(){
     var el = liberi.pop();
     if (!el) return false;
     var base = Math.min(window.innerWidth, 760);
-    var s  = base * (0.42 + Math.random()*0.42);
+    /* mai cosi' grandi da coprire lo schermo: una maschera che copre tutto
+       non e' piu' una maschera, e' un cambio di tema */
+    var s  = base * (0.34 + Math.random()*0.34);
     var x0 = 40 + Math.random()*(window.innerWidth - 80);
     var x1 = x0 + (Math.random()*2-1) * window.innerWidth * .34;
-    var d  = 4.6 + Math.random()*4.2;
+    /* lente: una maschera che attraversa in quattro secondi si perde, e il
+       motivo si vede solo per chi guardava in quel momento */
+    var d  = 6.5 + Math.random()*5.5;
 
     el.style.setProperty('--s',  s.toFixed(0)+'px');
     el.style.setProperty('--x0', x0.toFixed(0)+'px');
@@ -356,13 +360,23 @@ var Maschere = (function(){
     for (var k=0;k<n;k++) setTimeout(lancia, k*(passo||420));
   }
 
-  /* il ritmo normale: ogni tanto, senza regola che si senta */
+  /* il ritmo normale: spesso, ma senza una regola che si senta */
   (function programma(){
     setTimeout(function(){
-      if (!document.hidden) sciame(Math.random() < .3 ? 2 : 1, 900);
+      if (!document.hidden){
+        var r = Math.random();
+        sciame(r < .10 ? 3 : (r < .42 ? 2 : 1), 1100);
+      }
       programma();
-    }, 6000 + Math.random()*12000);
+    }, 3400 + Math.random()*5600);
   })();
+
+  /* la prima si vede subito: appena il sipario si alza ce n'e' gia' una in
+     mezzo alla copertina, se no il motivo si scopre solo scorrendo */
+  document.addEventListener('entrati', function(){
+    sciame(LEGGERO ? 1 : 2, 1200);
+    setTimeout(function(){ sciame(1); }, 3400);
+  });
 
   return { lancia: lancia, sciame: sciame };
 })();
