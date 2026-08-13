@@ -70,6 +70,11 @@ Sta su GitHub Pages: <https://eneaqupovisione.github.io/Demo-miscel/>, ramo
 chi ha gia' aperto il sito continua a vedere la versione vecchia — e' gia'
 successo di crederlo un difetto del codice quando era solo la cache.
 
+Quel numero se lo prende anche il copione (`VER` in `sito.js`, letto dal
+proprio `src`) e lo appende alle immagini della sequenza: quelle cambiano
+contenuto tenendo lo stesso nome, quindi senza il numero il browser
+continua a mostrare i fotogrammi del taglio precedente.
+
 Se il sito cambia indirizzo vanno aggiornati anche `og:url` e `og:image`,
 che sono assoluti apposta: molti scanner delle chat non risolvono un
 percorso relativo.

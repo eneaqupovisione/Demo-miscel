@@ -56,22 +56,38 @@ fermo colonna        41.0
 # il profilo netto, per i contatti
 fermo profilo        68.0
 
-# --- la scena dell'acqua: sequenza di fotogrammi per lo scrub ----------------
-# 50.9 -> 55.6 : il viso entra da destra, l'acqua lo prende, poi le bolle.
-# Non e' un video: e' una sequenza, perche' lo scroll la comanda fotogramma
-# per fotogramma e il seek dentro a un <video> su iOS non e' affidabile.
-echo "sequenza acqua:"
+# --- la scena del singolo: quattro pezzi, una sequenza sola ------------------
+# Non e' piu' un piano unico: sono quattro stacchi scelti a mano sul girato,
+# rimessi in fila. L'arco e' bolle -> volto -> pelo dell'acqua -> sott'acqua.
+#
+# Dieci fotogrammi al secondo per tutte, cosi' la durata sullo schermo e'
+# proporzionale a quella vera. I numeri contano: il copione (assets/js/sito.js)
+# ha dentro N = 70 e i tre punti di stacco. Se si cambiano le scene qui, vanno
+# cambiati anche li'.
+#
+#   scena  1   18.8 -> 20.4   1.6s   16 fotogrammi   (colonna di bolle)
+#   scena  2   20.6 -> 22.4   1.8s   18              (il volto, l'acqua che cola)
+#   scena  3   34.4 -> 36.0   1.6s   16              (la testa sul pelo dell'acqua)
+#   scena  4   53.4 -> 55.4   2.0s   20              (sott'acqua, le bolle)
+#                                    --------------
+#                                    70, stacchi a 16 · 34 · 50
+echo "sequenza del singolo:"
 TMP="$(mktemp -d)"
-# -frames:v 60 e' vincolante: il numero deve restare 60, perche' il copione
-# (assets/js/sito.js, costante N) conta su quello.
-ffmpeg -v error -y -ss 50.9 -t 4.7 -i "$SORG" \
-  -vf "$G,fps=60/4.7,scale=560:996:flags=lanczos" -frames:v 60 \
-  -q:v 2 "$TMP/%03d.png"
 i=0
-for f in "$TMP"/*.png; do
-  i=$((i+1))
-  cwebp -quiet -q 58 -m 6 -sharp_yuv "$f" -o "$(printf '%s/seq/a-%02d.webp' "$OUT" "$i")"
-done
+pezzo () {  # inizio  durata
+  ffmpeg -v error -y -ss "$1" -t "$2" -i "$SORG" \
+    -vf "$G,fps=10,scale=560:996:flags=lanczos" \
+    -q:v 2 "$TMP/p%03d.png"
+  for f in "$TMP"/p*.png; do
+    i=$((i+1))
+    cwebp -quiet -q 58 -m 6 -sharp_yuv "$f" -o "$(printf '%s/seq/a-%02d.webp' "$OUT" "$i")"
+  done
+  rm -f "$TMP"/p*.png
+}
+pezzo 18.8 1.6
+pezzo 20.6 1.8
+pezzo 34.4 1.6
+pezzo 53.4 2.0
 rm -rf "$TMP"
 echo "  · $i fotogrammi"
 

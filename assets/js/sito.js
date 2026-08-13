@@ -64,6 +64,17 @@ var PUNTATORE = window.matchMedia('(hover:hover) and (pointer:fine)').matches;
 /* schermi piccoli o pochi core: si tolgono le cose che costano */
 var LEGGERO = (navigator.hardwareConcurrency || 4) <= 4 && !PUNTATORE;
 
+/* La versione dei file: si legge dal ?v= del tag <script> di questa pagina.
+   Serve alle immagini della sequenza, che cambiano contenuto mantenendo lo
+   stesso nome — senza, il browser continua a servire i fotogrammi vecchi e
+   sembra che il taglio non sia stato applicato. Alzando il ?v= in
+   index.html si aggiorna tutto insieme. */
+var VER = (function(){
+  var t = document.querySelector('script[src*="sito.js"]');
+  var m = t && t.getAttribute('src').match(/[?&]v=([^&]+)/);
+  return m ? '?v=' + m[1] : '';
+})();
+
 var alFrame = (function(){
   var q = [], acceso = false;
   function giro(){
@@ -477,11 +488,19 @@ var Maschere = (function(){
    e' la mezza misura che toglie lo scatto.
    -------------------------------------------------------------------------- */
 var Sequenza = (function(){
-  var N = 60;                 /* deve corrispondere a strumenti/media.sh */
+  var N = 70;                 /* deve corrispondere a strumenti/media.sh */
+  /* La sequenza non e' un piano unico: sono quattro stacchi rimessi in fila.
+     Qui ci sono i fotogrammi in cui comincia una scena nuova, e servono a non
+     sfumare fra l'ultimo fotogramma di una e il primo dell'altra: uno stacco
+     sfumato non e' uno stacco, e' una pappa. */
+  var TAGLI = [16, 34, 50];
+  /* la quarta scena, sott'acqua: e' la piu' calma, e fa da respiro dietro a
+     "Chi e'" senza portarsi dietro gli stacchi */
+  var RESPIRO = [50, N-1];
   var imgs = new Array(N), caricate = 0, chiesta = false, pronta = false;
   var attesa = [];
 
-  function url(i){ return 'assets/media/seq/a-'+('0'+(i+1)).slice(-2)+'.webp'; }
+  function url(i){ return 'assets/media/seq/a-'+('0'+(i+1)).slice(-2)+'.webp' + VER; }
 
   function carica(){
     if (chiesta) return; chiesta = true;
@@ -505,22 +524,29 @@ var Sequenza = (function(){
     ctx.drawImage(im, (W-w)/2, (H-h)/2, w, h);
   }
 
-  function disegna(ctx, W, H, v, fondo){
+  function disegna(ctx, W, H, v, fondo, tratto){
     if (!pronta || !W) return false;
-    var f = clamp(v,0,1) * (N-1);
+    var da = tratto ? tratto[0] : 0, a2 = tratto ? tratto[1] : N-1;
+    var f = da + clamp(v,0,1) * (a2 - da);
     var i0 = Math.floor(f), t = f - i0;
     var a = imgs[i0] || imgs[0];
-    var b = imgs[Math.min(i0+1, N-1)];
+    var j1 = Math.min(i0+1, a2);
+    var b = imgs[j1];
     if (!a) return false;
     ctx.clearRect(0,0,W,H);
     if (fondo){ ctx.fillStyle = fondo; ctx.fillRect(0,0,W,H); }
     ctx.globalAlpha = 1; copri(ctx, a, W, H);
-    if (b && b !== a && t > .004){ ctx.globalAlpha = t; copri(ctx, b, W, H); ctx.globalAlpha = 1; }
+    /* la mezza misura fra due fotogrammi, tranne che sopra a uno stacco */
+    var stacco = TAGLI.indexOf(j1) >= 0;
+    if (b && b !== a && t > .004 && !stacco){
+      ctx.globalAlpha = t; copri(ctx, b, W, H); ctx.globalAlpha = 1;
+    }
     return true;
   }
 
   return {
     N: N,
+    RESPIRO: RESPIRO,
     carica: carica,
     disegna: disegna,
     quandoPronta: function(fn){ if (pronta) fn(); else attesa.push(fn); }
@@ -730,7 +756,7 @@ var Sequenza = (function(){
     ctx.setTransform(DPR,0,0,DPR,0,0);
     rendi();
   }
-  function rendi(){ Sequenza.disegna(ctx, W, H, p); }
+  function rendi(){ Sequenza.disegna(ctx, W, H, p, null, Sequenza.RESPIRO); }
 
   var pre = new IntersectionObserver(function(vs){
     if (!vs[0].isIntersecting) return;

@@ -15,7 +15,7 @@ sito/
 │   ├── css/sito.css        stili
 │   ├── js/sito.js          comportamento — in cima c'è DATI, il pannello dei contenuti
 │   └── media/              ARTEFATTI: si rigenerano, non si modificano a mano
-│       └── seq/            60 fotogrammi della scena d'acqua, comandati dallo scroll
+│       └── seq/            70 fotogrammi (4 scene in fila), comandati dallo scroll
 └── strumenti/media.sh      il costruttore dei media a partire dal girato
 ```
 
@@ -47,7 +47,7 @@ caricano aprendo il file con doppio clic.
 |---|---|---|
 | 01 | **Copertina** | il nome, il caleidoscopio del girato |
 | 02 | **Ascolta** | subito sotto il nome: le uscite e le piattaforme |
-| 03 | **Il singolo** | la scena d'acqua come sfondo di due cose da dire |
+| 03 | **Il singolo** | quattro stacchi del girato come sfondo di due cose da dire |
 | 04 | **Chi è** | tre righe grandi, e dietro il respiro |
 | 05 | **Scrivi** | booking, e la silhouette |
 
@@ -89,15 +89,17 @@ Nessuna libreria. Scroll, `IntersectionObserver` e due canvas.
   quindi cambia da solo mentre il video scorre. La misura del carattere non è una
   `clamp`: è calcolata, perché la larghezza di una parola dipende da quali
   lettere ha dentro (stessa cosa per i titoli e per il menu).
-- **Il singolo** — 320vh di scroll per una schermata inchiodata. La scena
-  d'acqua non è il contenuto: è lo **sfondo** di tre messaggi che fanno un
-  lavoro — cosa è uscito, dove si ascolta, e il bottone per ascoltarlo. Lo
-  scroll comanda 60 fotogrammi WebP disegnati su canvas (una sequenza e non un
-  `<video>`, perché il seek dentro a un video su iOS non è affidabile). Due
-  cose la rendono fluida: il progresso *insegue* lo scroll invece di copiarlo,
-  così il rimbalzo di iOS non si vede; e fra un fotogramma e il successivo si
-  disegna anche quello dopo in trasparenza, quindi 60 fotogrammi si comportano
-  come qualche centinaio. La pagina si ribalta in negativo per tutta la scena.
+- **Il singolo** — 320vh di scroll per una schermata inchiodata. Lo sfondo non
+  è un piano unico: sono **quattro stacchi scelti a mano sul girato**, rimessi
+  in fila — colonna di bolle, il volto con l'acqua che cola, la testa sul pelo
+  dell'acqua, sott'acqua. Lo scroll comanda 70 fotogrammi WebP disegnati su
+  canvas (una sequenza e non un `<video>`, perché il seek dentro a un video su
+  iOS non è affidabile). Tre cose la rendono fluida: il progresso *insegue* lo
+  scroll invece di copiarlo, così il rimbalzo di iOS non si vede; fra un
+  fotogramma e il successivo si disegna anche quello dopo in trasparenza,
+  quindi 70 fotogrammi si comportano come qualche centinaio; e sopra i tre
+  punti di stacco la trasparenza si toglie, perché uno stacco sfumato non è
+  uno stacco. La pagina si ribalta in negativo per tutta la scena.
 - **Maschere** — non sono nuvole sfumate: sono forme piene, a bordo netto, che
   salgono dal basso e **ribaltano quello che coprono**. Dentro la sagoma il
   fondo diventa blu e il testo bianco; fuori non cambia un pixel.
@@ -116,9 +118,10 @@ Nessuna libreria. Scroll, `IntersectionObserver` e due canvas.
   l'animazione da capo), si alza il `playbackRate` dell'animazione già in
   corso, che va da 1 a circa 4.6.
 - **Chi è** — il respiro dietro alle righe. Lo sfondo è la stessa sequenza del
-  singolo (nessun byte in più: le immagini sono caricate una volta sola e
-  disegnate da due canvas), e **non compare in dissolvenza: si apre da destra
-  come un taglio**, e solo quando la sezione è arrivata davvero. È la
+  singolo — ma solo l'ultimo pezzo, quello sott'acqua, che è il più calmo e non
+  si porta dietro gli stacchi (nessun byte in più: le immagini sono caricate
+  una volta sola e disegnate da due canvas). E **non compare in dissolvenza:
+  si apre da destra come un taglio**, e solo quando la sezione è arrivata davvero. È la
   differenza fra «c'era già e non l'avevi visto» e «è appena successo». Le tre
   righe entrano da sinistra, ognuna dentro alla sua feritoia, sfalsate.
 - **Movimento ridotto** — con `prefers-reduced-motion` le maschere spariscono,
