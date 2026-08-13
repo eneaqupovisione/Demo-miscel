@@ -135,13 +135,15 @@ Nessuna libreria. Scroll, `IntersectionObserver` e due canvas.
   l'animazione da capo), si alza il `playbackRate` dell'animazione già in
   corso, che va da 1 a circa 4.6.
 - **Pulsanti-bolla** — le piattaforme non sono righe: sono bolle, con la
-  stessa forma irregolare delle maschere. Stanno ferme finché le guardi;
-  appena si scorre oltre **si staccano e salgono via**, una dopo l'altra,
-  girando e rimpicciolendo. Tornando indietro tornano al loro posto, ma **più
-  piano di come se ne sono andate**: la partenza insegue lo scroll a un
-  decimo per frame, il ritorno a un trentesimo. Mentre volano non si possono
-  premere, e se una ha il fuoco da tastiera il volo non parte — un pulsante
-  che scappa mentre lo stai selezionando è un pulsante rotto.
+  stessa forma irregolare delle maschere. **Se ne vanno da sole**: ognuna ha
+  il suo momento, deciso da un tempo e non dallo scroll, e quando arriva si
+  stacca e sale via girando e rimpicciolendo. **Tornano quando si scorre** —
+  un movimento qualunque le richiama tutte, e rientrano piano (partono a un
+  cinquantesimo per frame, rientrano a un settantesimo).
+  Tre cose perché non diventi un dispetto: non se ne vanno mai tutte (almeno
+  due restano sempre); non si stacca niente mentre hai il dito o il puntatore
+  sopra; e mentre volano non si possono premere. Un pulsante che scappa
+  proprio mentre stai per premerlo è un pulsante rotto.
 - **Chi è** — il respiro dietro alle righe. Lo sfondo è la stessa sequenza del
   singolo — ma solo l'ultimo pezzo, quello sott'acqua, che è il più calmo e non
   si porta dietro gli stacchi (nessun byte in più: le immagini sono caricate

@@ -864,47 +864,82 @@ function Bolle(box){
 
   if (CALMO) return;   /* niente volo: restano dove sono */
 
-  var t = 0, obiettivo = 0, fermo = false;
+  /* --- il volo -----------------------------------------------------------
+     Se ne vanno da sole: ognuna ha il suo momento, deciso da un tempo e non
+     dallo scroll. Tornano invece quando si scorre — un movimento qualunque
+     le richiama tutte, e rientrano piano.
 
-  function daScroll(){
-    var r = box.getBoundingClientRect(), vh = window.innerHeight;
-    /* zero finche' il blocco sta comodo in vista; uno quando e' uscito in alto */
-    obiettivo = clamp(-(r.top - vh*.34) / (r.height + vh*.5), 0, 1);
-    if (box.contains(document.activeElement)) obiettivo = 0;
-    fermo = false;
+     Il tetto e' importante: non se ne vanno mai tutte. Almeno due restano
+     sempre al loro posto, se no la cosa per cui uno e' arrivato qui sparisce
+     dallo schermo e non torna finche' non muove il dito. */
+  var TETTO = Math.max(1, n - 2);
+  var stato = [];
+  for (var k=0;k<n;k++) stato.push({ p:0, via:false });
+  /* col dito o col puntatore sopra non si stacca niente: una bolla che
+     scappa proprio mentre stai per premerla e' un dispetto, non un effetto */
+  var toccata = false;
+  box.addEventListener('pointerenter', function(){ toccata = true; });
+  box.addEventListener('pointerleave', function(){ toccata = false; });
+
+  function richiama(){
+    for (var i=0;i<n;i++) stato[i].via = false;
+    dorme = false;
   }
 
-  function rendi(){
-    var vh = window.innerHeight;
-    var corsa = vh*.85 + 260;
-    for (var i=0;i<n;i++){
-      /* una dopo l'altra: la prima parte subito, l'ultima con un po' di ritardo */
-      var p = clamp((t - i*.055) / (1 - .055*(n-1)), 0, 1);
-      var e = p*p;                     /* parte piano e poi accelera */
-      var op = 1 - smorza(mappa(p,.42,.92));
-      bolle[i].style.transform =
-        'translate3d('+(DERIVA[i]*e).toFixed(1)+'px,calc(var(--dy,0px) + '
-        + (-corsa*e).toFixed(1)+'px),0) scale('+(1-.28*e).toFixed(3)
-        +') rotate('+(GIRO[i]*e).toFixed(1)+'deg)';
-      bolle[i].style.opacity = op.toFixed(3);
-      bolle[i].style.pointerEvents = p > .12 ? 'none' : 'auto';
-    }
+  function inVista(){
+    var r = box.getBoundingClientRect();
+    return r.bottom > -200 && r.top < window.innerHeight + 200;
   }
+
+  /* il rilascio: una alla volta, a caso fra quelle ferme */
+  (function rilascia(){
+    setTimeout(function(){
+      if (!document.hidden && inVista() && !toccata && !box.contains(document.activeElement)){
+        var via = 0, ferme = [];
+        for (var i=0;i<n;i++){
+          if (stato[i].via) via++;
+          else if (stato[i].p < .02) ferme.push(i);
+        }
+        if (via < TETTO && ferme.length){
+          stato[ferme[(Math.random()*ferme.length)|0]].via = true;
+          dorme = false;
+        }
+      }
+      rilascia();
+    }, 2400 + Math.random()*4600);
+  })();
+
+  var dorme = false;
 
   (function giro(){
     requestAnimationFrame(giro);
-    if (fermo) return;
-    /* due velocita': se ne vanno svelte, tornano piano */
-    t += (obiettivo - t) * (obiettivo > t ? .10 : .028);
-    if (Math.abs(obiettivo - t) < .0006){ t = obiettivo; fermo = true; }
-    rendi();
+    if (dorme) return;
+
+    var vh = window.innerHeight, corsa = vh*.85 + 260, quiete = true;
+    for (var i=0;i<n;i++){
+      var s = stato[i];
+      var ob = s.via ? 1 : 0;
+      /* se ne va con calma e torna ancora piu' piano: e' l'asimmetria che la
+         fa sembrare una bolla e non un pannello che scorre */
+      s.p += (ob - s.p) * (s.via ? .020 : .013);
+      if (Math.abs(ob - s.p) < .0015) s.p = ob; else quiete = false;
+
+      var e = s.p * s.p;             /* parte piano, poi accelera */
+      var a = bolle[i];
+      a.style.transform =
+        'translate3d('+(DERIVA[i]*e).toFixed(1)+'px,calc(var(--dy,0px) + '
+        + (-corsa*e).toFixed(1)+'px),0) scale('+(1-.28*e).toFixed(3)
+        +') rotate('+(GIRO[i]*e).toFixed(1)+'deg)';
+      a.style.opacity = (1 - smorza(mappa(s.p,.42,.92))).toFixed(3);
+      a.style.pointerEvents = s.p > .12 ? 'none' : 'auto';
+    }
+    if (quiete) dorme = true;
   })();
 
-  window.addEventListener('scroll', function(){ alFrame(daScroll); }, {passive:true});
-  window.addEventListener('resize', function(){ alFrame(daScroll); });
-  box.addEventListener('focusin', daScroll);
-  box.addEventListener('focusout', daScroll);
-  daScroll();
+  /* un movimento qualunque le richiama: e' l'unico modo per farle tornare */
+  window.addEventListener('scroll', function(){ alFrame(richiama); }, {passive:true});
+  window.addEventListener('resize', function(){ alFrame(richiama); });
+  box.addEventListener('focusin', richiama);
 }
 
 /* --------------------------------------------------------------------------
