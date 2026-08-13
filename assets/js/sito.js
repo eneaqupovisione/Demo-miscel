@@ -44,13 +44,6 @@ var DATI = {
     { nm:'YouTube',   href:'#' }
   ],
 
-  scheda: [
-    ['Genere', 'Indie'],
-    ['Lingua', 'Italiano'],
-    ['Formazione', 'Voce e chitarra'],
-    ['Dal vivo', 'Set breve, senza scaletta fissa']
-  ],
-
   nastro: ['Trattieni il fiato', 'Nuovo singolo', 'Ascolta ora', 'Scrivi per una data']
 };
 
@@ -297,21 +290,19 @@ if (PUNTATORE && !CALMO) (function(){
    Forme piene a bordo netto che salgono dal basso e ribaltano quello che
    coprono: dentro la sagoma il fondo diventa blu e il testo bianco, fuori non
    cambia niente. Il lavoro lo fa il CSS (backdrop-filter + screen); qui c'e'
-   solo chi le lancia, quando e con che misure.
+   chi le lancia, quando, con che misure — e quanto vanno veloci.
 
-   Non e' un flusso continuo: partono ogni tanto, a gruppi, e nel punto piu'
-   alto della scena arrivano tutte insieme.
+   Non e' un flusso ordinato: escono a gruppi sparsi, misure diverse dentro
+   allo stesso gruppo, e quando si scorre accelerano invece di restare ferme.
    -------------------------------------------------------------------------- */
 var Maschere = (function(){
-  if (CALMO) return { lancia:function(){}, sciame:function(){} };
+  if (CALMO) return { lancia:function(){}, gruppo:function(){}, sciame:function(){} };
 
   /* solo tinte su cui il bianco resta leggibile: una maschera passa sopra al
      testo, e mentre passa il testo deve restare testo */
   var TINTE = ['#1B3BFF','#1B3BFF','#1B3BFF','#3A1BFF','#0A18A8','#0B0E1C'];
-  /* ognuna costa un backdrop-filter a tutto schermo: il numero del gruppo e'
-     il tetto di quante possono stare a galla insieme */
-  var POOL  = LEGGERO ? 2 : 4;
-  var liberi = [];
+  var POOL  = LEGGERO ? 6 : 11;
+  var liberi = [], attive = [];
 
   for (var i=0;i<POOL;i++){
     var el = document.createElement('div');
@@ -321,64 +312,163 @@ var Maschere = (function(){
     liberi.push(el);
   }
 
-  function lancia(){
+  function lancia(centro){
     var el = liberi.pop();
     if (!el) return false;
-    var base = Math.min(window.innerWidth, 760);
-    /* mai cosi' grandi da coprire lo schermo: una maschera che copre tutto
-       non e' piu' una maschera, e' un cambio di tema */
-    var s  = base * (0.34 + Math.random()*0.34);
-    var x0 = 40 + Math.random()*(window.innerWidth - 80);
-    var x1 = x0 + (Math.random()*2-1) * window.innerWidth * .34;
-    /* lente: una maschera che attraversa in quattro secondi si perde, e il
-       motivo si vede solo per chi guardava in quel momento */
-    var d  = 6.5 + Math.random()*5.5;
+    var vw = window.innerWidth;
+    var base = Math.min(vw, 820);
+    /* la curva tiene basse le misure: tante piccole, ogni tanto una grande.
+       Se fossero tutte grandi si coprirebbe lo schermo, e una maschera che
+       copre tutto non e' piu' una maschera, e' un cambio di tema. */
+    var q  = Math.pow(Math.random(), 1.9);
+    var s  = base * (0.09 + q * 0.46);
+    var x0 = (centro === undefined ? 30 + Math.random()*(vw-60)
+                                   : centro + (Math.random()*2-1) * vw * .19);
+    x0 = clamp(x0, -s*.2, vw + s*.2);
+    var x1 = x0 + (Math.random()*2-1) * vw * .30;
+    /* le piccole salgono un po' piu' svelte: e' quello che fanno le bolle */
+    var d  = 5.2 + q*6.5 + Math.random()*2.6;
 
     el.style.setProperty('--s',  s.toFixed(0)+'px');
     el.style.setProperty('--x0', x0.toFixed(0)+'px');
     el.style.setProperty('--x1', x1.toFixed(0)+'px');
     el.style.setProperty('--d',  d.toFixed(2)+'s');
-    el.style.setProperty('--dm', (d/2.1).toFixed(2)+'s');
-    el.style.setProperty('--r',  ((Math.random()*2-1)*38).toFixed(0)+'deg');
+    el.style.setProperty('--dm', (d/2.3).toFixed(2)+'s');
+    el.style.setProperty('--r',  ((Math.random()*2-1)*44).toFixed(0)+'deg');
     el.style.setProperty('--tinta', TINTE[(Math.random()*TINTE.length)|0]);
 
     /* il reflow forzato serve: senza, riaggiungere la classe nello stesso
        frame in cui e' stata tolta non fa ripartire l'animazione */
     void el.offsetWidth;
     el.classList.add('sale');
+    el.anim = el.getAnimations ? el.getAnimations() : [];
+    for (var k=0;k<el.anim.length;k++) el.anim[k].playbackRate = spinta;
+    attive.push(el);
 
     el.addEventListener('animationend', function fine(e){
       if (e.animationName !== 'msale') return;
       el.removeEventListener('animationend', fine);
       el.classList.remove('sale');
+      el.anim = null;
+      var j = attive.indexOf(el); if (j >= 0) attive.splice(j,1);
       liberi.push(el);
     });
     return true;
   }
 
+  /* un gruppo: due-cinque maschere che escono vicine, sfalsate, di misure
+     diverse. Sparse, non in fila. */
+  function gruppo(quante){
+    var n = quante || (2 + (Math.random()*4|0));
+    var cx = 30 + Math.random()*(window.innerWidth - 60);
+    for (var k=0;k<n;k++){
+      (function(k){ setTimeout(function(){ lancia(cx); }, k*(110 + Math.random()*260)); })(k);
+    }
+  }
   function sciame(n, passo){
-    for (var k=0;k<n;k++) setTimeout(lancia, k*(passo||420));
+    for (var k=0;k<n;k++) setTimeout(lancia, k*(passo||300));
   }
 
-  /* il ritmo normale: spesso, ma senza una regola che si senta */
-  (function programma(){
-    setTimeout(function(){
-      if (!document.hidden){
-        var r = Math.random();
-        sciame(r < .10 ? 3 : (r < .42 ? 2 : 1), 1100);
-      }
-      programma();
-    }, 3400 + Math.random()*5600);
+  /* --- la spinta dello scroll -------------------------------------------
+     Chiesto esplicitamente: mentre si scorre non devono restare ferme, devono
+     andare piu' su. Non si tocca la durata (cambiarla farebbe ripartire
+     l'animazione da capo): si alza il playbackRate, che accelera quello che
+     e' gia' in corso senza uno scatto. */
+  var spinta = 1, velocita = 0, ultimaY = window.scrollY, ultimoT = performance.now();
+  window.addEventListener('scroll', function(){
+    var y = window.scrollY, t = performance.now();
+    var dt = Math.max(t - ultimoT, 8);
+    velocita = Math.max(velocita, Math.abs(y - ultimaY) / dt * 16.7);
+    ultimaY = y; ultimoT = t;
+  }, {passive:true});
+
+  (function giro(){
+    requestAnimationFrame(giro);
+    velocita *= .90;
+    var k = 1 + Math.min(velocita / 11, 3.6);
+    if (Math.abs(k - spinta) < .03) return;
+    spinta = k;
+    for (var i=0;i<attive.length;i++){
+      var a = attive[i].anim;
+      if (!a) continue;
+      for (var j=0;j<a.length;j++) a[j].playbackRate = spinta;
+    }
   })();
 
-  /* la prima si vede subito: appena il sipario si alza ce n'e' gia' una in
-     mezzo alla copertina, se no il motivo si scopre solo scorrendo */
+  /* il ritmo: gruppi ravvicinati, senza una regola che si senta */
+  (function programma(){
+    setTimeout(function(){
+      if (!document.hidden) gruppo();
+      programma();
+    }, 2200 + Math.random()*4200);
+  })();
+
+  /* le prime si vedono subito: appena il sipario si alza ce n'e' gia' un
+     gruppo in mezzo alla copertina, se no il motivo si scopre solo scorrendo */
   document.addEventListener('entrati', function(){
-    sciame(LEGGERO ? 1 : 2, 1200);
-    setTimeout(function(){ sciame(1); }, 3400);
+    gruppo(LEGGERO ? 2 : 4);
+    setTimeout(function(){ gruppo(LEGGERO ? 2 : 3); }, 2800);
   });
 
-  return { lancia: lancia, sciame: sciame };
+  return { lancia: lancia, gruppo: gruppo, sciame: sciame };
+})();
+
+/* --------------------------------------------------------------------------
+   la sequenza dell'acqua
+   Sessanta fotogrammi, caricati una volta sola e disegnati da due scene
+   diverse: quella del singolo e il respiro dietro a "Chi e'". Fra un
+   fotogramma e il successivo si disegna anche quello dopo in trasparenza:
+   e' la mezza misura che toglie lo scatto.
+   -------------------------------------------------------------------------- */
+var Sequenza = (function(){
+  var N = 60;                 /* deve corrispondere a strumenti/media.sh */
+  var imgs = new Array(N), caricate = 0, chiesta = false, pronta = false;
+  var attesa = [];
+
+  function url(i){ return 'assets/media/seq/a-'+('0'+(i+1)).slice(-2)+'.webp'; }
+
+  function carica(){
+    if (chiesta) return; chiesta = true;
+    for (var i=0;i<N;i++){
+      (function(i){
+        immagine(url(i)).then(function(im){
+          imgs[i] = im;
+          if (++caricate >= 4 && !pronta){
+            pronta = true;
+            for (var k=0;k<attesa.length;k++) attesa[k]();
+            attesa = [];
+          }
+        }, function(){ caricate++; });
+      })(i);
+    }
+  }
+
+  function copri(ctx, im, W, H){
+    var r = Math.max(W/im.width, H/im.height);
+    var w = im.width*r, h = im.height*r;
+    ctx.drawImage(im, (W-w)/2, (H-h)/2, w, h);
+  }
+
+  function disegna(ctx, W, H, v, fondo){
+    if (!pronta || !W) return false;
+    var f = clamp(v,0,1) * (N-1);
+    var i0 = Math.floor(f), t = f - i0;
+    var a = imgs[i0] || imgs[0];
+    var b = imgs[Math.min(i0+1, N-1)];
+    if (!a) return false;
+    ctx.clearRect(0,0,W,H);
+    if (fondo){ ctx.fillStyle = fondo; ctx.fillRect(0,0,W,H); }
+    ctx.globalAlpha = 1; copri(ctx, a, W, H);
+    if (b && b !== a && t > .004){ ctx.globalAlpha = t; copri(ctx, b, W, H); ctx.globalAlpha = 1; }
+    return true;
+  }
+
+  return {
+    N: N,
+    carica: carica,
+    disegna: disegna,
+    quandoPronta: function(fn){ if (pronta) fn(); else attesa.push(fn); }
+  };
 })();
 
 /* --------------------------------------------------------------------------
@@ -452,33 +542,25 @@ var Maschere = (function(){
 
 /* --------------------------------------------------------------------------
    il singolo: la sequenza comandata dallo scroll
-   Due cose la rendono fluida. La prima: il progresso non e' quello dello
-   scroll, e' un valore che lo insegue — cosi' il rimbalzo dello scroll di iOS
-   non si vede. La seconda: fra un fotogramma e il successivo si disegna anche
-   quello dopo, in trasparenza, quindi 60 fotogrammi si comportano come
-   qualche centinaio.
+   Il progresso non e' quello dello scroll, e' un valore che lo insegue: cosi'
+   il rimbalzo dello scroll di iOS non si vede.
    -------------------------------------------------------------------------- */
 (function(){
   var sez = $('#imm'), cv = $('#cvImm');
   var barra = $('#immBarra'), pct = $('#immPct');
   var tappe = $$('#imm .tappa');
   var ctx = cv.getContext('2d', { alpha:true });
-  var N = 60;                 /* deve corrispondere a strumenti/media.sh */
-  var imgs = new Array(N), caricate = 0, pronta = false;
   var W=0,H=0,DPR=1;
   var pT = 0, p = 0, entrata = 0, dentro = false, sciamato = false;
 
   /* i contenuti veri di questa scena stanno in DATI, come tutto il resto */
   var uscita = (DATI.uscite && DATI.uscite[0]) || { t:'—', href:'#' };
   $('#immTit').textContent = uscita.t;
-  $('#immElenco').innerHTML = DATI.piattaforme.map(function(x){ return x.nm; }).join(' &nbsp;·&nbsp; ');
   var cta = $('#immCta');
   var dove = uscita.href !== '#' ? uscita.href
            : (DATI.piattaforme[0] && DATI.piattaforme[0].href) || '#';
   cta.href = dove;
   if (dove !== '#'){ cta.target = '_blank'; cta.rel = 'noopener'; }
-
-  function url(i){ return 'assets/media/seq/a-'+('0'+(i+1)).slice(-2)+'.webp'; }
 
   function misura(){
     DPR = Math.min(window.devicePixelRatio || 1, 2);
@@ -486,27 +568,7 @@ var Maschere = (function(){
     if (!W) return;
     cv.width = Math.round(W*DPR); cv.height = Math.round(H*DPR);
     ctx.setTransform(DPR,0,0,DPR,0,0);
-    rendi(true);
-  }
-
-  function copri(im){
-    var r = Math.max(W/im.width, H/im.height);
-    var w = im.width*r, h = im.height*r;
-    ctx.drawImage(im, (W-w)/2, (H-h)/2, w, h);
-  }
-
-  function fotogrammi(v){
-    if (!pronta || !W) return;
-    var f = clamp(v,0,1) * (N-1);
-    var i0 = Math.floor(f), t = f - i0;
-    var a = imgs[i0] || imgs[0];
-    var b = imgs[Math.min(i0+1, N-1)];
-    if (!a) return;
-    ctx.clearRect(0,0,W,H);
-    ctx.fillStyle = '#0B0E1C'; ctx.fillRect(0,0,W,H);
-    ctx.globalAlpha = 1; copri(a);
-    /* la mezza misura fra due fotogrammi: e' quello che toglie lo scatto */
-    if (b && b !== a && t > .004){ ctx.globalAlpha = t; copri(b); ctx.globalAlpha = 1; }
+    rendi();
   }
 
   function smorza(t){ return t*t*(3-2*t); }
@@ -515,9 +577,9 @@ var Maschere = (function(){
     return smorza(mappa(v,a,a+m)) * (1 - smorza(mappa(v,b-m,b)));
   }
 
-  function rendi(forza){
+  function rendi(){
     var s = mappa(p, .04, .96);
-    fotogrammi(s);
+    Sequenza.disegna(ctx, W, H, s, '#0B0E1C');
     cv.style.opacity = (entrata * (1 - mappa(p,.95,1))).toFixed(3);
 
     barra.style.width = (s*100).toFixed(1)+'%';
@@ -532,8 +594,8 @@ var Maschere = (function(){
     }
 
     /* lo sciame arriva una volta sola per passaggio, sull'ultima tappa */
-    if (p > .70 && !sciamato){ sciamato = true; Maschere.sciame(LEGGERO ? 2 : 4, 520); }
-    if (p < .55) sciamato = false;
+    if (p > .68 && !sciamato){ sciamato = true; Maschere.gruppo(LEGGERO ? 3 : 5); }
+    if (p < .5) sciamato = false;
 
     document.body.classList.toggle('notte', p > .02 && p < .985);
   }
@@ -542,14 +604,8 @@ var Maschere = (function(){
   var pre = new IntersectionObserver(function(vs){
     if (!vs[0].isIntersecting) return;
     pre.disconnect();
-    for (var i=0;i<N;i++){
-      (function(i){
-        immagine(url(i)).then(function(im){
-          imgs[i] = im;
-          if (++caricate >= 4 && !pronta){ pronta = true; misura(); }
-        }, function(){ caricate++; });
-      })(i);
-    }
+    Sequenza.carica();
+    Sequenza.quandoPronta(misura);
   }, { rootMargin: '160% 0px' });
   pre.observe(sez);
 
@@ -564,8 +620,6 @@ var Maschere = (function(){
   (function giro(){
     requestAnimationFrame(giro);
     if (!dentro && Math.abs(p - pT) < .0008) return;
-    /* il progresso insegue lo scroll invece di copiarlo: e' tutta qui la
-       differenza fra una sequenza che scatta e una che scorre */
     p += (pT - p) * (CALMO ? 1 : .13);
     if (Math.abs(pT - p) < .0004) p = pT;
     rendi();
@@ -578,7 +632,89 @@ var Maschere = (function(){
 })();
 
 /* --------------------------------------------------------------------------
-   musica: le uscite, e la lastra che si apre di fianco
+   chi e': il respiro dietro alle righe
+   Lo sfondo non compare in dissolvenza: si apre da destra come un taglio, e
+   solo quando la sezione e' arrivata davvero. E' la differenza fra "c'era gia'
+   e non l'avevi visto" e "e' appena successo".
+   -------------------------------------------------------------------------- */
+(function(){
+  var sez = $('#chi'); if (!sez) return;
+  var cv = $('#cvChi');
+  var ctx = cv.getContext('2d', { alpha:true });
+  var W=0,H=0,DPR=1, pT=0, p=0, dentro=false;
+
+  /* ogni riga dentro alla sua feritoia: lo span taglia, la <i> scorre */
+  var dire = $('[data-righe]', sez);
+  var righe = $$('[data-righe] > span', sez);
+  righe.forEach(function(sp,i){
+    sp.innerHTML = '<i style="--d:'+(120 + i*130)+'ms">'+sp.innerHTML+'</i>';
+  });
+
+  /* una sola misura per tutte le righe, decisa dalla piu' lunga: righe di
+     corpi diversi sarebbero un manifesto, non una frase */
+  function misuraRighe(){
+    var p = dire.parentElement, cs = getComputedStyle(p);
+    var largo = p.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    if (largo <= 0) return;
+    dire.style.fontSize = '100px';
+    var max = 0;
+    righe.forEach(function(sp){ max = Math.max(max, sp.firstChild.scrollWidth); });
+    if (!max) return;
+    dire.style.fontSize = Math.min(100 * largo / max * .99, 132).toFixed(2) + 'px';
+  }
+  misuraRighe();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(misuraRighe);
+  window.addEventListener('resize', function(){ alFrame(misuraRighe); });
+
+  function misura(){
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = cv.clientWidth; H = cv.clientHeight;
+    if (!W) return;
+    cv.width = Math.round(W*DPR); cv.height = Math.round(H*DPR);
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    rendi();
+  }
+  function rendi(){ Sequenza.disegna(ctx, W, H, p); }
+
+  var pre = new IntersectionObserver(function(vs){
+    if (!vs[0].isIntersecting) return;
+    pre.disconnect();
+    Sequenza.carica();
+    Sequenza.quandoPronta(misura);
+  }, { rootMargin: '120% 0px' });
+  pre.observe(sez);
+
+  /* la rivelazione: una volta sola, e solo quando ce n'e' abbastanza in vista */
+  var oss = new IntersectionObserver(function(vs){
+    if (!vs[0].isIntersecting) return;
+    oss.disconnect();
+    sez.classList.add('svelato');
+    Maschere.gruppo(2);
+  }, { threshold:.28 });
+  oss.observe(sez);
+
+  function daScroll(){
+    var r = sez.getBoundingClientRect(), vh = window.innerHeight;
+    /* 0 quando il bordo alto entra, 1 quando quello basso esce: la scena
+       respira per tutta la traversata della sezione */
+    pT = clamp((vh - r.top) / (vh + r.height), 0, 1);
+    dentro = r.top < vh && r.bottom > 0;
+  }
+  (function giro(){
+    requestAnimationFrame(giro);
+    if (!dentro && Math.abs(p - pT) < .001) return;
+    p += (pT - p) * (CALMO ? 1 : .1);
+    rendi();
+  })();
+
+  window.addEventListener('scroll', function(){ alFrame(daScroll); }, {passive:true});
+  window.addEventListener('resize', function(){ alFrame(function(){ misura(); daScroll(); }); });
+  document.addEventListener('entrati', function(){ misura(); daScroll(); });
+  daScroll();
+})();
+
+/* --------------------------------------------------------------------------
+   ascolta: le uscite, le piattaforme, e la lastra che si apre di fianco
    -------------------------------------------------------------------------- */
 (function(){
   var box = $('#uscite'), piatt = $('#piatt'), lastra = $('#lastra');
@@ -597,7 +733,7 @@ var Maschere = (function(){
 
   piatt.innerHTML = DATI.piattaforme.map(function(p){
     return '<a href="'+p.href+'" '+(p.href!=='#'?'target="_blank" rel="noopener"':'')+'>'
-         +   '<span class="nm">'+p.nm+'</span><span class="fr">Apri →</span>'
+         +   '<span>'+p.nm+'</span><span class="fr">→</span>'
          + '</a>';
   }).join('');
 
@@ -644,10 +780,10 @@ var Maschere = (function(){
      sezione entra, e non tutte le volte */
   var oss = new IntersectionObserver(function(vs){
     vs.forEach(function(v){
-      if (v.isIntersecting && Math.random() < .7) setTimeout(Maschere.lancia, 500);
+      if (v.isIntersecting) setTimeout(function(){ Maschere.gruppo(2); }, 420);
     });
   }, { threshold:.35 });
-  [$('#musica'), $('#caleido'), $('#chi'), $('#contatti')].forEach(function(s){ if(s) oss.observe(s); });
+  [$('#ascolta'), $('#caleido'), $('#contatti')].forEach(function(s){ if(s) oss.observe(s); });
 })();
 
 /* --------------------------------------------------------------------------
@@ -847,7 +983,6 @@ var Maschere = (function(){
   m.textContent = DATI.booking; m.href = 'mailto:'+DATI.booking;
   var cta = $('#ctaBooking');
   if (cta) cta.href = 'mailto:'+DATI.booking+'?subject='+encodeURIComponent('Data — '+DATI.nome);
-  $('#cBooking').textContent = DATI.booking; $('#cBooking').href = 'mailto:'+DATI.booking;
   $('#cMgmt').textContent   = DATI.management; $('#cMgmt').href = 'mailto:'+DATI.management;
   $('#cPress').textContent  = DATI.stampa; $('#cPress').href = 'mailto:'+DATI.stampa;
 
@@ -856,10 +991,6 @@ var Maschere = (function(){
   }).join('');
   $('#social').innerHTML = social;
   $('#menuSocial').innerHTML = social;
-
-  $('#dati').innerHTML = DATI.scheda.map(function(r){
-    return '<div><dt class="mono">'+r[0]+'</dt><dd>'+r[1]+'</dd></div>';
-  }).join('');
 
   function mostra(t){
     avviso.textContent = t; avviso.classList.add('on');
@@ -898,7 +1029,7 @@ var Maschere = (function(){
     immagine('assets/media/copertina.jpg'),
     immagine('assets/media/ritratto-vuoto.jpg'),
     immagine('assets/media/ritratto-pieno.jpg'),
-    immagine('assets/media/seq/a-01.webp')
+    immagine('assets/media/copertina.jpg')
   ];
   if (document.fonts && document.fonts.ready) attese.push(document.fonts.ready);
   var v = $('#vCop');

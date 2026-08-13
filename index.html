@@ -23,7 +23,7 @@
 <!-- il ?v= serve: GitHub Pages tiene i file in cache dieci minuti, e chi
      ha gia' aperto il sito continuerebbe a vedere la versione vecchia.
      Si alza il numero a ogni pubblicazione. -->
-<link rel="stylesheet" href="assets/css/sito.css?v=3">
+<link rel="stylesheet" href="assets/css/sito.css?v=4">
 </head>
 <body>
 
@@ -72,12 +72,11 @@
 <div id="menu" aria-hidden="true">
   <button id="chiudi">Chiudi</button>
   <nav>
-    <a href="#manifesto" data-va>Manifesto</a>
+    <a href="#ascolta" data-va>Ascolta</a>
     <a href="#imm" data-va>Singolo</a>
-    <a href="#musica" data-va>Musica</a>
     <a href="#caleido" data-va>Specchi</a>
     <a href="#chi" data-va>Chi è</a>
-    <a href="#contatti" data-va>Contatti</a>
+    <a href="#contatti" data-va>Scrivi</a>
   </nav>
   <div class="pie" id="menuSocial"></div>
 </div>
@@ -100,7 +99,7 @@
     <p class="claim">Trattieni il fiato.</p>
     <div class="riga">
       <span class="mono">Musica indie · IT</span>
-      <a href="#manifesto" class="giu" aria-label="Scorri">
+      <a href="#ascolta" class="giu" aria-label="Scorri">
         <span class="mono">Scorri</span>
         <span class="ago" aria-hidden="true"></span>
       </a>
@@ -113,51 +112,38 @@
   <div class="scorre" id="nastro1"></div>
 </div>
 
-<!-- ========================== 02 · MANIFESTO ========================== -->
-<section id="manifesto" class="sez">
+<!-- ========================== 02 · ASCOLTA ==========================
+     Subito sotto il nome: la cosa per cui uno e' venuto qui. -->
+<section id="ascolta" class="sez">
   <div class="wrap">
     <div class="occhiello rev">
-      <span class="mono n">02</span><span class="mono">Manifesto</span>
+      <span class="mono n">02</span><span class="mono">Ascolta</span>
     </div>
-    <p class="frase" data-parole>Non canto per farmi sentire da lontano. Canto per restare <em>sott'acqua</em> un secondo in più.</p>
-    <div class="sotto">
-      <div class="rev">
-        <div class="filo"></div>
-        <p class="testo" style="margin-top:1.1rem">Una voce, una stanza, e il rumore che resta quando togli tutto il resto. Le canzoni nascono così: piccole, bagnate, senza niente addosso.</p>
-      </div>
-      <div class="rev">
-        <div class="filo"></div>
-        <p class="testo" style="margin-top:1.1rem">Quello che vedi qui sotto viene dal girato: nessuna immagine è stata aggiunta, sono tutti fotogrammi dello stesso video, rimessi in movimento dal tuo dito.</p>
-      </div>
-    </div>
+    <h2 class="tit" data-adatta data-max="180"><span class="gx" data-t="Ascolta">Ascolta</span></h2>
+
+    <div class="uscite" id="uscite"></div>
+    <div class="piatt" id="piatt"></div>
   </div>
 </section>
 
 <!-- ========================== 03 · IL SINGOLO ==========================
      La scena — il viso che entra dal lato, l'acqua che lo prende, le bolle —
-     non e' il contenuto: e' lo sfondo di quello che c'e' da dire, cioe' che
-     il pezzo e' uscito e dove si ascolta. -->
+     non e' il contenuto: e' lo sfondo di quello che c'e' da dire. -->
 <section id="imm" aria-labelledby="immTit">
   <div class="pin">
     <canvas id="cvImm" aria-hidden="true"></canvas>
     <div class="velo" aria-hidden="true"></div>
 
     <div class="dentro">
-      <div class="tappa" data-a="-.02" data-b=".40">
+      <div class="tappa" data-a="-.02" data-b=".54">
         <span class="mono">Nuovo singolo</span>
         <h2 class="tit-imm" id="immTit" data-adatta data-max="150">—</h2>
-        <p class="sotto" id="immMeta">Fuori ora.</p>
+        <p class="sotto">Fuori ora.</p>
       </div>
 
-      <div class="tappa" data-a=".36" data-b=".74">
-        <span class="mono">Dove ascoltarlo</span>
-        <p class="grande">Ovunque ascolti musica.</p>
-        <p class="elenco" id="immElenco"></p>
-      </div>
-
-      <div class="tappa" data-a=".70" data-b="1.02">
+      <div class="tappa" data-a=".50" data-b="1.02">
         <span class="mono">Il modo giusto</span>
-        <p class="grande">Con le cuffie, a volume alto.</p>
+        <p class="grande">Cuffie. Volume alto.</p>
         <a class="btn" id="immCta" href="#">Ascolta <span aria-hidden="true">&rarr;</span></a>
       </div>
     </div>
@@ -170,29 +156,13 @@
   </div>
 </section>
 
-<!-- ========================== 04 · MUSICA ========================== -->
-<section id="musica" class="sez">
-  <div class="wrap">
-    <div class="occhiello rev">
-      <span class="mono n">04</span><span class="mono">Musica</span>
-    </div>
-    <h2 class="tit" data-adatta data-max="180"><span class="gx" data-t="Ascolta">Ascolta</span></h2>
-    <p class="lede rev">Tutto quello che è uscito finora. Tocca una riga per aprire la lastra.</p>
-
-    <div class="uscite" id="uscite"></div>
-
-    <div class="piatt rev" id="piatt"></div>
-  </div>
-</section>
-
-<!-- ========================== 05 · CALEIDOSCOPIO ========================== -->
+<!-- ========================== 04 · SPECCHI ========================== -->
 <section id="caleido">
   <div class="wrap">
     <div class="occhiello rev">
-      <span class="mono n">05</span><span class="mono">Caleidoscopio</span>
+      <span class="mono n">04</span><span class="mono">Caleidoscopio</span>
     </div>
     <h2 class="tit" data-adatta data-max="180"><span class="gx" data-t="Specchi">Specchi</span></h2>
-    <p class="lede rev" style="color:var(--grigio)">Lo stesso fotogramma, moltiplicato. Trascina per girarlo, tira in su o in giù per cambiare il numero di specchi.</p>
     <div class="scena" id="scena">
       <canvas id="cvCal"></canvas>
       <video id="vCal" muted loop playsinline preload="metadata" class="sorgente" aria-hidden="true">
@@ -207,28 +177,27 @@
   </div>
 </section>
 
-<!-- ========================== 06 · CHI È ========================== -->
+<!-- ========================== 05 · CHI È ==========================
+     Poche righe grandi. Dietro, il respiro: la stessa scena d'acqua, che
+     entra dal lato quando la sezione arriva e si muove con lo scroll. -->
 <section id="chi" class="sez">
-  <div class="wrap">
+  <div class="sfondo" aria-hidden="true">
+    <canvas id="cvChi"></canvas>
+    <div class="velo"></div>
+  </div>
+
+  <div class="wrap in">
     <div class="occhiello rev">
-      <span class="mono n">06</span><span class="mono">Chi è</span>
+      <span class="mono n">05</span><span class="mono">Chi è</span>
     </div>
-    <div class="griglia">
-      <div class="torcia rev" id="torcia">
-        <img class="vuota" src="assets/media/ritratto-vuoto.jpg" alt="Michelle, di profilo, sott'acqua">
-        <img class="piena" src="assets/media/ritratto-pieno.jpg" alt="" aria-hidden="true">
-        <span class="anello" aria-hidden="true"></span>
-        <span class="scanl" aria-hidden="true"></span>
-        <span class="mono eti" aria-hidden="true">Passa il dito</span>
-      </div>
-      <div>
-        <h2 class="tit" data-adatta data-max="96"><span class="gx" data-t="Michelle">Michelle</span></h2>
-        <p class="pull rev">Scrive canzoni che stanno <em>sotto</em> la superficie.</p>
-        <p class="testo rev">Voce e chitarra, registrate vicino: quello che si sente è la stanza, non lo studio. I pezzi partono da una frase detta a mezza voce e finiscono quando smettono di chiedere attenzione.</p>
-        <p class="testo rev">Dal vivo è un set breve, senza scaletta fissa, che cambia forma a seconda di dove suona.</p>
-        <dl class="dati rev" id="dati"></dl>
-      </div>
-    </div>
+
+    <p class="dire" data-righe>
+      <span><em>Sott'acqua</em></span>
+      <span>un secondo</span>
+      <span>in più.</span>
+    </p>
+
+    <p class="mono nota rev">Voce e chitarra &nbsp;·&nbsp; registrate vicino &nbsp;·&nbsp; niente altro</p>
   </div>
 </section>
 
@@ -237,25 +206,31 @@
   <div class="scorre" id="nastro2"></div>
 </div>
 
-<!-- ========================== 07 · CONTATTI ========================== -->
+<!-- ========================== 06 · SCRIVI ========================== -->
 <section id="contatti">
-  <img class="fondo" src="assets/media/profilo.jpg" alt="" aria-hidden="true">
   <div class="wrap in">
     <div class="occhiello rev">
-      <span class="mono n">07</span><span class="mono">Contatti · Booking</span>
+      <span class="mono n">06</span><span class="mono">Booking</span>
     </div>
     <h2 class="tit" data-adatta data-max="180"><span class="gx" data-t="Scrivi">Scrivi</span></h2>
-    <p class="lede rev" style="color:var(--grigio)">Per una data, un festival, una collaborazione. Si risponde a tutti.</p>
 
-    <p class="azione rev"><a class="btn" id="ctaBooking" href="#">Scrivi per una data <span aria-hidden="true">→</span></a></p>
+    <div class="fila">
+      <div class="col-a">
+        <p class="azione rev"><a class="btn" id="ctaBooking" href="#">Scrivi per una data <span aria-hidden="true">&rarr;</span></a></p>
+        <a class="mail rev" id="mailBooking" href="#" data-copia>—</a>
+        <p class="mono rev">Tocca per copiare</p>
+        <ul class="altri rev">
+          <li><span class="mono">Management</span><a id="cMgmt" href="#">—</a></li>
+          <li><span class="mono">Stampa</span><a id="cPress" href="#">—</a></li>
+        </ul>
+      </div>
 
-    <a class="mail rev" id="mailBooking" href="#" data-copia>—</a>
-    <span class="mono">Tocca l'indirizzo per copiarlo</span>
-
-    <div class="blocchi">
-      <div class="blocco rev"><h3>Booking</h3><a id="cBooking" href="#">—</a></div>
-      <div class="blocco rev"><h3>Management</h3><a id="cMgmt" href="#">—</a></div>
-      <div class="blocco rev"><h3>Stampa</h3><a id="cPress" href="#">—</a></div>
+      <div class="col-b torcia rev" id="torcia">
+        <img class="vuota" src="assets/media/ritratto-vuoto.jpg" alt="Michelle, di profilo, sott'acqua">
+        <img class="piena" src="assets/media/ritratto-pieno.jpg" alt="" aria-hidden="true">
+        <span class="anello" aria-hidden="true"></span>
+        <span class="scanl" aria-hidden="true"></span>
+      </div>
     </div>
 
     <div class="social" id="social"></div>
@@ -268,10 +243,10 @@
   <div class="wrap in">
     <span class="mono">© <span id="anno"></span> Michelle</span>
     <span class="mono">Immagini dal videoclip</span>
-    <a class="mono" href="#cop">Torna su ↑</a>
+    <a class="mono" href="#cop">Su ↑</a>
   </div>
 </footer>
 
-<script src="assets/js/sito.js?v=3"></script>
+<script src="assets/js/sito.js?v=4"></script>
 </body>
 </html>

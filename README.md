@@ -41,6 +41,17 @@ caricano aprendo il file con doppio clic.
 
 ---
 
+## Le sei sezioni
+
+| | | |
+|---|---|---|
+| 01 | **Copertina** | il nome, il caleidoscopio del girato |
+| 02 | **Ascolta** | subito sotto il nome: le uscite e le piattaforme |
+| 03 | **Il singolo** | la scena d'acqua come sfondo di tre cose da dire |
+| 04 | **Specchi** | il caleidoscopio che si trascina |
+| 05 | **Chi è** | tre righe grandi, e dietro il respiro |
+| 06 | **Scrivi** | booking, con il ritratto a raggi X |
+
 ## ⚠ Cosa manca per pubblicarlo
 
 Il sito è finito nella forma; **i contenuti sono provvisori**. Sta tutto in un
@@ -54,13 +65,11 @@ unico posto: l'oggetto `DATI` in cima a [`assets/js/sito.js`](assets/js/sito.js)
 | Link ai social | `DATI.social` | tutti `#` |
 | Indirizzi booking / management / stampa | `DATI.booking`, `.management`, `.stampa` | finiscono in `.example`, che **non consegna** |
 | Frasi del nastro scorrevole | `DATI.nastro` | da rivedere |
-| Scheda (genere, lingua, formazione) | `DATI.scheda` | da confermare |
 
 Fuori da `DATI`, in [`index.html`](index.html):
 
-- il **manifesto** (la frase grande) e i due paragrafi sotto;
-- la **biografia** in `#chi` — è scritta senza inventare fatti (niente città,
-  etichette, date o premi): va sostituita con quella vera;
+- le tre righe di **`#chi`** e la riga di servizio sotto — sono scritte senza
+  inventare fatti (niente città, etichette, date o premi): vanno sostituite;
 - `<title>`, `meta description` e `og:description`.
 
 Gli indirizzi provvisori usano il dominio `.example`, riservato dallo IANA e non
@@ -97,17 +106,27 @@ Nessuna libreria. Scroll, `IntersectionObserver` e due canvas.
   della forma in `screen` tinge ciò che è diventato nero e lascia stare ciò che
   è diventato bianco. Il `grayscale` non è un vezzo: senza, il blu del sito
   rovesciato diventa giallo, e il giallo qui dentro non esiste. Una forma nera
-  al posto del blu dà l'inversione pura. Partono a caso ogni tanto, a gruppi di
-  una o due, e arrivano tutte insieme sull'ultima battuta del singolo.
+  al posto del blu dà l'inversione pura.
+  Escono a **gruppi sparsi** di due-cinque, di misure diverse dentro allo
+  stesso gruppo, ogni due-sei secondi. **Mentre si scorre accelerano**: non si
+  tocca la durata (la cambierebbe farebbe ripartire l'animazione da capo), si
+  alza il `playbackRate` dell'animazione già in corso, che va da 1 a circa 4.6
+  a seconda di quanto si scorre veloce.
 - **Specchi** — caleidoscopio interattivo su canvas 2D. Ogni spicchio è un
   triangolo: il ritaglio del fotogramma ha esattamente quelle proporzioni, e si
   ripete due volte lungo il raggio (la seconda specchiata) come in un
   caleidoscopio vero. Si trascina in orizzontale per girare, in verticale per
   cambiare il numero di specchi.
-- **Ritratto a raggi X** — due gradazioni dello stesso fotogramma, sovrapposte
-  al pixel: la torcia scopre quella piena dentro a un cerchio. Se nessuno tocca,
-  la torcia gira da sola — sul telefono è l'unico modo perché l'effetto si
-  mostri senza istruzioni.
+- **Chi è** — il respiro dietro alle righe. Lo sfondo è la stessa sequenza del
+  singolo (nessun byte in più: le immagini sono caricate una volta sola e
+  disegnate da due canvas), e **non compare in dissolvenza: si apre da destra
+  come un taglio**, e solo quando la sezione è arrivata davvero. È la
+  differenza fra «c'era già e non l'avevi visto» e «è appena successo». Le tre
+  righe entrano da sinistra, ognuna dentro alla sua feritoia, sfalsate.
+- **Ritratto a raggi X** — nei contatti. Due gradazioni dello stesso
+  fotogramma, sovrapposte al pixel: la torcia scopre quella piena dentro a un
+  cerchio. Se nessuno tocca, la torcia gira da sola — sul telefono è l'unico
+  modo perché l'effetto si mostri senza istruzioni.
 - **Movimento ridotto** — con `prefers-reduced-motion` le maschere spariscono,
   la scena si accorcia e la sequenza segue il dito senza smorzamento.
 

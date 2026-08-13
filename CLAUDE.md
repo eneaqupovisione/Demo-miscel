@@ -38,6 +38,11 @@ servito da un server statico.
 
 ## Da sapere prima di toccare
 
+- Le sezioni sono sei e numerate 01→06 nei commenti di `index.html`. Il
+  manifesto non esiste più: la sua frase è diventata le tre righe di `#chi`.
+- La sequenza dell'acqua è **una sola** (`Sequenza` in `sito.js`), caricata
+  una volta e disegnata da due canvas: la scena del singolo e il respiro
+  dietro a `#chi`. Non duplicarla.
 - La sezione **del singolo** è alta 320vh: quell'altezza *è* la durata della
   scena. Cambiarla cambia il ritmo di tutto. Il numero di fotogrammi (`N` in
   `sito.js`) deve corrispondere a quello che produce `strumenti/media.sh`.
@@ -45,8 +50,10 @@ servito da un server statico.
   vincoli: il `grayscale(1)` prima di `invert(1)` toglie il giallo che
   altrimenti nasce dal blu rovesciato; le tinte devono reggere il bianco
   sopra, perché una maschera passa sul testo mentre lo si legge; e ognuna
-  costa un `backdrop-filter` a tutto schermo, quindi poche e mai tutte
-  insieme.
+  costa un `backdrop-filter` a tutto schermo, quindi la curva delle misure
+  tiene basse le dimensioni (tante piccole, ogni tanto una grande). La spinta
+  dello scroll passa dal `playbackRate` dell'animazione: **non** dalla durata,
+  che cambiandola farebbe ripartire tutto da capo.
 - Il **caleidoscopio** legge `colonna.mp4`, non un girato già specchiato:
   rispecchiare una cosa già specchiata restituisce una macchia.
 
