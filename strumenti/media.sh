@@ -47,8 +47,22 @@ fermo () { # nome  istante  [filtro extra]
 }
 
 echo "clip:"
-# copertina — il caleidoscopio di mani con cui il girato si apre
-clip copertina   1.4  5.2  30
+# La copertina e' la scena 2 (20.6 -> 22.4): il volto rovesciato con l'acqua
+# che cola. Dura 1.8s, troppo poco per un anello che non si senta, quindi va
+# avanti e poi indietro: 3.6 secondi che si richiudono su se stessi senza
+# nessuno scatto, perche' il primo fotogramma e' anche l'ultimo.
+echo "  · copertina (scena 2, andata e ritorno)"
+ffmpeg -v error -y -ss 20.6 -t 1.8 -i "$SORG" \
+  -filter_complex "[0:v]$G,eq=brightness=0.055,scale=$W:$H:flags=lanczos,split[a][b];[b]reverse[r];[a][r]concat=n=2:v=1[v]" \
+  -map "[v]" -an -c:v libx264 -profile:v main -pix_fmt yuv420p -crf 28 -preset slow \
+  -movflags +faststart -g 45 "$OUT/copertina.mp4"
+# il fermo non e' il primo fotogramma: quello e' quasi nero, e chi arriva
+# vedrebbe un rettangolo vuoto finche' il video non parte.
+# Il filo di luce in piu' (eq brightness) non e' una correzione estetica: la
+# scena ha momenti quasi neri, e su quelli chi arriva vedrebbe uno schermo
+# spento invece di una copertina.
+ffmpeg -v error -y -ss 21.2 -i "$SORG" -frames:v 1 \
+  -vf "$G,eq=brightness=0.055,scale=$W:$H:flags=lanczos" -q:v 4 "$OUT/copertina.jpg"
 
 echo "fermi immagine:"
 # la colonna a raggi X: e' la miniatura della lastra che si apre sulle uscite
@@ -62,15 +76,17 @@ fermo profilo        68.0
 #
 # Dieci fotogrammi al secondo per tutte, cosi' la durata sullo schermo e'
 # proporzionale a quella vera. I numeri contano: il copione (assets/js/sito.js)
-# ha dentro N = 70 e i tre punti di stacco. Se si cambiano le scene qui, vanno
+# ha dentro N = 52 e i due punti di stacco. Se si cambiano le scene qui, vanno
 # cambiati anche li'.
 #
+# La scena 2 non e' piu' qui: e' diventata la copertina, e ripeterla dentro
+# alla stessa pagina sarebbe una rima involontaria.
+#
 #   scena  1   18.8 -> 20.4   1.6s   16 fotogrammi   (colonna di bolle)
-#   scena  2   20.6 -> 22.4   1.8s   18              (il volto, l'acqua che cola)
 #   scena  3   34.4 -> 36.0   1.6s   16              (la testa sul pelo dell'acqua)
 #   scena  4   53.4 -> 55.4   2.0s   20              (sott'acqua, le bolle)
 #                                    --------------
-#                                    70, stacchi a 16 · 34 · 50
+#                                    52, stacchi a 16 · 32
 echo "sequenza del singolo:"
 TMP="$(mktemp -d)"
 i=0
@@ -85,7 +101,6 @@ pezzo () {  # inizio  durata
   rm -f "$TMP"/p*.png
 }
 pezzo 18.8 1.6
-pezzo 20.6 1.8
 pezzo 34.4 1.6
 pezzo 53.4 2.0
 rm -rf "$TMP"

@@ -488,15 +488,15 @@ var Maschere = (function(){
    e' la mezza misura che toglie lo scatto.
    -------------------------------------------------------------------------- */
 var Sequenza = (function(){
-  var N = 70;                 /* deve corrispondere a strumenti/media.sh */
+  var N = 52;                 /* deve corrispondere a strumenti/media.sh */
   /* La sequenza non e' un piano unico: sono quattro stacchi rimessi in fila.
      Qui ci sono i fotogrammi in cui comincia una scena nuova, e servono a non
      sfumare fra l'ultimo fotogramma di una e il primo dell'altra: uno stacco
      sfumato non e' uno stacco, e' una pappa. */
-  var TAGLI = [16, 34, 50];
+  var TAGLI = [16, 32];
   /* la quarta scena, sott'acqua: e' la piu' calma, e fa da respiro dietro a
      "Chi e'" senza portarsi dietro gli stacchi */
-  var RESPIRO = [50, N-1];
+  var RESPIRO = [32, N-1];
   var imgs = new Array(N), caricate = 0, chiesta = false, pronta = false;
   var attesa = [];
 

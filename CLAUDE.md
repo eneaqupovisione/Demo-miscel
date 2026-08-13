@@ -65,15 +65,16 @@ servito da un server statico.
 Sta su GitHub Pages: <https://eneaqupovisione.github.io/Demo-miscel/>, ramo
 `main`, cartella radice. Si aggiorna con un `git push`.
 
-**A ogni pubblicazione si alza il `?v=` dei due link in `index.html`**
-(`sito.css` e `sito.js`). Pages tiene i file in cache dieci minuti: senza,
+**A ogni pubblicazione si lancia `./strumenti/versione.sh <n>`**, che alza il
+`?v=` su *tutti* i riferimenti di `index.html` — non solo stile e copione, ma
+anche video e immagini. Pages tiene i file in cache dieci minuti: senza,
 chi ha gia' aperto il sito continua a vedere la versione vecchia — e' gia'
 successo di crederlo un difetto del codice quando era solo la cache.
 
 Quel numero se lo prende anche il copione (`VER` in `sito.js`, letto dal
-proprio `src`) e lo appende alle immagini della sequenza: quelle cambiano
-contenuto tenendo lo stesso nome, quindi senza il numero il browser
-continua a mostrare i fotogrammi del taglio precedente.
+proprio `src`) e lo appende alle immagini della sequenza, che dal documento
+non si vedono. Ci sono cascato due volte: una modifica sembrava non essere
+stata applicata, ed era solo la cache.
 
 Se il sito cambia indirizzo vanno aggiornati anche `og:url` e `og:image`,
 che sono assoluti apposta: molti scanner delle chat non risolvono un

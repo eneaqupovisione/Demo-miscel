@@ -15,7 +15,7 @@ sito/
 │   ├── css/sito.css        stili
 │   ├── js/sito.js          comportamento — in cima c'è DATI, il pannello dei contenuti
 │   └── media/              ARTEFATTI: si rigenerano, non si modificano a mano
-│       └── seq/            70 fotogrammi (4 scene in fila), comandati dallo scroll
+│       └── seq/            52 fotogrammi (3 scene in fila), comandati dallo scroll
 └── strumenti/media.sh      il costruttore dei media a partire dal girato
 ```
 
@@ -29,6 +29,16 @@ che è in `assets/media/` esce da lì: si rifà con un comando.
 Serve `ffmpeg`, `cwebp` e (per il marchio sull'anteprima) `magick`. Lo script
 taglia le clip, applica la gradazione duotone, estrae la sequenza e compone
 l'immagine di anteprima per le chat.
+
+**Dopo aver rigenerato i media, si alza il numero di versione:**
+
+```bash
+./strumenti/versione.sh 13
+```
+
+Riscrive il `?v=` su tutti i riferimenti di `index.html` — stile, copione,
+video, immagini. Serve perché i file cambiano contenuto tenendo lo stesso
+nome, e senza un numero nuovo il browser continua a servire quelli vecchi.
 
 ## Guardarlo in locale
 
@@ -45,9 +55,9 @@ caricano aprendo il file con doppio clic.
 
 | | | |
 |---|---|---|
-| 01 | **Copertina** | il nome, il caleidoscopio del girato |
+| 01 | **Copertina** | il nome, e il volto sott'acqua in anello |
 | 02 | **Ascolta** | subito sotto il nome: le uscite e le piattaforme |
-| 03 | **Il singolo** | quattro stacchi del girato come sfondo di due cose da dire |
+| 03 | **Il singolo** | tre stacchi del girato come sfondo di due cose da dire |
 | 04 | **Chi è** | tre righe grandi, e dietro il respiro |
 | 05 | **Scrivi** | booking, e la silhouette |
 
@@ -84,20 +94,27 @@ corretti, e chi possiede dominio e accessi messo per iscritto.
 
 Nessuna libreria. Scroll, `IntersectionObserver` e due canvas.
 
-- **Copertina** — il caleidoscopio con cui si apre il girato. Il nome è in
+- **Copertina** — la scena 2 del girato (20,6→22,4): il volto rovesciato con
+  l'acqua che cola. Dura 1,8 secondi, troppo poco per un anello che non si
+  senta, quindi va **avanti e poi indietro** — 3,6 secondi che si richiudono su
+  sé stessi senza nessuno scatto, perché il primo fotogramma è anche l'ultimo.
+  È l'unica parte del sito che non segue i ruoli di `:root`: qui il fondo non è
+  una scelta, è il girato, quindi è scura e tutto quello che ci sta sopra si
+  rilegge in chiaro. Il nome è in
   `mix-blend-mode: difference`: si scurisce sul bianco e si schiarisce sul nero,
   quindi cambia da solo mentre il video scorre. La misura del carattere non è una
   `clamp`: è calcolata, perché la larghezza di una parola dipende da quali
   lettere ha dentro (stessa cosa per i titoli e per il menu).
 - **Il singolo** — 320vh di scroll per una schermata inchiodata. Lo sfondo non
-  è un piano unico: sono **quattro stacchi scelti a mano sul girato**, rimessi
-  in fila — colonna di bolle, il volto con l'acqua che cola, la testa sul pelo
-  dell'acqua, sott'acqua. Lo scroll comanda 70 fotogrammi WebP disegnati su
+  è un piano unico: sono **tre stacchi scelti a mano sul girato**, rimessi
+  in fila — colonna di bolle, la testa sul pelo dell'acqua, sott'acqua (il
+  volto è salito in copertina, e ripeterlo qui sarebbe una rima involontaria).
+  Lo scroll comanda 52 fotogrammi WebP disegnati su
   canvas (una sequenza e non un `<video>`, perché il seek dentro a un video su
   iOS non è affidabile). Tre cose la rendono fluida: il progresso *insegue* lo
   scroll invece di copiarlo, così il rimbalzo di iOS non si vede; fra un
   fotogramma e il successivo si disegna anche quello dopo in trasparenza,
-  quindi 70 fotogrammi si comportano come qualche centinaio; e sopra i tre
+  quindi 52 fotogrammi si comportano come qualche centinaio; e sopra i due
   punti di stacco la trasparenza si toglie, perché uno stacco sfumato non è
   uno stacco. La pagina si ribalta in negativo per tutta la scena.
 - **Maschere** — non sono nuvole sfumate: sono forme piene, a bordo netto, che
