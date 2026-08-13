@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<!--
+  BLOB MASK — metaball come maschera sul contenuto di una pagina
+  ==============================================================
+
+  COME FUNZIONA IL TRUCCO
+  Due canvas identici sovrapposti al contenuto, entrambi con le gocce su fondo NERO.
+  Il nero è l'elemento neutro sia per difference sia per screen: fuori dalle gocce
+  non succede assolutamente nulla, il contenuto resta com'è.
+
+    canvas 1 · gocce BIANCHE · mix-blend-mode: difference
+        dentro le gocce inverte:  bianco -> nero,  nero -> bianco
+    canvas 2 · gocce BLU      · mix-blend-mode: screen
+        dentro le gocce colora:   nero -> blu,     bianco -> resta bianco
+
+    somma:  fuori = nero su bianco   ·   dentro = bianco su blu
+
+  REQUISITI
+  · Il contenitore deve avere isolation:isolate, altrimenti la fusione "scappa"
+    e tinge anche il resto della pagina.
+  · I canvas devono avere pointer-events:none, così il testo resta selezionabile.
+  · Il contesto WebGL va creato con alpha:false e pulito a nero.
+  · Funziona su design a due toni. Con foto sotto ottieni un negativo colorato,
+    che a volte è bellissimo ma va verificato caso per caso.
+
+  MODALITÀ NEGATIVO
+  Se ti basta il negativo puro (bianco su nero dentro le gocce) togli il secondo
+  canvas: un solo livello, metà del costo. Il tasto NEGATIVO nel mixer lo mostra.
+-->
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blob mask</title>
+<style>
+  :root {
+    --ink:#000; --paper:#fff; --hair:rgba(0,0,0,.22);
+    --ui: ui-monospace, "SFMono-Regular", "JetBrains Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing:border-box; }
+
+  html { scroll-behavior:smooth; }
+  body {
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:"Helvetica Neue", Helvetica, Arial, sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ===== il palcoscenico: isolation:isolate contiene la fusione ===== */
+  .stage { position:relative; isolation:isolate; background:var(--paper); }
+
+  .stage canvas {
+    position:fixed; inset:0; width:100%; height:100%;
+    display:block; pointer-events:none;
+  }
+  #c-invert { mix-blend-mode:difference; }
+  #c-tint   { mix-blend-mode:screen; }
+  #c-tint[hidden] { display:none; }
+
+  /* ===== contenuto di prova — sostituiscilo col tuo ===== */
+  .wrap { max-width:1080px; margin:0 auto; padding:0 clamp(20px,5vw,64px); }
+
+  .band { padding:clamp(64px,12vh,140px) 0; }
+
+  .eyebrow {
+    font-family:var(--ui); font-size:10px; letter-spacing:.34em;
+    text-transform:uppercase; margin:0 0 clamp(20px,4vh,40px);
+  }
+
+  h1 {
+    margin:0; font-weight:700;
+    font-size:clamp(44px,10.5vw,150px); line-height:.86; letter-spacing:-.045em;
+  }
+  h1 em { font-style:normal; display:block; }
+
+  h2 {
+    margin:0 0 24px; font-weight:700;
+    font-size:clamp(26px,4.4vw,58px); line-height:1; letter-spacing:-.03em;
+  }
+
+  .lede {
+    margin:clamp(32px,6vh,56px) 0 0; max-width:46ch;
+    font-size:clamp(16px,1.5vw,20px); line-height:1.6;
+  }
+
+  .cols {
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    gap:clamp(24px,4vw,56px); margin-top:clamp(40px,7vh,72px);
+  }
+  .cols p { margin:0; font-size:14px; line-height:1.75; }
+  .cols h3 {
+    margin:0 0 10px; font-family:var(--ui);
+    font-size:10px; letter-spacing:.24em; text-transform:uppercase; font-weight:400;
+  }
+
+  .rule { height:1px; background:currentColor; opacity:.25; margin:clamp(48px,8vh,90px) 0; }
+
+  .meta {
+    display:flex; flex-wrap:wrap; gap:10px 28px;
+    font-family:var(--ui); font-size:10px; letter-spacing:.18em; text-transform:uppercase;
+  }
+
+  .huge {
+    font-weight:700; font-size:clamp(64px,18vw,260px);
+    line-height:.8; letter-spacing:-.06em; margin:0;
+  }
+
+  /* ===== mixer, fuori dallo stage così la fusione non lo tocca ===== */
+  .panel {
+    position:fixed; bottom:clamp(14px,3vw,28px); right:clamp(14px,3vw,28px);
+    width:min(268px, calc(100vw - 28px));
+    background:var(--paper); border:1px solid var(--ink);
+    font-family:var(--ui); font-size:10px; letter-spacing:.05em; z-index:50;
+  }
+  .head { display:flex; align-items:stretch; border-bottom:1px solid var(--ink); }
+  .transport {
+    all:unset; width:34px; display:grid; place-items:center; cursor:pointer;
+    border-right:1px solid var(--ink); font-size:11px; line-height:1;
+  }
+  .transport:hover, .transport:focus-visible { background:var(--ink); color:var(--paper); }
+  .transport:focus-visible { outline:2px solid var(--ink); outline-offset:-4px; }
+  .tab {
+    all:unset; flex:1; text-align:center; padding:9px 4px; cursor:pointer;
+    text-transform:uppercase; letter-spacing:.2em; font-size:9px; opacity:.4;
+  }
+  .tab[aria-selected="true"] { opacity:1; background:rgba(0,0,0,.05); }
+  .tab:focus-visible { outline:2px solid var(--ink); outline-offset:-4px; }
+  .meter {
+    display:grid; place-items:center; padding:0 9px; border-left:1px solid var(--hair);
+    font-variant-numeric:tabular-nums; font-size:9px; opacity:.45; min-width:50px;
+  }
+  .sheet { padding:8px 12px 12px; max-height:50vh; overflow-y:auto; overscroll-behavior:contain; }
+  .sheet[hidden] { display:none; }
+  .hint {
+    margin:0 0 8px; padding:7px 8px; border:1px solid var(--hair);
+    font-size:9px; line-height:1.6; opacity:.6; letter-spacing:.03em;
+  }
+  .knob { display:grid; grid-template-columns:1fr auto; align-items:center; gap:0 8px; padding:6px 0 2px; }
+  .knob + .knob { border-top:1px solid rgba(0,0,0,.07); }
+  .knob label { text-transform:lowercase; }
+  .knob output { font-variant-numeric:tabular-nums; opacity:.5; }
+  .knob input { grid-column:1 / -1; }
+  input[type="range"] {
+    -webkit-appearance:none; appearance:none; width:100%; height:12px;
+    background:transparent; margin:0; cursor:ew-resize;
+  }
+  input[type="range"]::-webkit-slider-runnable-track { height:1px; background:var(--ink); }
+  input[type="range"]::-moz-range-track { height:1px; background:var(--ink); }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance:none; width:8px; height:8px; margin-top:-3.5px;
+    background:var(--ink); border:0; border-radius:50%;
+  }
+  input[type="range"]::-moz-range-thumb { width:8px; height:8px; background:var(--ink); border:0; border-radius:50%; }
+  input[type="range"]:focus-visible { outline:2px solid var(--ink); outline-offset:3px; }
+
+  .swatch { display:flex; align-items:center; gap:8px; padding:8px 0 4px; border-top:1px solid rgba(0,0,0,.07); }
+  .swatch label { flex:1; text-transform:lowercase; }
+  input[type="color"] {
+    -webkit-appearance:none; appearance:none; width:34px; height:18px;
+    padding:0; border:1px solid var(--ink); background:none; cursor:pointer;
+  }
+  input[type="color"]::-webkit-color-swatch-wrapper { padding:1px; }
+  input[type="color"]::-webkit-color-swatch { border:0; }
+
+  .row { display:flex; gap:6px; margin-top:12px; }
+  .btn {
+    all:unset; flex:1; text-align:center; padding:7px 4px; border:1px solid var(--ink);
+    cursor:pointer; text-transform:uppercase; font-size:8px; letter-spacing:.14em;
+  }
+  .btn[aria-pressed="true"] { background:var(--ink); color:var(--paper); }
+  .btn:hover, .btn:focus-visible { background:var(--ink); color:var(--paper); }
+  .btn:focus-visible { outline:2px solid var(--ink); outline-offset:2px; }
+
+  pre.snippet {
+    margin:10px 12px 12px; padding:9px; border:1px solid var(--hair);
+    font-size:9px; line-height:1.6; white-space:pre-wrap; user-select:all;
+  }
+  pre.snippet[hidden] { display:none; }
+
+  .fallback {
+    position:fixed; inset:0; display:grid; place-items:center; padding:24px;
+    text-align:center; font-size:12px; line-height:1.8; background:var(--paper); z-index:99;
+  }
+  .fallback[hidden] { display:none; }
+</style>
+</head>
+<body>
+
+<div class="stage" id="stage">
+
+  <!-- ---------- contenuto: testo vero, selezionabile ---------- -->
+  <section class="band wrap">
+    <p class="eyebrow">Sezione di prova · sostituiscila col tuo contenuto</p>
+    <h1>Il fluido<em>attraversa</em><em>la pagina</em></h1>
+    <p class="lede">
+      Le gocce non sono disegnate sopra al testo: sono una finestra che cambia
+      come si vede quello che c'è sotto. Prova a selezionare questo paragrafo
+      mentre ci passano sopra — resta testo a tutti gli effetti.
+    </p>
+
+    <div class="cols">
+      <div>
+        <h3>Fuori</h3>
+        <p>Il livello delle gocce è nero, e il nero è neutro per entrambe le
+        modalità di fusione. Fuori dalla sagoma il contenuto non viene toccato
+        da nulla, nemmeno di un valore.</p>
+      </div>
+      <div>
+        <h3>Dentro</h3>
+        <p>Il primo canvas inverte, il secondo colora. Due passaggi elementari
+        che insieme rimappano i due toni della pagina senza sapere niente di
+        cosa ci sia scritto.</p>
+      </div>
+      <div>
+        <h3>Costo</h3>
+        <p>Due disegni a schermo intero per fotogramma. In modalità negativo
+        uno solo. La fisica gira una volta sola e alimenta entrambi.</p>
+      </div>
+    </div>
+
+    <div class="rule"></div>
+
+    <div class="meta">
+      <span>Metaball</span><span>WebGL</span><span>Stokes v ∝ r²</span><span>Scorri</span>
+    </div>
+  </section>
+
+  <section class="band wrap">
+    <h2>Sotto le gocce<br>il testo si inverte</h2>
+    <p class="lede">
+      Scorri lentamente e guarda il bordo mentre attraversa una riga: la lettera
+      cambia stato una colonna di pixel alla volta, senza scalinature, perché il
+      contorno della metaball è antialiasato dalla derivata del campo.
+    </p>
+    <div class="rule"></div>
+    <p class="huge">01</p>
+  </section>
+
+  <section class="band wrap">
+    <h2>Con contenuti<br>a più toni</h2>
+    <p class="lede">
+      Su una fotografia o su una scala di grigi il risultato è un negativo
+      colorato: interessante, ma va guardato caso per caso. Il trucco dà il
+      meglio dove il progetto è già a due toni.
+    </p>
+    <div class="cols">
+      <div><h3>Consigliato</h3><p>Testo, regole, campiture piene, illustrazioni al tratto.</p></div>
+      <div><h3>Da verificare</h3><p>Fotografie, gradienti, interfacce con molti grigi intermedi.</p></div>
+      <div><h3>Alternativa</h3><p>Maschera CSS su una copia del contenuto, se ti serve libertà totale.</p></div>
+    </div>
+    <div class="rule"></div>
+    <p class="eyebrow">Fine della prova</p>
+  </section>
+
+  <!-- ---------- i due livelli di fusione ---------- -->
+  <canvas id="c-invert" aria-hidden="true"></canvas>
+  <canvas id="c-tint"   aria-hidden="true"></canvas>
+</div>
+
+<div class="fallback" hidden id="fallback">
+  Il tuo browser non supporta WebGL, quindi l'effetto non può essere disegnato.<br>
+  Prova con Chrome, Firefox o Safari aggiornati.
+</div>
+
+<aside class="panel" id="panel">
+  <div class="head">
+    <button class="transport" id="btnPlay" aria-label="Metti in pausa">❚❚</button>
+    <button class="tab" id="tabForma" role="tab" aria-selected="false" aria-controls="sheetForma">Forma</button>
+    <button class="tab" id="tabMoto"  role="tab" aria-selected="true"  aria-controls="sheetMoto">Moto</button>
+    <div class="meter" id="fps">—</div>
+  </div>
+
+  <div class="sheet" id="sheetForma" hidden>
+    <p class="hint">Caratteristiche della singola goccia. Mettile in pausa per vederle bene.</p>
+    <div class="swatch" id="swatchRow">
+      <label for="tintColor">tinta</label>
+      <input type="color" id="tintColor" value="#1a3cff">
+    </div>
+    <div class="row" id="rowForma">
+      <button class="btn" id="btnMode" aria-pressed="false">Negativo</button>
+      <button class="btn" id="btnConf">Config</button>
+    </div>
+  </div>
+
+  <div class="sheet" id="sheetMoto">
+    <p class="hint">Come le gocce si relazionano. Guardale in movimento.</p>
+    <div class="row" id="rowMoto">
+      <button class="btn" id="btnDir">Inverti flusso</button>
+      <button class="btn" id="btnShake">Scuoti</button>
+    </div>
+  </div>
+
+  <pre class="snippet" id="snippet" hidden></pre>
+</aside>
+
+<script>
+/* =========================================================================
+   1. CONFIG
+   ========================================================================= */
+const CONFIG = {
+  /* FORMA — la singola goccia */
+  count:      22,
+  sizeMax:    0.066,
+  spread:     0.42,
+  merge:      1.00,
+  warp:       0.055,
+  warpScale:  2.80,
+  stretch:    0.54,
+
+  /* MOTO — come si relazionano */
+  speed:      0.140,
+  viscosity:  1.04,
+  cohesion:   0.66,
+  repulsion:  2.00,
+  damping:    11.0,
+  snap:       0.018,
+  sway:       0.065,
+  warpSpeed:  0.26,
+
+  direction:  1,
+  tint:       '#1a3cff',   // colore dentro le gocce
+  mode:       'tinta'      // 'tinta' = due livelli · 'negativo' = solo inversione
+};
+
+/* =========================================================================
+   2. Shader — identico per i due livelli, cambia solo uInk.
+      uPaper è sempre NERO: è il neutro di difference e di screen.
+   ========================================================================= */
+const VERT = `
+attribute vec2 aPos;
+void main() { gl_Position = vec4(aPos, 0.0, 1.0); }
+`;
+
+const fragSource = (count, hasDeriv) => `
+${hasDeriv ? '#extension GL_OES_standard_derivatives : enable\n#define HAS_DERIV 1' : ''}
+precision highp float;
+#define COUNT ${count}
+
+uniform vec4  uBlobs[COUNT];
+uniform vec2  uRes;
+uniform float uAspect;
+uniform float uTime;
+uniform float uMerge;
+uniform float uWarp;
+uniform float uWarpScale;
+uniform vec3  uInk;
+
+float hash21(vec2 p) {
+  p = fract(p * vec2(123.34, 456.21));
+  p += dot(p, p + 45.32);
+  return fract(p.x * p.y);
+}
+float vnoise(vec2 p) {
+  vec2 i = floor(p), f = fract(p);
+  vec2 u = f * f * (3.0 - 2.0 * f);
+  float a = hash21(i);
+  float b = hash21(i + vec2(1.0, 0.0));
+  float c = hash21(i + vec2(0.0, 1.0));
+  float d = hash21(i + vec2(1.0, 1.0));
+  return mix(mix(a, b, u.x), mix(c, d, u.x), u.y);
+}
+float fbm(vec2 p) {
+  float v = 0.0, a = 0.5;
+  for (int i = 0; i < 3; i++) { v += a * vnoise(p); p = p * 2.03 + 11.7; a *= 0.5; }
+  return v;
+}
+
+void main() {
+  vec2 p = gl_FragCoord.xy / uRes;
+
+  vec2 wp = vec2(p.x * uAspect, p.y) * uWarpScale;
+  vec2 n = vec2(fbm(wp + vec2(0.0, uTime)), fbm(wp + vec2(5.7, -uTime) + 31.4)) - 0.5;
+  vec2 q = p + n * uWarp * vec2(1.0 / uAspect, 1.0);
+
+  float field = 0.0;
+  for (int i = 0; i < COUNT; i++) {
+    vec4 b = uBlobs[i];
+    vec2 d = (q - b.xy) * vec2(uAspect, 1.0);
+    d.y /= b.w;
+    field += (b.z * b.z) / max(dot(d, d), 1e-6);
+  }
+
+  #ifdef HAS_DERIV
+    float w = max(fwidth(field), 1e-5);
+    float mask = smoothstep(uMerge - w, uMerge + w, field);
+  #else
+    float mask = smoothstep(uMerge * 0.94, uMerge * 1.06, field);
+  #endif
+
+  gl_FragColor = vec4(uInk * mask, 1.0);   // fuori = nero = neutro
+}
+`;
+
+/* =========================================================================
+   3. Un livello = un canvas + un contesto WebGL
+   ========================================================================= */
+function hexToRgb(h) {
+  const v = parseInt(h.slice(1), 16);
+  return [(v>>16&255)/255, (v>>8&255)/255, (v&255)/255];
+}
+
+function createLayer(canvas, inkHex) {
+  const gl = canvas.getContext('webgl', { antialias:false, alpha:false })
+          || canvas.getContext('experimental-webgl');
+  if (!gl) return null;
+
+  const hasDeriv = !!gl.getExtension('OES_standard_derivatives');
+  const buf = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
+
+  let program = null, U = {}, ink = hexToRgb(inkHex);
+
+  function compile(type, src) {
+    const s = gl.createShader(type);
+    gl.shaderSource(s, src); gl.compileShader(s);
+    if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) { console.error(gl.getShaderInfoLog(s)); return null; }
+    return s;
+  }
+
+  return {
+    setCount(n) {
+      const vs = compile(gl.VERTEX_SHADER, VERT);
+      const fs = compile(gl.FRAGMENT_SHADER, fragSource(n, hasDeriv));
+      if (!vs || !fs) return;
+      const p = gl.createProgram();
+      gl.attachShader(p, vs); gl.attachShader(p, fs); gl.linkProgram(p);
+      if (!gl.getProgramParameter(p, gl.LINK_STATUS)) { console.error(gl.getProgramInfoLog(p)); return; }
+      if (program) gl.deleteProgram(program);
+      program = p; gl.useProgram(program);
+      const loc = gl.getAttribLocation(program, 'aPos');
+      gl.enableVertexAttribArray(loc);
+      gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
+      U = {};
+      ['uBlobs','uRes','uAspect','uTime','uMerge','uWarp','uWarpScale','uInk']
+        .forEach(k => U[k] = gl.getUniformLocation(program, k));
+      gl.uniform3fv(U.uInk, ink);
+    },
+    setInk(hex) { ink = hexToRgb(hex); if (program) { gl.useProgram(program); gl.uniform3fv(U.uInk, ink); } },
+    resize(w, h) { canvas.width = w; canvas.height = h; gl.viewport(0, 0, w, h); },
+    draw(data, W, H, A, warpClock) {
+      if (!program) return;
+      gl.useProgram(program);
+      gl.uniform4fv(U.uBlobs, data);
+      gl.uniform2f(U.uRes, W, H);
+      gl.uniform1f(U.uAspect, A);
+      gl.uniform1f(U.uTime, warpClock);
+      gl.uniform1f(U.uMerge, CONFIG.merge);
+      gl.uniform1f(U.uWarp, CONFIG.warp);
+      gl.uniform1f(U.uWarpScale, CONFIG.warpScale);
+      gl.drawArrays(gl.TRIANGLES, 0, 3);
+    }
+  };
+}
+
+const cInvert = document.getElementById('c-invert');
+const cTint   = document.getElementById('c-tint');
+const layerInvert = createLayer(cInvert, '#ffffff');   // difference -> inverte
+const layerTint   = createLayer(cTint,   CONFIG.tint); // screen     -> colora
+
+if (!layerInvert) {
+  document.getElementById('fallback').hidden = false;
+  document.getElementById('panel').style.display = 'none';
+} else {
+  init();
+}
+
+/* =========================================================================
+   4. Fisica (identica alla versione precedente)
+   ========================================================================= */
+function init() {
+const rand = (a,b) => a + Math.random()*(b-a);
+const TAU = Math.PI*2;
+let A = 1, blobs = [], data = null, bonded = null, bondAge = null;
+
+function radiusOf(t) { const M = CONFIG.sizeMax, m = M*CONFIG.spread; return m + t*(M-m); }
+function terminal(r) { const M = Math.max(CONFIG.sizeMax,1e-4); return CONFIG.speed*(r*r)/(M*M); }
+function massOf(r)   { const M = Math.max(CONFIG.sizeMax,1e-4); return Math.max(0.20, Math.pow(r/M,3)); }
+
+function makeBlob(atEdge) {
+  const sizeT = Math.random(), r = radiusOf(sizeT);
+  return {
+    sizeT, X: rand(0,A),
+    Y: atEdge ? (CONFIG.direction > 0 ? -0.25 : 1.25) : rand(-0.2,1.2),
+    vX: 0, vY: terminal(r)*CONFIG.direction,
+    r0: r, r, age: 0, life: rand(22,55),
+    swayPhase: Math.random()*TAU, swayFreq: rand(0.05,0.18)
+  };
+}
+function setCount(n) {
+  if (n < blobs.length) blobs.length = n;
+  else while (blobs.length < n) blobs.push(makeBlob(false));
+  data = new Float32Array(n*4);
+  bonded = new Uint8Array(n*n);
+  bondAge = new Float32Array(n*n);
+  layerInvert.setCount(n);
+  if (layerTint) layerTint.setCount(n);
+}
+
+const CORE=1.00, REACH=1.34, FORM=1.06, BREAK=1.30, MIN_BOND=0.5;
+
+function substep(h) {
+  const n = blobs.length;
+  for (let i = 0; i < n; i++) {
+    const a = blobs[i]; if (a.r <= 0) continue;
+    for (let j = i+1; j < n; j++) {
+      const b = blobs[j]; if (b.r <= 0) continue;
+      const dx = b.X-a.X, dy = b.Y-a.Y, d2 = dx*dx+dy*dy;
+      const sum = a.r+b.r, reach = sum*REACH;
+      if (d2 > reach*reach) { bonded[i*n+j]=0; bondAge[i*n+j]=0; continue; }
+      const dist = Math.max(Math.sqrt(d2),1e-5);
+      const nx = dx/dist, ny = dy/dist, s = dist/sum;
+      const mA = massOf(a.r), mB = massOf(b.r);
+
+      let f;
+      if (s < CORE) { const t = 1-s/CORE; f = CONFIG.repulsion*t*t; }
+      else { const u = (s-CORE)/(REACH-CORE); f = -CONFIG.cohesion*Math.sin(Math.PI*u); }
+
+      const vrel = (b.vX-a.vX)*nx + (b.vY-a.vY)*ny;
+      const damp = -CONFIG.damping*vrel*(1-s/REACH);
+      const accA = (-f - damp)*h, accB = (f + damp)*h;
+      a.vX += nx*accA/mA; a.vY += ny*accA/mA;
+      b.vX += nx*accB/mB; b.vY += ny*accB/mB;
+
+      const k = i*n+j, was = bonded[k];
+      const now = was ? (s < BREAK) : (s < FORM);
+      if (was && now) bondAge[k] += h;
+      if (was && !now) {
+        if (bondAge[k] > MIN_BOND) {
+          const imp = CONFIG.snap;
+          a.vX -= nx*imp/mA; a.vY -= ny*imp/mA;
+          b.vX += nx*imp/mB; b.vY += ny*imp/mB;
+        }
+        bondAge[k] = 0;
+      }
+      if (!was && now) bondAge[k] = 0;
+      bonded[k] = now ? 1 : 0;
+    }
+  }
+
+  const relax = 1 - Math.exp(-h/Math.max(CONFIG.viscosity,0.02));
+  const vMax = CONFIG.speed*6 + 0.10;
+  for (let i = 0; i < n; i++) {
+    const b = blobs[i];
+    const tY = terminal(b.r)*CONFIG.direction;
+    const tX = Math.sin(clock*b.swayFreq*TAU + b.swayPhase)*CONFIG.sway;
+    b.vY += (tY-b.vY)*relax;
+    b.vX += (tX-b.vX)*relax;
+    const sp = Math.hypot(b.vX,b.vY);
+    if (sp > vMax) { b.vX *= vMax/sp; b.vY *= vMax/sp; }
+    b.X += b.vX*h; b.Y += b.vY*h;
+    if (b.X < b.r*0.4)     { b.X = b.r*0.4;     b.vX =  Math.abs(b.vX)*0.3; }
+    if (b.X > A - b.r*0.4) { b.X = A - b.r*0.4; b.vX = -Math.abs(b.vX)*0.3; }
+  }
+}
+
+function recycle(dt) {
+  const n = blobs.length;
+  for (let i = 0; i < n; i++) {
+    const b = blobs[i]; b.age += dt;
+    if (b.age >= b.life || b.Y > 1.4 || b.Y < -0.4) {
+      blobs[i] = makeBlob(true);
+      for (let j = 0; j < n; j++) { bonded[i*n+j]=0; bonded[j*n+i]=0; bondAge[i*n+j]=0; bondAge[j*n+i]=0; }
+    }
+  }
+}
+function refreshRadii() {
+  for (const b of blobs) {
+    b.r0 = radiusOf(b.sizeT);
+    const left = b.life - b.age;
+    b.r = b.r0 * (left < 3 ? Math.max(0,left/3) : 1);
+  }
+}
+function writeData() {
+  for (let i = 0; i < blobs.length; i++) {
+    const b = blobs[i];
+    const sp = Math.min(1, Math.abs(b.vY)/Math.max(CONFIG.speed,1e-4));
+    data[i*4]   = b.X/A;
+    data[i*4+1] = b.Y;
+    data[i*4+2] = Math.max(b.r,0);
+    data[i*4+3] = 1 + CONFIG.stretch*sp;
+  }
+}
+
+/* ===== resize ===== */
+let W=0, H=0;
+function resize() {
+  const dpr = Math.min(window.devicePixelRatio||1, 2);
+  W = Math.round(innerWidth*dpr); H = Math.round(innerHeight*dpr);
+  layerInvert.resize(W,H);
+  if (layerTint) layerTint.resize(W,H);
+  const newA = W/H;
+  if (blobs.length && A > 0) { const s = newA/A; for (const b of blobs) b.X *= s; }
+  A = newA;
+}
+addEventListener('resize', resize);
+let clock = 0, warpClock = 0;
+resize();
+setCount(CONFIG.count);
+
+/* ===== loop ===== */
+let running = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+let last = performance.now(), frames = 0, fpsClock = 0;
+const fpsOut = document.getElementById('fps');
+
+for (let k = 0; k < 300; k++) { clock += 1/90; refreshRadii(); substep(1/90); }
+
+function frame(now) {
+  const dt = Math.min((now-last)/1000, 1/30); last = now;
+  refreshRadii();
+  if (running) {
+    clock += dt; warpClock += dt*CONFIG.warpSpeed;
+    recycle(dt);
+    const sub = Math.max(1, Math.ceil(dt*90)), h = dt/sub;
+    for (let s = 0; s < sub; s++) substep(h);
+  }
+  writeData();
+
+  layerInvert.draw(data, W, H, A, warpClock);
+  if (layerTint && CONFIG.mode === 'tinta') layerTint.draw(data, W, H, A, warpClock);
+
+  frames++; fpsClock += dt;
+  if (fpsClock > 0.7) {
+    fpsOut.textContent = running ? Math.round(frames/fpsClock)+' fps' : 'pausa';
+    frames = 0; fpsClock = 0;
+  }
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+/* =========================================================================
+   5. Mixer (cancellabile in produzione)
+   ========================================================================= */
+const btnPlay = document.getElementById('btnPlay');
+const tabForma = document.getElementById('tabForma');
+const tabMoto = document.getElementById('tabMoto');
+const sheetForma = document.getElementById('sheetForma');
+const sheetMoto = document.getElementById('sheetMoto');
+
+function showTab(w) {
+  const f = w === 'forma';
+  tabForma.setAttribute('aria-selected', String(f));
+  tabMoto.setAttribute('aria-selected', String(!f));
+  sheetForma.hidden = !f; sheetMoto.hidden = f;
+}
+tabForma.addEventListener('click', () => showTab('forma'));
+tabMoto.addEventListener('click', () => showTab('moto'));
+
+function setRunning(v) {
+  running = v;
+  btnPlay.textContent = v ? '❚❚' : '▶';
+  btnPlay.setAttribute('aria-label', v ? 'Metti in pausa' : 'Riprendi');
+  showTab(v ? 'moto' : 'forma');
+  if (!v) fpsOut.textContent = 'pausa';
+}
+btnPlay.addEventListener('click', () => setRunning(!running));
+addEventListener('keydown', e => {
+  if (e.code === 'Space' && !/INPUT|TEXTAREA/.test(e.target.tagName)) { e.preventDefault(); setRunning(!running); }
+});
+setRunning(running);
+
+const FORMA = [
+  { key:'count',     label:'gocce',        min:3,    max:36,   step:1, rebuild:true },
+  { key:'sizeMax',   label:'dimensione',   min:0.03, max:0.13, step:0.002 },
+  { key:'spread',    label:'varietà',      min:0.15, max:0.9,  step:0.01 },
+  { key:'merge',     label:'fusione',      min:0.5,  max:2.2,  step:0.05 },
+  { key:'warp',      label:'irregolarità', min:0,    max:0.15, step:0.005 },
+  { key:'warpScale', label:'grana',        min:0.8,  max:8,    step:0.1 },
+  { key:'stretch',   label:'allungamento', min:0,    max:1.2,  step:0.02 }
+];
+const MOTO = [
+  { key:'speed',     label:'velocità',     min:0.01, max:0.25, step:0.005 },
+  { key:'viscosity', label:'viscosità',    min:0.08, max:1.6,  step:0.02 },
+  { key:'cohesion',  label:'tensione',     min:0,    max:1.2,  step:0.02 },
+  { key:'repulsion', label:'repulsione',   min:0,    max:4,    step:0.05 },
+  { key:'damping',   label:'smorzamento',  min:0,    max:20,   step:0.5 },
+  { key:'snap',      label:'scatto',       min:0,    max:0.08, step:0.002 },
+  { key:'sway',      label:'deriva',       min:0,    max:0.12, step:0.005 },
+  { key:'warpSpeed', label:'rimescolo',    min:0,    max:0.4,  step:0.01 }
+];
+
+function buildKnobs(list, sheet, anchor) {
+  list.forEach(k => {
+    const wrap = document.createElement('div');
+    wrap.className = 'knob';
+    const id = 'k-'+k.key;
+    wrap.innerHTML =
+      '<label for="'+id+'">'+k.label+'</label><output></output>' +
+      '<input type="range" id="'+id+'" min="'+k.min+'" max="'+k.max+'" step="'+k.step+'" value="'+CONFIG[k.key]+'">';
+    sheet.insertBefore(wrap, anchor);
+    const input = wrap.querySelector('input'), out = wrap.querySelector('output');
+    const dec = k.step < 0.01 ? 3 : (k.step < 1 ? 2 : 0);
+    const show = () => out.textContent = (+input.value).toFixed(dec);
+    show();
+    input.addEventListener('input', () => {
+      CONFIG[k.key] = +input.value;
+      if (k.rebuild) setCount(CONFIG.count);
+      show();
+    });
+  });
+}
+buildKnobs(FORMA, sheetForma, document.getElementById('swatchRow'));
+buildKnobs(MOTO,  sheetMoto,  document.getElementById('rowMoto'));
+
+document.getElementById('tintColor').addEventListener('input', e => {
+  CONFIG.tint = e.target.value;
+  if (layerTint) layerTint.setInk(CONFIG.tint);
+});
+
+const btnMode = document.getElementById('btnMode');
+btnMode.addEventListener('click', () => {
+  const neg = CONFIG.mode === 'tinta';
+  CONFIG.mode = neg ? 'negativo' : 'tinta';
+  btnMode.setAttribute('aria-pressed', String(neg));
+  cTint.hidden = neg;
+});
+
+document.getElementById('btnDir').addEventListener('click', () => { CONFIG.direction *= -1; });
+document.getElementById('btnShake').addEventListener('click', () => {
+  for (const b of blobs) { b.vX += rand(-1,1)*CONFIG.speed*4; b.vY += rand(-1,1)*CONFIG.speed*4; }
+  if (!running) setRunning(true);
+});
+
+const snippet = document.getElementById('snippet');
+document.getElementById('btnConf').addEventListener('click', () => {
+  if (!snippet.hidden) { snippet.hidden = true; return; }
+  snippet.textContent = 'const CONFIG = ' + JSON.stringify(CONFIG, null, 2) + ';';
+  snippet.hidden = false;
+});
+}
+</script>
+</body>
+</html>

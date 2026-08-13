@@ -28,13 +28,13 @@ var DATI = {
     { n:'03', t:'Michelle',meta:'2024 · Singolo', href:'#' }
   ],
 
-  /* PROVVISORIO — link alle piattaforme */
-  piattaforme: [
-    { nm:'Spotify',      href:'#' },
-    { nm:'Apple Music',  href:'#' },
-    { nm:'YouTube',      href:'#' },
-    { nm:'Bandcamp',     href:'#' },
-    { nm:'SoundCloud',   href:'#' }
+  /* PROVVISORIO — i pulsanti-bolla sotto la copertina.
+     Tre per ora: aggiungerne uno vuol dire aggiungere una riga qui, la
+     griglia e il volo si adattano da soli. */
+  bolle: [
+    { nm:'Spotify',   href:'#' },
+    { nm:'YouTube',   href:'#' },
+    { nm:'Instagram', href:'#' }
   ],
 
   /* PROVVISORIO — social */
@@ -634,7 +634,7 @@ var Sequenza = (function(){
   $('#immTit').textContent = uscita.t;
   var cta = $('#immCta');
   var dove = uscita.href !== '#' ? uscita.href
-           : (DATI.piattaforme[0] && DATI.piattaforme[0].href) || '#';
+           : (DATI.bolle[0] && DATI.bolle[0].href) || '#';
   cta.href = dove;
   if (dove !== '#'){ cta.target = '_blank'; cta.rel = 'noopener'; }
 
@@ -808,7 +808,7 @@ function Bolle(box){
   var TINTE  = ['#1B3BFF','#0B0E1C','#1B3BFF','#0B0E1C','#1B3BFF','#3A1BFF'];
   var SCARTI = [0, 24, -12, 18, 4, -18];      /* px: rompono la griglia */
 
-  box.innerHTML = DATI.piattaforme.map(function(p,i){
+  box.innerHTML = DATI.bolle.map(function(p,i){
     return '<a href="'+p.href+'" '+(p.href!=='#'?'target="_blank" rel="noopener"':'')
          +   ' style="--dy:'+SCARTI[i%SCARTI.length]+'px">'
          +   '<span class="corpo" style="--tinta:'+TINTE[i%TINTE.length]
@@ -865,88 +865,71 @@ function Bolle(box){
   if (CALMO) return;   /* niente volo: restano dove sono */
 
   /* --- il volo -----------------------------------------------------------
-     Se ne vanno da sole: ognuna ha il suo momento, deciso da un tempo e non
-     dallo scroll. Tornano invece quando si scorre — un movimento qualunque
-     le richiama tutte, e rientrano piano.
+     Non un tempo e non una corsa continua: una soglia. Finche' il blocco sta
+     in mezzo allo schermo le bolle stanno; quando il suo bordo basso sale
+     oltre il 42% del viewport — cioe' quando si sta passando alla sezione
+     dopo — se ne vanno **tutte insieme**. Tornando indietro rientrano, piu'
+     piano di come se ne sono andate.
 
-     Il tetto e' importante: non se ne vanno mai tutte. Almeno due restano
-     sempre al loro posto, se no la cosa per cui uno e' arrivato qui sparisce
-     dallo schermo e non torna finche' non muove il dito. */
-  var TETTO = Math.max(1, n - 2);
-  var stato = [];
-  for (var k=0;k<n;k++) stato.push({ p:0, via:false });
+     Le due soglie non coincidono (42% per andarsene, 62% per tornare): se
+     fossero la stessa, fermandosi sul bordo le bolle sbatterebbero avanti e
+     indietro a ogni pixel di scroll.                                        */
+  var p = 0, via = false, dorme = false;
   /* col dito o col puntatore sopra non si stacca niente: una bolla che
      scappa proprio mentre stai per premerla e' un dispetto, non un effetto */
   var toccata = false;
   box.addEventListener('pointerenter', function(){ toccata = true; });
   box.addEventListener('pointerleave', function(){ toccata = false; });
 
-  function richiama(){
-    for (var i=0;i<n;i++) stato[i].via = false;
-    dorme = false;
+  function soglia(){
+    var r = box.getBoundingClientRect(), vh = window.innerHeight;
+    var prima = via;
+    if (!via){
+      if (r.bottom < vh*.42 && !toccata && !box.contains(document.activeElement)) via = true;
+    } else if (r.bottom > vh*.62){
+      via = false;
+    }
+    if (prima !== via) dorme = false;
   }
-
-  function inVista(){
-    var r = box.getBoundingClientRect();
-    return r.bottom > -200 && r.top < window.innerHeight + 200;
-  }
-
-  /* il rilascio: una alla volta, a caso fra quelle ferme */
-  (function rilascia(){
-    setTimeout(function(){
-      if (!document.hidden && inVista() && !toccata && !box.contains(document.activeElement)){
-        var via = 0, ferme = [];
-        for (var i=0;i<n;i++){
-          if (stato[i].via) via++;
-          else if (stato[i].p < .02) ferme.push(i);
-        }
-        if (via < TETTO && ferme.length){
-          stato[ferme[(Math.random()*ferme.length)|0]].via = true;
-          dorme = false;
-        }
-      }
-      rilascia();
-    }, 2400 + Math.random()*4600);
-  })();
-
-  var dorme = false;
 
   (function giro(){
     requestAnimationFrame(giro);
     if (dorme) return;
 
-    var vh = window.innerHeight, corsa = vh*.85 + 260, quiete = true;
-    for (var i=0;i<n;i++){
-      var s = stato[i];
-      var ob = s.via ? 1 : 0;
-      /* se ne va con calma e torna ancora piu' piano: e' l'asimmetria che la
-         fa sembrare una bolla e non un pannello che scorre */
-      s.p += (ob - s.p) * (s.via ? .020 : .013);
-      if (Math.abs(ob - s.p) < .0015) s.p = ob; else quiete = false;
+    var ob = via ? 1 : 0;
+    /* se ne vanno con calma e tornano ancora piu' piano: e' l'asimmetria che
+       le fa sembrare bolle e non pannelli che scorrono */
+    p += (ob - p) * (via ? .026 : .015);
+    if (Math.abs(ob - p) < .0015){ p = ob; dorme = true; }
 
-      var e = s.p * s.p;             /* parte piano, poi accelera */
-      var a = bolle[i];
-      a.style.transform =
+    var vh = window.innerHeight, corsa = vh*.9 + 300;
+    var e = p * p;                      /* parte piano, poi accelera */
+    var op = (1 - smorza(mappa(p,.42,.94))).toFixed(3);
+    for (var i=0;i<n;i++){
+      /* tutte insieme, ma non come un blocco unico: deriva e rotazione
+         restano diverse, se no sembrerebbe un pannello che scivola */
+      bolle[i].style.transform =
         'translate3d('+(DERIVA[i]*e).toFixed(1)+'px,calc(var(--dy,0px) + '
-        + (-corsa*e).toFixed(1)+'px),0) scale('+(1-.28*e).toFixed(3)
+        + (-corsa*e).toFixed(1)+'px),0) scale('+(1-.26*e).toFixed(3)
         +') rotate('+(GIRO[i]*e).toFixed(1)+'deg)';
-      a.style.opacity = (1 - smorza(mappa(s.p,.42,.92))).toFixed(3);
-      a.style.pointerEvents = s.p > .12 ? 'none' : 'auto';
+      bolle[i].style.opacity = op;
+      bolle[i].style.pointerEvents = p > .12 ? 'none' : 'auto';
     }
-    if (quiete) dorme = true;
   })();
 
-  /* un movimento qualunque le richiama: e' l'unico modo per farle tornare */
-  window.addEventListener('scroll', function(){ alFrame(richiama); }, {passive:true});
-  window.addEventListener('resize', function(){ alFrame(richiama); });
-  box.addEventListener('focusin', richiama);
+  window.addEventListener('scroll', function(){ alFrame(soglia); }, {passive:true});
+  window.addEventListener('resize', function(){ alFrame(soglia); });
+  box.addEventListener('focusin', function(){ via = false; dorme = false; });
+  soglia();
 }
 
+(function(){ var b = $('#piatt'); if (b) Bolle(b); })();
+
 /* --------------------------------------------------------------------------
-   ascolta: le uscite, le piattaforme, e la lastra che si apre di fianco
+   ascolta: le uscite e la lastra che si apre di fianco
    -------------------------------------------------------------------------- */
 (function(){
-  var box = $('#uscite'), piatt = $('#piatt'), lastra = $('#lastra');
+  var box = $('#uscite'), lastra = $('#lastra');
   var titLastra = $('#lastra .h');
 
   box.innerHTML = DATI.uscite.map(function(u){
@@ -959,9 +942,6 @@ function Bolle(box){
          +   '<span class="fr" aria-hidden="true">→</span>'
          + '</a>';
   }).join('');
-
-  /* le piattaforme sono bolle, e stanno in un modulo loro qui sotto */
-  Bolle(piatt);
 
   var righe = $$('.uscita', box);
 

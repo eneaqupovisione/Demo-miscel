@@ -56,7 +56,8 @@ caricano aprendo il file con doppio clic.
 | | | |
 |---|---|---|
 | 01 | **Copertina** | il nome, e il volto sott'acqua in anello |
-| 02 | **Ascolta** | subito sotto il nome: le uscite e i pulsanti-bolla |
+| — | **Pulsanti-bolla** | subito sotto il nome: dove ascoltarla |
+| 02 | **Ascolta** | le uscite |
 | 03 | **Il singolo** | tre stacchi del girato come sfondo di due cose da dire |
 | 04 | **Chi è** | tre righe grandi, e dietro il respiro |
 | 05 | **Scrivi** | booking, e la silhouette |
@@ -70,7 +71,7 @@ unico posto: l'oggetto `DATI` in cima a [`assets/js/sito.js`](assets/js/sito.js)
 |---|---|---|
 | Nome d'arte | `DATI.nome` | `Michelle` — da confermare |
 | Titoli, anni e link delle uscite | `DATI.uscite` | **inventati**, da sostituire |
-| Link a Spotify / Apple / YouTube / Bandcamp / SoundCloud | `DATI.piattaforme` | tutti `#` |
+| Link dei tre pulsanti-bolla | `DATI.bolle` | tutti `#` — per ora Spotify, YouTube, Instagram |
 | Link ai social | `DATI.social` | tutti `#` |
 | Indirizzi booking / management / stampa | `DATI.booking`, `.management`, `.stampa` | finiscono in `.example`, che **non consegna** |
 | Frasi del nastro scorrevole | `DATI.nastro` | da rivedere |
@@ -134,16 +135,18 @@ Nessuna libreria. Scroll, `IntersectionObserver` e due canvas.
   accelerano**: non si tocca la durata (cambiarla farebbe ripartire
   l'animazione da capo), si alza il `playbackRate` dell'animazione già in
   corso, che va da 1 a circa 4.6.
-- **Pulsanti-bolla** — le piattaforme non sono righe: sono bolle, con la
-  stessa forma irregolare delle maschere. **Se ne vanno da sole**: ognuna ha
-  il suo momento, deciso da un tempo e non dallo scroll, e quando arriva si
-  stacca e sale via girando e rimpicciolendo. **Tornano quando si scorre** —
-  un movimento qualunque le richiama tutte, e rientrano piano (partono a un
-  cinquantesimo per frame, rientrano a un settantesimo).
-  Tre cose perché non diventi un dispetto: non se ne vanno mai tutte (almeno
-  due restano sempre); non si stacca niente mentre hai il dito o il puntatore
-  sopra; e mentre volano non si possono premere. Un pulsante che scappa
-  proprio mentre stai per premerlo è un pulsante rotto.
+- **Pulsanti-bolla** — stanno subito sotto la copertina, prima di "Ascolta":
+  tre bolle con la stessa forma irregolare delle maschere. Non è una corsa
+  continua legata allo scroll né un tempo: è una **soglia**. Finché il blocco
+  sta in mezzo allo schermo restano ferme; quando il suo bordo basso sale
+  oltre il 42% del viewport — cioè quando stai passando alla sezione dopo —
+  **se ne vanno tutte insieme**, girando e rimpicciolendo. Scendendo sotto il
+  62% rientrano, più piano di come se ne sono andate.
+  Le due soglie non coincidono di proposito: se fossero la stessa, fermandosi
+  sul bordo le bolle sbatterebbero avanti e indietro a ogni pixel di scroll.
+  E non si stacca niente mentre hai il dito o il puntatore sopra, né mentre
+  una ha il fuoco da tastiera: un pulsante che scappa proprio mentre stai per
+  premerlo è un pulsante rotto.
 - **Chi è** — il respiro dietro alle righe. Lo sfondo è la stessa sequenza del
   singolo — ma solo l'ultimo pezzo, quello sott'acqua, che è il più calmo e non
   si porta dietro gli stacchi (nessun byte in più: le immagini sono caricate

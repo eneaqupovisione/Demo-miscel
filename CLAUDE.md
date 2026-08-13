@@ -57,6 +57,9 @@ servito da un server statico.
 - I **pulsanti-bolla** (`Bolle()` in `sito.js`) e le maschere condividono la
   stessa funzione `forma()`: se cambi la forma, cambiano tutti e due. È
   voluto.
+- Il volo dei pulsanti è una **soglia con isteresi** (42% per andarsene, 62%
+  per tornare), non una corsa continua. Se le due soglie diventano una sola,
+  fermandosi sul bordo le bolle sbattono avanti e indietro.
 - La forma delle maschere è generata dal copione (`forma()` in `sito.js`) e
   animata con la Web Animations API, non con un `@keyframes`: servono tre
   ritagli con lo **stesso numero di segmenti**, altrimenti il passaggio
