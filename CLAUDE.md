@@ -50,6 +50,20 @@ servito da un server statico.
 - Il **caleidoscopio** legge `colonna.mp4`, non un girato già specchiato:
   rispecchiare una cosa già specchiata restituisce una macchia.
 
+## Pubblicazione
+
+Sta su GitHub Pages: <https://eneaqupovisione.github.io/Demo-miscel/>, ramo
+`main`, cartella radice. Si aggiorna con un `git push`.
+
+**A ogni pubblicazione si alza il `?v=` dei due link in `index.html`**
+(`sito.css` e `sito.js`). Pages tiene i file in cache dieci minuti: senza,
+chi ha gia' aperto il sito continua a vedere la versione vecchia — e' gia'
+successo di crederlo un difetto del codice quando era solo la cache.
+
+Se il sito cambia indirizzo vanno aggiornati anche `og:url` e `og:image`,
+che sono assoluti apposta: molti scanner delle chat non risolvono un
+percorso relativo.
+
 ## Stato
 
 Forma finita, **contenuti provvisori**. L'elenco di cosa manca è nel
