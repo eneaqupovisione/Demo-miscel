@@ -301,7 +301,10 @@ var Maschere = (function(){
   /* solo tinte su cui il bianco resta leggibile: una maschera passa sopra al
      testo, e mentre passa il testo deve restare testo */
   var TINTE = ['#1B3BFF','#1B3BFF','#1B3BFF','#3A1BFF','#0A18A8','#0B0E1C'];
-  var POOL  = LEGGERO ? 6 : 11;
+  /* il costo di una maschera e' un backdrop-filter senza sfocatura — una
+     operazione per pixel, non un blur — quindi se ne reggono parecchie.
+     Sui dispositivi dichiaratamente deboli si scende comunque. */
+  var POOL  = LEGGERO ? 5 : 11;
   var liberi = [], attive = [];
 
   for (var i=0;i<POOL;i++){
