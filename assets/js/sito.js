@@ -168,8 +168,17 @@ function immagine(src){
   /* il marchio in testata compare quando il nome grande e' uscito di scena:
      due volte lo stesso nome sullo stesso schermo e' una ripetizione, non
      un'identita' */
+  var ultimoY = 0;
   var oltre = function(){
-    document.body.classList.toggle('oltre', window.scrollY > window.innerHeight * .72);
+    var y = window.scrollY;
+    document.body.classList.toggle('oltre', y > window.innerHeight * .72);
+    /* la testata si toglie di mezzo mentre si scende e torna appena si risale:
+       su una sezione di solo testo, una barra fissa in difference finisce
+       sempre addosso a una riga */
+    if (Math.abs(y - ultimoY) > 6){
+      document.body.classList.toggle('giu', y > ultimoY && y > window.innerHeight * .9);
+      ultimoY = y;
+    }
   };
   window.addEventListener('scroll', function(){ alFrame(oltre); }, {passive:true});
   oltre();
@@ -420,7 +429,7 @@ var Bolle = (function(){
    immersione: la sequenza comandata dallo scroll
    -------------------------------------------------------------------------- */
 (function(){
-  var sez = $('#imm'), cv = $('#cvImm'), velo = $('#immVelo');
+  var sez = $('#imm'), cv = $('#cvImm');
   var barra = $('#immBarra'), pct = $('#immPct');
   var fiati = $$('#imm .fiato');
   var ctx = cv.getContext('2d', { alpha:false });
@@ -476,7 +485,11 @@ var Bolle = (function(){
     var s = mappa(p, .06, .94);
     disegna(s);
 
-    velo.style.opacity = (1 - mappa(p, .0, .10)) + mappa(p, .93, 1);
+    /* La scena si accende mentre la sezione sale, non dopo: se aspettasse
+       l'inizio della corsa, l'utente si troverebbe davanti una schermata vuota
+       alta quanto il telefono. Alle 40 mila del viewport e' gia' tutta li'. */
+    var entrata = clamp(1 - r.top / (window.innerHeight * .8), 0, 1);
+    cv.style.opacity = (entrata * (1 - mappa(p, .94, 1))).toFixed(3);
     barra.style.width = (s*100).toFixed(1)+'%';
     pct.textContent = ('0'+Math.round(s*99)).slice(-2);
 
@@ -790,6 +803,21 @@ var Bolle = (function(){
     navigator.clipboard.writeText(DATI.booking).then(function(){
       mostra('Indirizzo copiato');
     }, function(){ window.location.href = 'mailto:'+DATI.booking; });
+  });
+})();
+
+/* --------------------------------------------------------------------------
+   i link non ancora collegati
+   Finche' DATI non ha gli indirizzi veri, questi puntano a '#'. Senza questo
+   guardiano un tocco riporterebbe in cima alla pagina, che sembra un difetto.
+   Quando i link ci sono, questo pezzo semplicemente non trova piu' niente.
+   -------------------------------------------------------------------------- */
+(function(){
+  document.addEventListener('click', function(e){
+    var a = e.target.closest && e.target.closest('a[href="#"]');
+    if (!a) return;
+    e.preventDefault();
+    console.warn('link da collegare:', a.textContent.trim());
   });
 })();
 

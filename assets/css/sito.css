@@ -255,7 +255,9 @@ body.notte .bolle.amb{mix-blend-mode:screen;opacity:.42}
   position:fixed;top:0;left:0;right:0;z-index:110;
   display:flex;align-items:center;justify-content:space-between;
   padding:1rem var(--gut);mix-blend-mode:difference;color:var(--osso);
+  transition:transform .45s var(--e);
 }
+body.giu #testata{transform:translate3d(0,-115%,0)}
 #testata .marchio{font-family:var(--disp);font-weight:800;font-size:.95rem;
   letter-spacing:.02em;text-transform:uppercase;
   opacity:0;transform:translate3d(0,-6px,0);pointer-events:none;
@@ -349,9 +351,11 @@ body.oltre #testata .marchio{opacity:1;transform:none;pointer-events:auto}
 /* La sezione e' alta: e' lo spazio di scroll che serve a far succedere la
    scena. Dentro, una sola schermata inchiodata. */
 #imm{height:400vh;position:relative}
+/* il pinnaggio non ha fondo proprio: se ne avesse uno, taglierebbe di netto la
+   nuvola delle bolle che scorre dietro alla pagina, e il taglio si vede */
 #imm .pin{position:sticky;top:0;height:100svh;min-height:100dvh;overflow:hidden;
-  display:flex;align-items:center;justify-content:center;background:var(--fondo)}
-#imm canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  display:flex;align-items:center;justify-content:center;background:transparent}
+#imm canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0}
 #imm .fiati{position:absolute;inset:0;z-index:4;padding-inline:var(--gut);
   display:grid;place-items:center;pointer-events:none}
 #imm .fiato{
@@ -366,8 +370,6 @@ body.oltre #testata .marchio{opacity:1;transform:none;pointer-events:auto}
   display:flex;gap:.9rem;align-items:center;color:var(--osso);mix-blend-mode:difference}
 #imm .hud .barra{width:64px;height:1px;background:currentColor;opacity:.4;position:relative}
 #imm .hud .barra i{position:absolute;inset:0 auto 0 0;width:0;background:currentColor}
-#imm .lastra-copri{position:absolute;inset:0;z-index:3;background:var(--fondo);
-  opacity:1;transition:opacity .3s linear;pointer-events:none}
 
 /* --- 10 musica ----------------------------------------------------------- */
 #musica .uscite{margin-top:clamp(20px,5vw,42px);border-top:1px solid var(--linea)}
@@ -565,6 +567,10 @@ body.oltre #testata .marchio{opacity:1;transform:none;pointer-events:auto}
   .rev,.rev-p{opacity:1;transform:none;filter:none}
   .bolle{display:none}
   #grana{animation:none}
-  #imm{height:120vh}
-  #imm .fiato{position:static;opacity:1;transform:none}
+  /* niente scena che si accende e si spegne: i tre respiri restano scritti,
+     uno sotto l'altro, e la sequenza resta comandata dal dito */
+  #imm{height:160vh}
+  #imm .fiati{display:flex;flex-direction:column;align-items:center;justify-content:center}
+  #imm .fiato{grid-area:auto;opacity:1;transform:none;transition:none}
+  #imm canvas{opacity:1 !important}
 }
