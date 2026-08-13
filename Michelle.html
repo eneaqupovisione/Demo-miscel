@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Michelle — sito ufficiale</title>
+<meta name="description" content="Michelle. Musica indie. Ascolta, guarda, scrivi per una data.">
+<meta name="theme-color" content="#F2EFE8">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Michelle — sito ufficiale">
+<meta property="og:description" content="Trattieni il fiato.">
+<meta property="og:image" content="assets/media/og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' fill='%23F2EFE8'/%3E%3Ccircle cx='16' cy='16' r='7' fill='%231B3BFF'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Archivo:wght@300;400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="preload" as="image" href="assets/media/copertina.jpg">
+<link rel="stylesheet" href="assets/css/sito.css">
+</head>
+<body>
+
+<!-- filtri: lo scioglimento del nome, quando lo si tocca -->
+<svg class="defs" aria-hidden="true">
+  <filter id="sciogli" x="-20%" y="-25%" width="140%" height="150%" color-interpolation-filters="sRGB">
+    <feTurbulence id="scT" type="fractalNoise" baseFrequency="0.006 0.022" numOctaves="2" seed="7" result="t"/>
+    <feDisplacementMap id="scD" in="SourceGraphic" in2="t" scale="0" xChannelSelector="R" yChannelSelector="G"/>
+  </filter>
+</svg>
+
+<!-- strati fissi -->
+<div id="prog" aria-hidden="true"></div>
+<div id="righe" aria-hidden="true"></div>
+<div id="grana" aria-hidden="true"></div>
+<div id="cur" aria-hidden="true"></div>
+<div id="cur2" aria-hidden="true"></div>
+<div id="copiato" role="status" aria-live="polite"></div>
+
+<!-- la lastra a raggi X delle uscite -->
+<div id="lastra" aria-hidden="true">
+  <i class="scan"></i>
+  <img src="assets/media/colonna.jpg" alt="">
+  <div class="c"><span class="k">lastra · 001</span><div class="h"></div></div>
+</div>
+
+<!-- caricamento -->
+<div id="loader">
+  <div class="lin">
+    <div class="lnome" id="lnome" data-adatta data-max="150" aria-hidden="true"></div>
+    <div class="lbar"><i></i></div>
+    <div class="lrow">
+      <span class="mono">Immersione in corso</span>
+      <span class="mono a" id="lpct">0%</span>
+    </div>
+  </div>
+</div>
+
+<!-- testata -->
+<header id="testata">
+  <a href="#cop" class="marchio">Michelle</a>
+  <span class="mono" id="ora">—</span>
+  <button id="apri" aria-expanded="false" aria-controls="menu">Menu</button>
+</header>
+
+<div id="menu" aria-hidden="true">
+  <button id="chiudi">Chiudi</button>
+  <nav>
+    <a href="#manifesto" data-va>Manifesto</a>
+    <a href="#imm" data-va>Singolo</a>
+    <a href="#musica" data-va>Musica</a>
+    <a href="#caleido" data-va>Specchi</a>
+    <a href="#chi" data-va>Chi è</a>
+    <a href="#contatti" data-va>Contatti</a>
+  </nav>
+  <div class="pie" id="menuSocial"></div>
+</div>
+
+<main>
+
+<!-- ========================== 01 · COPERTINA ========================== -->
+<section id="cop">
+  <div class="med">
+    <video id="vCop" poster="assets/media/copertina.jpg" muted loop playsinline autoplay preload="auto"
+           disablepictureinpicture aria-hidden="true">
+      <source src="assets/media/copertina.mp4" type="video/mp4">
+    </video>
+  </div>
+
+  <span class="mono hud" aria-hidden="true">01 — Copertina · 44°N</span>
+
+  <div class="in">
+    <h1 class="nome" id="nome" data-sciogli data-adatta data-max="240">Michelle</h1>
+    <p class="claim">Trattieni il fiato.</p>
+    <div class="riga">
+      <span class="mono">Musica indie · IT</span>
+      <a href="#manifesto" class="giu" aria-label="Scorri">
+        <span class="mono">Scorri</span>
+        <span class="ago" aria-hidden="true"></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- nastro -->
+<div class="nastro" aria-hidden="true">
+  <div class="scorre" id="nastro1"></div>
+</div>
+
+<!-- ========================== 02 · MANIFESTO ========================== -->
+<section id="manifesto" class="sez">
+  <div class="wrap">
+    <div class="occhiello rev">
+      <span class="mono n">02</span><span class="mono">Manifesto</span>
+    </div>
+    <p class="frase" data-parole>Non canto per farmi sentire da lontano. Canto per restare <em>sott'acqua</em> un secondo in più.</p>
+    <div class="sotto">
+      <div class="rev">
+        <div class="filo"></div>
+        <p class="testo" style="margin-top:1.1rem">Una voce, una stanza, e il rumore che resta quando togli tutto il resto. Le canzoni nascono così: piccole, bagnate, senza niente addosso.</p>
+      </div>
+      <div class="rev">
+        <div class="filo"></div>
+        <p class="testo" style="margin-top:1.1rem">Quello che vedi qui sotto viene dal girato: nessuna immagine è stata aggiunta, sono tutti fotogrammi dello stesso video, rimessi in movimento dal tuo dito.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================== 03 · IL SINGOLO ==========================
+     La scena — il viso che entra dal lato, l'acqua che lo prende, le bolle —
+     non e' il contenuto: e' lo sfondo di quello che c'e' da dire, cioe' che
+     il pezzo e' uscito e dove si ascolta. -->
+<section id="imm" aria-labelledby="immTit">
+  <div class="pin">
+    <canvas id="cvImm" aria-hidden="true"></canvas>
+    <div class="velo" aria-hidden="true"></div>
+
+    <div class="dentro">
+      <div class="tappa" data-a="-.02" data-b=".40">
+        <span class="mono">Nuovo singolo</span>
+        <h2 class="tit-imm" id="immTit" data-adatta data-max="150">—</h2>
+        <p class="sotto" id="immMeta">Fuori ora.</p>
+      </div>
+
+      <div class="tappa" data-a=".36" data-b=".74">
+        <span class="mono">Dove ascoltarlo</span>
+        <p class="grande">Ovunque ascolti musica.</p>
+        <p class="elenco" id="immElenco"></p>
+      </div>
+
+      <div class="tappa" data-a=".70" data-b="1.02">
+        <span class="mono">Il modo giusto</span>
+        <p class="grande">Con le cuffie, a volume alto.</p>
+        <a class="btn" id="immCta" href="#">Ascolta <span aria-hidden="true">&rarr;</span></a>
+      </div>
+    </div>
+
+    <div class="hud" aria-hidden="true">
+      <span class="mono">03 &mdash; Il singolo</span>
+      <span class="barra"><i id="immBarra"></i></span>
+      <span class="mono" id="immPct">00</span>
+    </div>
+  </div>
+</section>
+
+<!-- ========================== 04 · MUSICA ========================== -->
+<section id="musica" class="sez">
+  <div class="wrap">
+    <div class="occhiello rev">
+      <span class="mono n">04</span><span class="mono">Musica</span>
+    </div>
+    <h2 class="tit" data-adatta data-max="180"><span class="gx" data-t="Ascolta">Ascolta</span></h2>
+    <p class="lede rev">Tutto quello che è uscito finora. Tocca una riga per aprire la lastra.</p>
+
+    <div class="uscite" id="uscite"></div>
+
+    <div class="piatt rev" id="piatt"></div>
+  </div>
+</section>
+
+<!-- ========================== 05 · CALEIDOSCOPIO ========================== -->
+<section id="caleido">
+  <div class="wrap">
+    <div class="occhiello rev">
+      <span class="mono n">05</span><span class="mono">Caleidoscopio</span>
+    </div>
+    <h2 class="tit" data-adatta data-max="180"><span class="gx" data-t="Specchi">Specchi</span></h2>
+    <p class="lede rev" style="color:var(--grigio)">Lo stesso fotogramma, moltiplicato. Trascina per girarlo, tira in su o in giù per cambiare il numero di specchi.</p>
+    <div class="scena" id="scena">
+      <canvas id="cvCal"></canvas>
+      <video id="vCal" muted loop playsinline preload="metadata" class="sorgente" aria-hidden="true">
+        <source src="assets/media/colonna.mp4" type="video/mp4">
+      </video>
+      <div class="tocca"><span>Trascina</span></div>
+      <div class="ctr">
+        <span class="mono">Specchi <b id="calN">08</b></span>
+        <span class="mono">Rotazione <b id="calR">000°</b></span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ========================== 06 · CHI È ========================== -->
+<section id="chi" class="sez">
+  <div class="wrap">
+    <div class="occhiello rev">
+      <span class="mono n">06</span><span class="mono">Chi è</span>
+    </div>
+    <div class="griglia">
+      <div class="torcia rev" id="torcia">
+        <img class="vuota" src="assets/media/ritratto-vuoto.jpg" alt="Michelle, di profilo, sott'acqua">
+        <img class="piena" src="assets/media/ritratto-pieno.jpg" alt="" aria-hidden="true">
+        <span class="anello" aria-hidden="true"></span>
+        <span class="scanl" aria-hidden="true"></span>
+        <span class="mono eti" aria-hidden="true">Passa il dito</span>
+      </div>
+      <div>
+        <h2 class="tit" data-adatta data-max="96"><span class="gx" data-t="Michelle">Michelle</span></h2>
+        <p class="pull rev">Scrive canzoni che stanno <em>sotto</em> la superficie.</p>
+        <p class="testo rev">Voce e chitarra, registrate vicino: quello che si sente è la stanza, non lo studio. I pezzi partono da una frase detta a mezza voce e finiscono quando smettono di chiedere attenzione.</p>
+        <p class="testo rev">Dal vivo è un set breve, senza scaletta fissa, che cambia forma a seconda di dove suona.</p>
+        <dl class="dati rev" id="dati"></dl>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- nastro basso -->
+<div class="nastro b" aria-hidden="true">
+  <div class="scorre" id="nastro2"></div>
+</div>
+
+<!-- ========================== 07 · CONTATTI ========================== -->
+<section id="contatti">
+  <img class="fondo" src="assets/media/profilo.jpg" alt="" aria-hidden="true">
+  <div class="wrap in">
+    <div class="occhiello rev">
+      <span class="mono n">07</span><span class="mono">Contatti · Booking</span>
+    </div>
+    <h2 class="tit" data-adatta data-max="180"><span class="gx" data-t="Scrivi">Scrivi</span></h2>
+    <p class="lede rev" style="color:var(--grigio)">Per una data, un festival, una collaborazione. Si risponde a tutti.</p>
+
+    <p class="azione rev"><a class="btn" id="ctaBooking" href="#">Scrivi per una data <span aria-hidden="true">→</span></a></p>
+
+    <a class="mail rev" id="mailBooking" href="#" data-copia>—</a>
+    <span class="mono">Tocca l'indirizzo per copiarlo</span>
+
+    <div class="blocchi">
+      <div class="blocco rev"><h3>Booking</h3><a id="cBooking" href="#">—</a></div>
+      <div class="blocco rev"><h3>Management</h3><a id="cMgmt" href="#">—</a></div>
+      <div class="blocco rev"><h3>Stampa</h3><a id="cPress" href="#">—</a></div>
+    </div>
+
+    <div class="social" id="social"></div>
+  </div>
+</section>
+
+</main>
+
+<footer id="piede">
+  <div class="wrap in">
+    <span class="mono">© <span id="anno"></span> Michelle</span>
+    <span class="mono">Immagini dal videoclip</span>
+    <a class="mono" href="#cop">Torna su ↑</a>
+  </div>
+</footer>
+
+<script src="assets/js/sito.js"></script>
+</body>
+</html>
