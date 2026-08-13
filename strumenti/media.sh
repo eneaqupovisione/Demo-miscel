@@ -66,13 +66,15 @@ fermo profilo        68.0
 # per fotogramma e il seek dentro a un <video> su iOS non e' affidabile.
 echo "sequenza acqua:"
 TMP="$(mktemp -d)"
+# -frames:v 60 e' vincolante: il numero deve restare 60, perche' il copione
+# (assets/js/sito.js, costante N) conta su quello.
 ffmpeg -v error -y -ss 50.9 -t 4.7 -i "$SORG" \
-  -vf "$G,fps=48/4.7,scale=600:1067:flags=lanczos" \
+  -vf "$G,fps=60/4.7,scale=560:996:flags=lanczos" -frames:v 60 \
   -q:v 2 "$TMP/%03d.png"
 i=0
 for f in "$TMP"/*.png; do
   i=$((i+1))
-  cwebp -quiet -q 62 -m 6 -sharp_yuv "$f" -o "$(printf '%s/seq/a-%02d.webp' "$OUT" "$i")"
+  cwebp -quiet -q 58 -m 6 -sharp_yuv "$f" -o "$(printf '%s/seq/a-%02d.webp' "$OUT" "$i")"
 done
 rm -rf "$TMP"
 echo "  · $i fotogrammi"

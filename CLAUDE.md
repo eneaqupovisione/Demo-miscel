@@ -38,11 +38,15 @@ servito da un server statico.
 
 ## Da sapere prima di toccare
 
-- La sezione **immersione** è alta 400vh: quell'altezza *è* la durata della
-  scena. Cambiarla cambia il ritmo di tutto.
-- Le **bolle** sono due strati: `.amb` sta dietro ai contenuti (z-index 0),
-  `.burst` sopra a tutto (z-index 98). Alzare `.burst` fuori dall'immersione
-  rende illeggibile il testo — è già stato provato.
+- La sezione **del singolo** è alta 320vh: quell'altezza *è* la durata della
+  scena. Cambiarla cambia il ritmo di tutto. Il numero di fotogrammi (`N` in
+  `sito.js`) deve corrispondere a quello che produce `strumenti/media.sh`.
+- Le **maschere** (`.maschera`) invertono e tingono ciò che coprono. Tre
+  vincoli: il `grayscale(1)` prima di `invert(1)` toglie il giallo che
+  altrimenti nasce dal blu rovesciato; le tinte devono reggere il bianco
+  sopra, perché una maschera passa sul testo mentre lo si legge; e ognuna
+  costa un `backdrop-filter` a tutto schermo, quindi poche e mai tutte
+  insieme.
 - Il **caleidoscopio** legge `colonna.mp4`, non un girato già specchiato:
   rispecchiare una cosa già specchiata restituisce una macchia.
 

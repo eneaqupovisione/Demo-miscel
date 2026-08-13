@@ -4,8 +4,9 @@ Sito di un'artista indie. Una pagina sola, pensata per il telefono, con una sola
 azione: **scrivere per una data**.
 
 Tutta la lingua visiva viene dal videoclip: bianco sporco, nero che tende al blu,
-caleidoscopio, bolle a raggi X. L'unico colore che nel girato non c'è — il **blu
-acceso** — è la voce del sito, e compare solo dove si deve toccare o guardare.
+caleidoscopio, colonne di bolle a raggi X. L'unico colore che nel girato non c'è
+— il **blu acceso** — è la voce del sito: compare dove si deve toccare o
+guardare, e dentro le maschere che ogni tanto attraversano la pagina.
 
 ```
 sito/
@@ -14,7 +15,7 @@ sito/
 │   ├── css/sito.css        stili
 │   ├── js/sito.js          comportamento — in cima c'è DATI, il pannello dei contenuti
 │   └── media/              ARTEFATTI: si rigenerano, non si modificano a mano
-│       └── seq/            48 fotogrammi della scena d'acqua, comandati dallo scroll
+│       └── seq/            60 fotogrammi della scena d'acqua, comandati dallo scroll
 └── strumenti/media.sh      il costruttore dei media a partire dal girato
 ```
 
@@ -80,15 +81,24 @@ Nessuna libreria. Scroll, `IntersectionObserver` e due canvas.
   quindi cambia da solo mentre il video scorre. La misura del carattere non è una
   `clamp`: è calcolata, perché la larghezza di una parola dipende da quali
   lettere ha dentro (stessa cosa per i titoli e per il menu).
-- **Immersione** — 400vh di scroll per una schermata inchiodata. Lo scroll
-  comanda 48 fotogrammi WebP disegnati su canvas: è una sequenza e non un
-  `<video>` perché il seek dentro a un video, su iOS, non è affidabile. La
-  pagina si ribalta in negativo per tutta la durata della scena.
-- **Bolle** — due strati di `div` sfocati mossi da `transform`, non canvas: il
-  compositore del browser li muove sulla GPU, ed è l'unico modo per averle
-  fluide su un telefono. Lo strato di fondo è sempre acceso e sta *dietro* ai
-  contenuti; quello di scoppio passa *sopra a tutto* e si accende solo
-  sull'espirazione, dove non c'è niente da leggere.
+- **Il singolo** — 320vh di scroll per una schermata inchiodata. La scena
+  d'acqua non è il contenuto: è lo **sfondo** di tre messaggi che fanno un
+  lavoro — cosa è uscito, dove si ascolta, e il bottone per ascoltarlo. Lo
+  scroll comanda 60 fotogrammi WebP disegnati su canvas (una sequenza e non un
+  `<video>`, perché il seek dentro a un video su iOS non è affidabile). Due
+  cose la rendono fluida: il progresso *insegue* lo scroll invece di copiarlo,
+  così il rimbalzo di iOS non si vede; e fra un fotogramma e il successivo si
+  disegna anche quello dopo in trasparenza, quindi 60 fotogrammi si comportano
+  come qualche centinaio. La pagina si ribalta in negativo per tutta la scena.
+- **Maschere** — non sono nuvole sfumate: sono forme piene, a bordo netto, che
+  salgono dal basso e **ribaltano quello che coprono**. Dentro la sagoma il
+  fondo diventa blu e il testo bianco; fuori non cambia un pixel.
+  `backdrop-filter: grayscale(1) invert(1)` rovescia il fondo, poi il colore
+  della forma in `screen` tinge ciò che è diventato nero e lascia stare ciò che
+  è diventato bianco. Il `grayscale` non è un vezzo: senza, il blu del sito
+  rovesciato diventa giallo, e il giallo qui dentro non esiste. Una forma nera
+  al posto del blu dà l'inversione pura. Partono a caso ogni tanto, a gruppi di
+  una o due, e arrivano tutte insieme sull'ultima battuta del singolo.
 - **Specchi** — caleidoscopio interattivo su canvas 2D. Ogni spicchio è un
   triangolo: il ritaglio del fotogramma ha esattamente quelle proporzioni, e si
   ripete due volte lungo il raggio (la seconda specchiata) come in un
@@ -98,8 +108,8 @@ Nessuna libreria. Scroll, `IntersectionObserver` e due canvas.
   al pixel: la torcia scopre quella piena dentro a un cerchio. Se nessuno tocca,
   la torcia gira da sola — sul telefono è l'unico modo perché l'effetto si
   mostri senza istruzioni.
-- **Movimento ridotto** — con `prefers-reduced-motion` le bolle spariscono,
-  l'immersione si accorcia e i tre respiri diventano testo fermo.
+- **Movimento ridotto** — con `prefers-reduced-motion` le maschere spariscono,
+  la scena si accorcia e la sequenza segue il dito senza smorzamento.
 
 ## Pubblicazione
 

@@ -191,32 +191,53 @@ body.notte #righe{background:repeating-linear-gradient(180deg,
   background:var(--blu);box-shadow:0 0 14px rgba(27,59,255,.6);
 }
 
-/* --- le bolle ------------------------------------------------------------
-   Due strati. Quello di fondo (.amb) e' sempre acceso, lentissimo, quasi
-   invisibile: e' la lavalamp che tiene viva la pagina. Quello di scoppio
-   (.burst) sale veloce e colora tutto — si accende solo quando serve.
-   Non e' canvas: sono div sfocati mossi da transform, cioe' la cosa piu'
-   fluida che un telefono sappia fare.                                      */
-.bolle{position:fixed;inset:0;z-index:98;pointer-events:none;overflow:hidden;
-  mix-blend-mode:hard-light;contain:strict}
-.bolle.amb{opacity:.42;z-index:0;mix-blend-mode:multiply}
-body.notte .bolle.amb{mix-blend-mode:screen;opacity:.42}
-.bolle.burst{opacity:0;transition:opacity .5s var(--e)}
-.bolle.locale{position:absolute;inset:0;z-index:1;mix-blend-mode:screen;opacity:.34}
-.bolla{
-  position:absolute;left:0;top:0;border-radius:50%;
-  width:var(--s);height:var(--s);margin:calc(var(--s) / -2);
-  background:radial-gradient(circle at 38% 34%,var(--c1) 0%,var(--c2) 46%,transparent 71%);
-  filter:blur(var(--b,26px));
-  will-change:transform;
-  animation:sale var(--d) linear var(--dl) infinite;
+/* --- le maschere -----------------------------------------------------------
+   Non sono nuvole sfumate: sono forme piene, a bordo netto, che ribaltano
+   quello che coprono. Dentro alla sagoma il fondo diventa blu e il testo
+   bianco; fuori non cambia un pixel.
+
+   Come: backdrop-filter rovescia il fondo (bianco -> nero, testo nero ->
+   bianco), poi il colore della forma in `screen` tinge cio' che e' diventato
+   nero e lascia stare cio' che e' diventato bianco. Una forma nera al posto
+   del blu da' l'inversione pura.
+
+   grayscale(1) prima di invert(1) non e' un vezzo: senza, il blu del sito
+   rovesciato diventa giallo, e il giallo qui dentro non esiste. Cosi' tutto
+   quello che finisce sotto la maschera cade sull'asse blu-bianco.
+
+   Perche' non e' un canvas: cosi' la forma vive di transform e border-radius,
+   che il compositore muove da solo, e il testo sotto resta testo vero.       */
+.maschera{
+  /* sopra alla testata: una maschera che si ferma davanti alla barra fissa
+     si vede che si ferma */
+  position:fixed;left:0;top:0;z-index:115;pointer-events:none;
+  width:var(--s);height:calc(var(--s) * 1.16);margin-left:calc(var(--s) / -2);
+  background:var(--tinta,#1B3BFF);
+  mix-blend-mode:screen;
+  -webkit-backdrop-filter:grayscale(1) invert(1);
+  backdrop-filter:grayscale(1) invert(1);
+  border-radius:62% 38% 46% 54% / 55% 48% 52% 45%;
+  transform:translate3d(0,130vh,0);
+  will-change:transform,border-radius;
 }
-@keyframes sale{
-  0%  {transform:translate3d(var(--x0),115vh,0) scale(.5)}
-  18% {transform:translate3d(var(--x1),86vh,0)  scale(1.06)}
-  46% {transform:translate3d(var(--x2),52vh,0)  scale(.9)}
-  74% {transform:translate3d(var(--x1),20vh,0)  scale(1.12)}
-  100%{transform:translate3d(var(--x3),-28vh,0) scale(.62)}
+/* dove backdrop-filter non c'e', la forma fa comunque il suo mestiere:
+   inverte e basta, senza tinta */
+@supports not ((backdrop-filter:grayscale(1) invert(1)) or (-webkit-backdrop-filter:grayscale(1) invert(1))){
+  .maschera{background:#FFFFFF;mix-blend-mode:difference}
+}
+.maschera.sale{
+  animation:msale var(--d) cubic-bezier(.36,.02,.28,1) forwards,
+            mmorfa var(--dm) ease-in-out infinite;
+}
+@keyframes msale{
+  from{transform:translate3d(var(--x0),128vh,0) rotate(0deg) scale(.78)}
+  to  {transform:translate3d(var(--x1),-58vh,0) rotate(var(--r)) scale(1.08)}
+}
+@keyframes mmorfa{
+  0%,100%{border-radius:62% 38% 46% 54% / 55% 48% 52% 45%}
+  25%    {border-radius:41% 59% 63% 37% / 43% 62% 38% 57%}
+  50%    {border-radius:54% 46% 33% 67% / 64% 38% 62% 36%}
+  75%    {border-radius:35% 65% 52% 48% / 50% 56% 44% 50%}
 }
 
 /* cursore: solo dove c'e' un puntatore vero */
@@ -348,28 +369,62 @@ body.oltre #testata .marchio{opacity:1;transform:none;pointer-events:auto}
 @media(min-width:820px){#manifesto .sotto{grid-template-columns:1fr 1fr;gap:3rem}}
 
 /* --- 09 immersione ------------------------------------------------------- */
-/* La sezione e' alta: e' lo spazio di scroll che serve a far succedere la
-   scena. Dentro, una sola schermata inchiodata. */
-#imm{height:400vh;position:relative}
-/* il pinnaggio non ha fondo proprio: se ne avesse uno, taglierebbe di netto la
-   nuvola delle bolle che scorre dietro alla pagina, e il taglio si vede */
-#imm .pin{position:sticky;top:0;height:100svh;min-height:100dvh;overflow:hidden;
-  display:flex;align-items:center;justify-content:center;background:transparent}
+/* La sezione e' alta: quell'altezza e' la durata della scena. Dentro, una
+   sola schermata inchiodata, e il girato fa da sfondo a quello che c'e' da
+   dire — non il contrario. */
+#imm{height:320vh;position:relative}
+/* il pinnaggio non ha fondo proprio: se ne avesse uno, taglierebbe di netto
+   quello che gli scorre dietro, e il taglio si vede */
+#imm .pin{position:sticky;top:0;height:100svh;min-height:100dvh;overflow:hidden;background:transparent}
 #imm canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0}
-#imm .fiati{position:absolute;inset:0;z-index:4;padding-inline:var(--gut);
-  display:grid;place-items:center;pointer-events:none}
-#imm .fiato{
-  grid-area:1/1;font-family:var(--disp);font-weight:800;text-transform:uppercase;
-  font-size:clamp(2.4rem,15vw,8rem);line-height:.85;letter-spacing:-.045em;
-  color:var(--osso);mix-blend-mode:difference;opacity:0;
-  transform:translate3d(0,18px,0) scale(.96);transition:opacity .5s,transform .7s var(--e);
-  text-align:center;
+
+/* il velo: il girato passa dal quasi bianco al quasi nero, quindi la
+   leggibilita' non puo' dipendere da lui. Il fondo del testo se lo porta
+   dietro il testo. */
+#imm .velo{
+  position:absolute;inset:0;z-index:2;pointer-events:none;
+  background:
+    linear-gradient(180deg,rgba(5,7,15,.30) 0%,rgba(5,7,15,0) 18%),
+    linear-gradient(0deg,rgba(5,7,15,.93) 0%,rgba(5,7,15,.74) 22%,rgba(5,7,15,.12) 52%,rgba(5,7,15,0) 70%);
 }
-#imm .fiato.on{opacity:1;transform:none}
-#imm .hud{position:absolute;z-index:5;left:var(--gut);bottom:calc(var(--gut) + 6px);
-  display:flex;gap:.9rem;align-items:center;color:var(--osso);mix-blend-mode:difference}
-#imm .hud .barra{width:64px;height:1px;background:currentColor;opacity:.4;position:relative}
-#imm .hud .barra i{position:absolute;inset:0 auto 0 0;width:0;background:currentColor}
+#imm .dentro{
+  position:absolute;left:0;right:0;bottom:0;z-index:3;display:grid;
+  padding:0 var(--gut) calc(var(--gut) + 40px);
+}
+#imm .tappa{
+  grid-area:1/1;align-self:end;color:var(--osso);
+  opacity:0;transform:translate3d(0,26px,0);will-change:opacity,transform;
+}
+#imm .tappa .mono{color:var(--blu-l);display:block;margin-bottom:.7rem}
+#imm .tit-imm{
+  font-family:var(--disp);font-weight:800;text-transform:uppercase;
+  line-height:.84;letter-spacing:-.045em;color:var(--osso);margin:0;
+}
+#imm .grande{
+  font-family:var(--disp);font-weight:700;text-transform:uppercase;
+  font-size:clamp(1.55rem,7.6vw,3.4rem);line-height:.98;letter-spacing:-.032em;
+  max-width:15ch;margin:0;
+}
+#imm .sotto{
+  font-family:var(--disp);font-weight:600;text-transform:uppercase;
+  font-size:clamp(1rem,4.6vw,1.6rem);line-height:1;letter-spacing:-.01em;
+  margin:.6rem 0 0;color:var(--grigio);
+}
+#imm .elenco{
+  font-family:var(--mono);font-size:.64rem;letter-spacing:.18em;text-transform:uppercase;
+  color:var(--grigio);margin:1rem 0 0;line-height:1.9;
+}
+#imm .tappa .btn{
+  margin-top:1.2rem;background:var(--blu);border-color:var(--blu);color:var(--osso);
+}
+#imm .tappa .btn::before{background:var(--osso)}
+#imm .tappa .btn:hover,#imm .tappa .btn:active{color:var(--nero)}
+#imm .hud{
+  position:absolute;z-index:4;left:var(--gut);bottom:calc(var(--gut) - 8px);
+  display:flex;gap:.9rem;align-items:center;color:var(--grigio);
+}
+#imm .hud .barra{width:56px;height:1px;background:currentColor;opacity:.4;position:relative}
+#imm .hud .barra i{position:absolute;inset:0 auto 0 0;width:0;background:var(--blu-l)}
 
 /* --- 10 musica ----------------------------------------------------------- */
 #musica .uscite{margin-top:clamp(20px,5vw,42px);border-top:1px solid var(--linea)}
@@ -517,7 +572,6 @@ body.oltre #testata .marchio{opacity:1;transform:none;pointer-events:auto}
   -webkit-mask-composite:source-in;mask-composite:intersect}
 @media(min-width:900px){#contatti .fondo{height:92%;right:2%;opacity:.32}}
 #contatti .in{position:relative;z-index:2}
-#contatti .bolle.locale .bolla{filter:blur(30px)}
 #contatti .occhiello{border-color:rgba(242,239,232,.2)}
 #contatti .tit{color:var(--osso)}
 #contatti .azione{margin:clamp(22px,5vw,38px) 0 clamp(18px,4vw,28px)}
@@ -565,12 +619,10 @@ body.oltre #testata .marchio{opacity:1;transform:none;pointer-events:auto}
   *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;
     transition-duration:.001ms !important}
   .rev,.rev-p{opacity:1;transform:none;filter:none}
-  .bolle{display:none}
+  .maschera{display:none}
   #grana{animation:none}
-  /* niente scena che si accende e si spegne: i tre respiri restano scritti,
-     uno sotto l'altro, e la sequenza resta comandata dal dito */
-  #imm{height:160vh}
-  #imm .fiati{display:flex;flex-direction:column;align-items:center;justify-content:center}
-  #imm .fiato{grid-area:auto;opacity:1;transform:none;transition:none}
+  /* la scena resta, ma corta: la sequenza e' comandata dal dito, non da un
+     tempo che scorre per conto suo */
+  #imm{height:200vh}
   #imm canvas{opacity:1 !important}
 }

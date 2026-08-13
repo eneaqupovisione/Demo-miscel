@@ -293,77 +293,78 @@ if (PUNTATORE && !CALMO) (function(){
 })();
 
 /* --------------------------------------------------------------------------
-   le bolle
-   Due strati di div sfocati che salgono. Nessun canvas: il compositore del
-   browser muove i transform sulla GPU, ed e' l'unica strada per avere una
-   cosa del genere fluida su un telefono.
+   le maschere
+   Forme piene a bordo netto che salgono dal basso e ribaltano quello che
+   coprono: dentro la sagoma il fondo diventa blu e il testo bianco, fuori non
+   cambia niente. Il lavoro lo fa il CSS (backdrop-filter + screen); qui c'e'
+   solo chi le lancia, quando e con che misure.
+
+   Non e' un flusso continuo: partono ogni tanto, a gruppi, e nel punto piu'
+   alto della scena arrivano tutte insieme.
    -------------------------------------------------------------------------- */
-var Bolle = (function(){
-  var amb = $('#bolleAmb'), burst = $('#bolleBurst');
-  if (CALMO) return { livello: function(){}, colpo: function(){} };
+var Maschere = (function(){
+  if (CALMO) return { lancia:function(){}, sciame:function(){} };
 
-  var TAV = {
-    amb:  ['#C3C5CB','#D9D4C8','#8B8F99','#6C86FF','#E8E4DA'],
-    fuoco:['#1B3BFF','#3A1BFF','#0A18A8','#F2EFE8','#0B0E1C','#6C86FF','#1B3BFF','#C3C5CB']
-  };
+  /* solo tinte su cui il bianco resta leggibile: una maschera passa sopra al
+     testo, e mentre passa il testo deve restare testo */
+  var TINTE = ['#1B3BFF','#1B3BFF','#1B3BFF','#3A1BFF','#0A18A8','#0B0E1C'];
+  /* ognuna costa un backdrop-filter a tutto schermo: poche, e mai tutte
+     insieme, altrimenti il telefono lo si sente */
+  var POOL  = LEGGERO ? 2 : 4;
+  var liberi = [];
 
-  function crea(box, n, cfg){
-    var h = '';
-    for (var i=0;i<n;i++){
-      var c  = cfg.col[(Math.random()*cfg.col.length)|0];
-      var s  = cfg.s[0] + Math.random()*(cfg.s[1]-cfg.s[0]);
-      var d  = cfg.d[0] + Math.random()*(cfg.d[1]-cfg.d[0]);
-      var dl = -Math.random()*d;
-      var b  = cfg.b[0] + Math.random()*(cfg.b[1]-cfg.b[0]);
-      /* la deriva orizzontale: quattro tappe, mai una linea retta */
-      var x0 = cfg.x0(i,n), sp = cfg.sp;
-      var x1 = x0 + (Math.random()*2-1)*sp;
-      var x2 = x0 + (Math.random()*2-1)*sp*1.5;
-      var x3 = x0 + (Math.random()*2-1)*sp*2;
-      h += '<span class="bolla" style="'
-         + '--s:'+s.toFixed(1)+'vmin;--b:'+b.toFixed(0)+'px;'
-         + '--c1:'+c+'ee;--c2:'+c+'44;'
-         + '--d:'+d.toFixed(2)+'s;--dl:'+dl.toFixed(2)+'s;'
-         + '--x0:'+x0.toFixed(1)+'vw;--x1:'+x1.toFixed(1)+'vw;'
-         + '--x2:'+x2.toFixed(1)+'vw;--x3:'+x3.toFixed(1)+'vw;'
-         + '"></span>';
-    }
-    box.innerHTML = h;
+  for (var i=0;i<POOL;i++){
+    var el = document.createElement('div');
+    el.className = 'maschera';
+    el.setAttribute('aria-hidden','true');
+    document.body.appendChild(el);
+    liberi.push(el);
   }
 
-  crea(amb, LEGGERO ? 4 : 6, {
-    col: TAV.amb, s:[70,130], d:[46,86], b:[54,92], sp:9,
-    x0: function(i,n){ return 8 + (i/(n-1||1))*84 + (Math.random()*14-7); }
-  });
+  function lancia(){
+    var el = liberi.pop();
+    if (!el) return false;
+    var base = Math.min(window.innerWidth, 760);
+    var s  = base * (0.42 + Math.random()*0.42);
+    var x0 = 40 + Math.random()*(window.innerWidth - 80);
+    var x1 = x0 + (Math.random()*2-1) * window.innerWidth * .34;
+    var d  = 4.6 + Math.random()*4.2;
 
-  /* Lo scoppio parte dal lato destro, da dove entra il viso, e si allarga:
-     le bolle "escono dalla faccia" e invadono lo schermo salendo. */
-  crea(burst, LEGGERO ? 10 : 16, {
-    col: TAV.fuoco, s:[26,74], d:[3.0,6.4], b:[16,44], sp:16,
-    x0: function(i,n){ return 62 + (Math.random()*2-1)*46 * (i/(n-1||1)); }
-  });
+    el.style.setProperty('--s',  s.toFixed(0)+'px');
+    el.style.setProperty('--x0', x0.toFixed(0)+'px');
+    el.style.setProperty('--x1', x1.toFixed(0)+'px');
+    el.style.setProperty('--d',  d.toFixed(2)+'s');
+    el.style.setProperty('--dm', (d/2.1).toFixed(2)+'s');
+    el.style.setProperty('--r',  ((Math.random()*2-1)*38).toFixed(0)+'deg');
+    el.style.setProperty('--tinta', TINTE[(Math.random()*TINTE.length)|0]);
 
-  /* Lo strato di scoppio passa SOPRA al testo: si accende solo dentro
-     all'immersione, dove non c'e' niente da leggere. Altrove il motivo torna
-     alzando lo strato di fondo, che sta dietro ai contenuti e non li sporca. */
-  var liv = 0, obiettivo = 0, ambLiv = .42, colpoFino = 0;
-  (function giro(){
-    liv = lerp(liv, obiettivo, .08);
-    burst.style.opacity = liv.toFixed(3);
-    var a = (Date.now() < colpoFino) ? .82 : .42;
-    ambLiv = lerp(ambLiv, a, .045);
-    amb.style.opacity = ambLiv.toFixed(3);
-    requestAnimationFrame(giro);
+    /* il reflow forzato serve: senza, riaggiungere la classe nello stesso
+       frame in cui e' stata tolta non fa ripartire l'animazione */
+    void el.offsetWidth;
+    el.classList.add('sale');
+
+    el.addEventListener('animationend', function fine(e){
+      if (e.animationName !== 'msale') return;
+      el.removeEventListener('animationend', fine);
+      el.classList.remove('sale');
+      liberi.push(el);
+    });
+    return true;
+  }
+
+  function sciame(n, passo){
+    for (var k=0;k<n;k++) setTimeout(lancia, k*(passo||420));
+  }
+
+  /* il ritmo normale: ogni tanto, senza regola che si senta */
+  (function programma(){
+    setTimeout(function(){
+      if (!document.hidden) sciame(Math.random() < .3 ? 2 : 1, 900);
+      programma();
+    }, 6000 + Math.random()*12000);
   })();
 
-  return {
-    livello: function(v){ obiettivo = clamp(v,0,1); },
-    colpo:   function(ms){ colpoFino = Date.now() + (ms||2600); },
-    semina:  function(box, n){ crea(box, n, {
-      col: ['#1B3BFF','#3A1BFF','#6C86FF','#0A18A8'], s:[16,42], d:[9,19], b:[22,40], sp:10,
-      x0: function(i,nn){ return 6 + (i/(nn-1||1))*88; }
-    }); }
-  };
+  return { lancia: lancia, sciame: sciame };
 })();
 
 /* --------------------------------------------------------------------------
@@ -436,36 +437,91 @@ var Bolle = (function(){
 })();
 
 /* --------------------------------------------------------------------------
-   immersione: la sequenza comandata dallo scroll
+   il singolo: la sequenza comandata dallo scroll
+   Due cose la rendono fluida. La prima: il progresso non e' quello dello
+   scroll, e' un valore che lo insegue — cosi' il rimbalzo dello scroll di iOS
+   non si vede. La seconda: fra un fotogramma e il successivo si disegna anche
+   quello dopo, in trasparenza, quindi 60 fotogrammi si comportano come
+   qualche centinaio.
    -------------------------------------------------------------------------- */
 (function(){
   var sez = $('#imm'), cv = $('#cvImm');
   var barra = $('#immBarra'), pct = $('#immPct');
-  var fiati = $$('#imm .fiato');
-  var ctx = cv.getContext('2d', { alpha:false });
-  var N = 48, imgs = new Array(N), caricate = 0, pronta = false;
-  var W=0,H=0,DPR=1, ultimo = -1, p = 0;
+  var tappe = $$('#imm .tappa');
+  var ctx = cv.getContext('2d', { alpha:true });
+  var N = 60;                 /* deve corrispondere a strumenti/media.sh */
+  var imgs = new Array(N), caricate = 0, pronta = false;
+  var W=0,H=0,DPR=1;
+  var pT = 0, p = 0, entrata = 0, dentro = false, sciamato = false;
+
+  /* i contenuti veri di questa scena stanno in DATI, come tutto il resto */
+  var uscita = (DATI.uscite && DATI.uscite[0]) || { t:'—', href:'#' };
+  $('#immTit').textContent = uscita.t;
+  $('#immElenco').innerHTML = DATI.piattaforme.map(function(x){ return x.nm; }).join(' &nbsp;·&nbsp; ');
+  var cta = $('#immCta');
+  var dove = uscita.href !== '#' ? uscita.href
+           : (DATI.piattaforme[0] && DATI.piattaforme[0].href) || '#';
+  cta.href = dove;
+  if (dove !== '#'){ cta.target = '_blank'; cta.rel = 'noopener'; }
 
   function url(i){ return 'assets/media/seq/a-'+('0'+(i+1)).slice(-2)+'.webp'; }
 
   function misura(){
     DPR = Math.min(window.devicePixelRatio || 1, 2);
     W = cv.clientWidth; H = cv.clientHeight;
+    if (!W) return;
     cv.width = Math.round(W*DPR); cv.height = Math.round(H*DPR);
     ctx.setTransform(DPR,0,0,DPR,0,0);
-    ultimo = -1; disegna(p);
+    rendi(true);
   }
 
-  function disegna(v){
-    if (!pronta) return;
-    var i = clamp(Math.round(v*(N-1)), 0, N-1);
-    if (i === ultimo) return;
-    var im = imgs[i]; if (!im) return;
-    ultimo = i;
+  function copri(im){
     var r = Math.max(W/im.width, H/im.height);
     var w = im.width*r, h = im.height*r;
-    ctx.fillStyle = '#F2EFE8'; ctx.fillRect(0,0,W,H);
     ctx.drawImage(im, (W-w)/2, (H-h)/2, w, h);
+  }
+
+  function fotogrammi(v){
+    if (!pronta || !W) return;
+    var f = clamp(v,0,1) * (N-1);
+    var i0 = Math.floor(f), t = f - i0;
+    var a = imgs[i0] || imgs[0];
+    var b = imgs[Math.min(i0+1, N-1)];
+    if (!a) return;
+    ctx.clearRect(0,0,W,H);
+    ctx.fillStyle = '#0B0E1C'; ctx.fillRect(0,0,W,H);
+    ctx.globalAlpha = 1; copri(a);
+    /* la mezza misura fra due fotogrammi: e' quello che toglie lo scatto */
+    if (b && b !== a && t > .004){ ctx.globalAlpha = t; copri(b); ctx.globalAlpha = 1; }
+  }
+
+  function smorza(t){ return t*t*(3-2*t); }
+  function fascia(v,a,b){
+    var m = .09;
+    return smorza(mappa(v,a,a+m)) * (1 - smorza(mappa(v,b-m,b)));
+  }
+
+  function rendi(forza){
+    var s = mappa(p, .04, .96);
+    fotogrammi(s);
+    cv.style.opacity = (entrata * (1 - mappa(p,.95,1))).toFixed(3);
+
+    barra.style.width = (s*100).toFixed(1)+'%';
+    pct.textContent = ('0'+Math.round(s*99)).slice(-2);
+
+    for (var i=0;i<tappe.length;i++){
+      var t = tappe[i];
+      var v = fascia(p, parseFloat(t.dataset.a), parseFloat(t.dataset.b));
+      t.style.opacity = v.toFixed(3);
+      t.style.transform = 'translate3d(0,'+((1-v)*26).toFixed(1)+'px,0)';
+      t.style.pointerEvents = v > .62 ? 'auto' : 'none';
+    }
+
+    /* lo sciame arriva una volta sola per passaggio, sull'ultima tappa */
+    if (p > .70 && !sciamato){ sciamato = true; Maschere.sciame(LEGGERO ? 2 : 4, 520); }
+    if (p < .55) sciamato = false;
+
+    document.body.classList.toggle('notte', p > .02 && p < .985);
   }
 
   /* si carica solo quando la sezione si avvicina: non pesa sull'apertura */
@@ -475,48 +531,36 @@ var Bolle = (function(){
     for (var i=0;i<N;i++){
       (function(i){
         immagine(url(i)).then(function(im){
-          imgs[i] = im; caricate++;
-          if (caricate >= 6 && !pronta){ pronta = true; misura(); }
-          if (caricate === N) { ultimo = -1; disegna(p); }
+          imgs[i] = im;
+          if (++caricate >= 4 && !pronta){ pronta = true; misura(); }
         }, function(){ caricate++; });
       })(i);
     }
-  }, { rootMargin: '150% 0px' });
+  }, { rootMargin: '160% 0px' });
   pre.observe(sez);
 
-  window.addEventListener('resize', function(){ alFrame(misura); });
-
-  function scorri(){
+  function daScroll(){
     var r = sez.getBoundingClientRect();
     var alt = sez.offsetHeight - window.innerHeight;
-    p = clamp(-r.top / (alt||1), 0, 1);
-
-    /* la scena occupa il centro della corsa; le code servono a entrare e uscire */
-    var s = mappa(p, .06, .94);
-    disegna(s);
-
-    /* La scena si accende mentre la sezione sale, non dopo: se aspettasse
-       l'inizio della corsa, l'utente si troverebbe davanti una schermata vuota
-       alta quanto il telefono. Alle 40 mila del viewport e' gia' tutta li'. */
-    var entrata = clamp(1 - r.top / (window.innerHeight * .8), 0, 1);
-    cv.style.opacity = (entrata * (1 - mappa(p, .94, 1))).toFixed(3);
-    barra.style.width = (s*100).toFixed(1)+'%';
-    pct.textContent = ('0'+Math.round(s*99)).slice(-2);
-
-    fiati.forEach(function(f){
-      var a = parseFloat(f.dataset.a), b = parseFloat(f.dataset.b);
-      f.classList.toggle('on', s > a && s < b);
-    });
-
-    /* l'espirazione: le bolle escono e colorano tutto */
-    var soffio = mappa(s, .60, .74) * (1 - mappa(s, .92, 1));
-    Bolle.livello(soffio);
-
-    document.body.classList.toggle('notte', p > .02 && p < .985);
+    pT = clamp(-r.top / (alt||1), 0, 1);
+    entrata = clamp(1 - r.top / (window.innerHeight * .8), 0, 1);
+    dentro = r.top < window.innerHeight && r.bottom > 0;
   }
-  window.addEventListener('scroll', function(){ alFrame(scorri); }, {passive:true});
-  window.addEventListener('resize', function(){ alFrame(scorri); });
-  document.addEventListener('entrati', function(){ misura(); scorri(); });
+
+  (function giro(){
+    requestAnimationFrame(giro);
+    if (!dentro && Math.abs(p - pT) < .0008) return;
+    /* il progresso insegue lo scroll invece di copiarlo: e' tutta qui la
+       differenza fra una sequenza che scatta e una che scorre */
+    p += (pT - p) * (CALMO ? 1 : .13);
+    if (Math.abs(pT - p) < .0004) p = pT;
+    rendi();
+  })();
+
+  window.addEventListener('scroll', function(){ alFrame(daScroll); }, {passive:true});
+  window.addEventListener('resize', function(){ alFrame(function(){ misura(); daScroll(); }); });
+  document.addEventListener('entrati', function(){ misura(); daScroll(); });
+  daScroll();
 })();
 
 /* --------------------------------------------------------------------------
@@ -582,11 +626,14 @@ var Bolle = (function(){
     scorri();
   }
 
-  /* qualche bolla passa anche qui: il motivo torna, piu' piano */
+  /* il motivo torna anche fuori dalla scena: una maschera sola, quando la
+     sezione entra, e non tutte le volte */
   var oss = new IntersectionObserver(function(vs){
-    vs.forEach(function(v){ if (v.isIntersecting) Bolle.colpo(3000); });
+    vs.forEach(function(v){
+      if (v.isIntersecting && Math.random() < .7) setTimeout(Maschere.lancia, 500);
+    });
   }, { threshold:.35 });
-  [$('#musica'), $('#caleido'), $('#contatti')].forEach(function(s){ if(s) oss.observe(s); });
+  [$('#musica'), $('#caleido'), $('#chi'), $('#contatti')].forEach(function(s){ if(s) oss.observe(s); });
 })();
 
 /* --------------------------------------------------------------------------
@@ -794,8 +841,6 @@ var Bolle = (function(){
     return '<a href="'+s.href+'" '+(s.href!=='#'?'target="_blank" rel="noopener"':'')+'>'+s.nm+'</a>';
   }).join('');
   $('#social').innerHTML = social;
-  var loc = $('#bolleContatti');
-  if (loc && Bolle.semina) Bolle.semina(loc, 7);
   $('#menuSocial').innerHTML = social;
 
   $('#dati').innerHTML = DATI.scheda.map(function(r){

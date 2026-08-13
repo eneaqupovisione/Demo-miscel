@@ -32,8 +32,6 @@
 <div id="prog" aria-hidden="true"></div>
 <div id="righe" aria-hidden="true"></div>
 <div id="grana" aria-hidden="true"></div>
-<div class="bolle amb" id="bolleAmb" aria-hidden="true"></div>
-<div class="bolle burst" id="bolleBurst" aria-hidden="true"></div>
 <div id="cur" aria-hidden="true"></div>
 <div id="cur2" aria-hidden="true"></div>
 <div id="copiato" role="status" aria-live="polite"></div>
@@ -68,7 +66,7 @@
   <button id="chiudi">Chiudi</button>
   <nav>
     <a href="#manifesto" data-va>Manifesto</a>
-    <a href="#imm" data-va>Immersione</a>
+    <a href="#imm" data-va>Singolo</a>
     <a href="#musica" data-va>Musica</a>
     <a href="#caleido" data-va>Specchi</a>
     <a href="#chi" data-va>Chi è</a>
@@ -128,19 +126,37 @@
   </div>
 </section>
 
-<!-- ========================== 03 · IMMERSIONE ========================== -->
-<!-- La scena: il viso entra dal lato, l'acqua lo prende, e sull'espirazione
-     escono le bolle che colorano tutto lo schermo. -->
-<section id="imm" aria-label="Immersione">
+<!-- ========================== 03 · IL SINGOLO ==========================
+     La scena — il viso che entra dal lato, l'acqua che lo prende, le bolle —
+     non e' il contenuto: e' lo sfondo di quello che c'e' da dire, cioe' che
+     il pezzo e' uscito e dove si ascolta. -->
+<section id="imm" aria-labelledby="immTit">
   <div class="pin">
     <canvas id="cvImm" aria-hidden="true"></canvas>
-    <div class="fiati" aria-hidden="true">
-      <span class="fiato" data-adatta data-max="150" data-a=".08" data-b=".30">Inspira</span>
-      <span class="fiato" data-adatta data-max="150" data-a=".40" data-b=".60">Tieni</span>
-      <span class="fiato" data-adatta data-max="150" data-a=".70" data-b=".95">Espira</span>
+    <div class="velo" aria-hidden="true"></div>
+
+    <div class="dentro">
+      <div class="tappa" data-a="-.02" data-b=".40">
+        <span class="mono">Nuovo singolo</span>
+        <h2 class="tit-imm" id="immTit" data-adatta data-max="150">—</h2>
+        <p class="sotto" id="immMeta">Fuori ora.</p>
+      </div>
+
+      <div class="tappa" data-a=".36" data-b=".74">
+        <span class="mono">Dove ascoltarlo</span>
+        <p class="grande">Ovunque ascolti musica.</p>
+        <p class="elenco" id="immElenco"></p>
+      </div>
+
+      <div class="tappa" data-a=".70" data-b="1.02">
+        <span class="mono">Il modo giusto</span>
+        <p class="grande">Con le cuffie, a volume alto.</p>
+        <a class="btn" id="immCta" href="#">Ascolta <span aria-hidden="true">&rarr;</span></a>
+      </div>
     </div>
+
     <div class="hud" aria-hidden="true">
-      <span class="mono">03 — Immersione</span>
+      <span class="mono">03 &mdash; Il singolo</span>
       <span class="barra"><i id="immBarra"></i></span>
       <span class="mono" id="immPct">00</span>
     </div>
@@ -217,7 +233,6 @@
 <!-- ========================== 07 · CONTATTI ========================== -->
 <section id="contatti">
   <img class="fondo" src="assets/media/profilo.jpg" alt="" aria-hidden="true">
-  <div class="bolle locale" id="bolleContatti" aria-hidden="true"></div>
   <div class="wrap in">
     <div class="occhiello rev">
       <span class="mono n">07</span><span class="mono">Contatti · Booking</span>
