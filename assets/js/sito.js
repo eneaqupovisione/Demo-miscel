@@ -376,9 +376,19 @@ var Bolle = (function(){
     return '<span class="l" style="--d:'+(i*52)+'ms">'+c+'</span>';
   }).join('');
 
-  document.addEventListener('entrati', function(){
-    cop.classList.add('pronta');
-    var p = video.play(); if (p && p.catch) p.catch(function(){});
+  /* l'autoplay puo' essere negato (risparmio energetico, impostazioni): si
+     ritenta, e comunque al primo tocco riparte */
+  var prove = 0;
+  function parti(){
+    var p = video.play();
+    if (p && p.catch) p.catch(function(){ if (prove++ < 6) setTimeout(parti, 400); });
+  }
+  document.addEventListener('entrati', function(){ cop.classList.add('pronta'); parti(); });
+  document.addEventListener('pointerdown', function(){
+    if (video.paused && !document.hidden) { prove = 0; parti(); }
+  }, {passive:true});
+  document.addEventListener('visibilitychange', function(){
+    if (!document.hidden && video.paused){ prove = 0; parti(); }
   });
 
   /* parallasse leggera: il video scende meno della pagina */

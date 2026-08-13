@@ -59,8 +59,6 @@ fermo ritratto-vuoto 15.6 "eq=contrast=0.46:brightness=0.20,gblur=sigma=1.0"
 fermo ritratto-pieno 15.6 "eq=contrast=1.14"
 # il profilo netto, per i contatti
 fermo profilo        68.0
-# fermo della scena d'acqua (anteprima della sequenza)
-fermo acqua          53.0
 
 # --- la scena dell'acqua: sequenza di fotogrammi per lo scrub ----------------
 # 50.9 -> 55.6 : il viso entra da destra, l'acqua lo prende, poi le bolle.
