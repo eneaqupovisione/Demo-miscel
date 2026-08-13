@@ -54,6 +54,9 @@ servito da un server statico.
   tiene basse le dimensioni (tante piccole, ogni tanto una grande). La spinta
   dello scroll passa dal `playbackRate` dell'animazione: **non** dalla durata,
   che cambiandola farebbe ripartire tutto da capo.
+- I **pulsanti-bolla** (`Bolle()` in `sito.js`) e le maschere condividono la
+  stessa funzione `forma()`: se cambi la forma, cambiano tutti e due. È
+  voluto.
 - La forma delle maschere è generata dal copione (`forma()` in `sito.js`) e
   animata con la Web Animations API, non con un `@keyframes`: servono tre
   ritagli con lo **stesso numero di segmenti**, altrimenti il passaggio

@@ -43,8 +43,6 @@ var DATI = {
     { nm:'TikTok',    href:'#' },
     { nm:'YouTube',   href:'#' }
   ],
-
-  nastro: ['Trattieni il fiato', 'Nuovo singolo', 'Ascolta ora', 'Scrivi per una data']
 };
 
 /* --------------------------------------------------------------------------
@@ -58,8 +56,12 @@ var $$ = function(s,c){ return Array.prototype.slice.call((c||document).querySel
 var clamp = function(v,a,b){ return v<a?a:(v>b?b:v); };
 var lerp  = function(a,b,t){ return a+(b-a)*t; };
 var mappa = function(v,a,b){ return clamp((v-a)/(b-a),0,1); };
+var smorza = function(t){ return t*t*(3-2*t); };
 
 var CALMO = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+/* clip-path: path() non c'e' ovunque. Dove manca si torna al border-radius,
+   che e' piu' tondo ma vivo. */
+var SUPPORTA_RITAGLIO = !!(window.CSS && CSS.supports && CSS.supports('clip-path','path("M0,0 L1,0 Z")'));
 var PUNTATORE = window.matchMedia('(hover:hover) and (pointer:fine)').matches;
 /* schermi piccoli o pochi core: si tolgono le cose che costano */
 var LEGGERO = (navigator.hardwareConcurrency || 4) <= 4 && !PUNTATORE;
@@ -297,6 +299,39 @@ if (PUNTATORE && !CALMO) (function(){
 })();
 
 /* --------------------------------------------------------------------------
+   la forma irregolare
+   La usano le maschere che attraversano la pagina e i pulsanti-bolla: e' la
+   stessa lingua, quindi e' lo stesso codice.
+   --------------------------------------------------------------------------
+   Non una goccia tonda: un giro di punti a raggio irregolare, raccordati
+   con delle cubiche. Ne servono tre per maschera, con lo stesso numero di
+   segmenti, perche' l'animazione possa passare dall'una all'altra. */
+function orlo(pt){
+  var n = pt.length;
+  var d = 'M' + pt[0][0].toFixed(1) + ',' + pt[0][1].toFixed(1);
+  for (var i=0;i<n;i++){
+    var p0 = pt[(i-1+n)%n], p1 = pt[i], p2 = pt[(i+1)%n], p3 = pt[(i+2)%n];
+    d += 'C' + (p1[0]+(p2[0]-p0[0])/6).toFixed(1) + ',' + (p1[1]+(p2[1]-p0[1])/6).toFixed(1)
+       + ' '  + (p2[0]-(p3[0]-p1[0])/6).toFixed(1) + ',' + (p2[1]-(p3[1]-p1[1])/6).toFixed(1)
+       + ' '  + p2[0].toFixed(1) + ',' + p2[1].toFixed(1);
+  }
+  return d + 'Z';
+}
+function forma(w, h, punti, irr, giro){
+  var pt = [];
+  for (var i=0;i<punti;i++){
+    var a = (i/punti)*Math.PI*2 + giro;
+    /* raggio diverso a ogni punto, e i due assi indipendenti: e' quello che
+       toglie la simmetria e la fa sembrare una cosa e non una figura */
+    var r = 1 - irr*Math.random();
+    var q = 1 - irr*.6*Math.random();
+    pt.push([ w/2 + Math.cos(a)*(w/2)*r*.98,
+              h/2 + Math.sin(a)*(h/2)*q*.98 ]);
+  }
+  return 'path("' + orlo(pt) + '")';
+}
+
+/* --------------------------------------------------------------------------
    le maschere
    Forme piene a bordo netto che salgono dal basso e ribaltano quello che
    coprono: dentro la sagoma il fondo diventa blu e il testo bianco, fuori non
@@ -321,7 +356,7 @@ var Maschere = (function(){
 
   /* clip-path: path() non c'e' ovunque. Dove manca si torna al border-radius,
      che e' piu' tondo ma vivo. */
-  var RITAGLIO = window.CSS && CSS.supports && CSS.supports('clip-path','path("M0,0 L1,0 Z")');
+  var RITAGLIO = SUPPORTA_RITAGLIO;
 
   /* il gruppo di maschere esiste dall'inizio e si riusa: crearle e buttarle a
      ogni lancio farebbe lavorare il compositore per niente */
@@ -331,35 +366,6 @@ var Maschere = (function(){
     el0.setAttribute('aria-hidden','true');
     document.body.appendChild(el0);
     liberi.push(el0);
-  }
-
-  /* --- la forma ----------------------------------------------------------
-     Non una goccia tonda: un giro di punti a raggio irregolare, raccordati
-     con delle cubiche. Ne servono tre per maschera, con lo stesso numero di
-     segmenti, perche' l'animazione possa passare dall'una all'altra. */
-  function orlo(pt){
-    var n = pt.length;
-    var d = 'M' + pt[0][0].toFixed(1) + ',' + pt[0][1].toFixed(1);
-    for (var i=0;i<n;i++){
-      var p0 = pt[(i-1+n)%n], p1 = pt[i], p2 = pt[(i+1)%n], p3 = pt[(i+2)%n];
-      d += 'C' + (p1[0]+(p2[0]-p0[0])/6).toFixed(1) + ',' + (p1[1]+(p2[1]-p0[1])/6).toFixed(1)
-         + ' '  + (p2[0]-(p3[0]-p1[0])/6).toFixed(1) + ',' + (p2[1]-(p3[1]-p1[1])/6).toFixed(1)
-         + ' '  + p2[0].toFixed(1) + ',' + p2[1].toFixed(1);
-    }
-    return d + 'Z';
-  }
-  function forma(w, h, punti, irr, giro){
-    var pt = [];
-    for (var i=0;i<punti;i++){
-      var a = (i/punti)*Math.PI*2 + giro;
-      /* raggio diverso a ogni punto, e i due assi indipendenti: e' quello che
-         toglie la simmetria e la fa sembrare una cosa e non una figura */
-      var r = 1 - irr*Math.random();
-      var q = 1 - irr*.6*Math.random();
-      pt.push([ w/2 + Math.cos(a)*(w/2)*r*.98,
-                h/2 + Math.sin(a)*(h/2)*q*.98 ]);
-    }
-    return 'path("' + orlo(pt) + '")';
   }
 
   function lancia(centro){
@@ -611,18 +617,6 @@ var Sequenza = (function(){
 })();
 
 /* --------------------------------------------------------------------------
-   nastri
-   -------------------------------------------------------------------------- */
-(function(){
-  var testo = DATI.nastro.map(function(s){
-    return '<span>'+s+' <b>◆</b></span>';
-  }).join('');
-  /* due volte: l'animazione scorre di meta' larghezza e non si vede il salto */
-  $('#nastro1').innerHTML = testo + testo + testo + testo;
-  $('#nastro2').innerHTML = testo + testo + testo + testo;
-})();
-
-/* --------------------------------------------------------------------------
    il singolo: la sequenza comandata dallo scroll
    Il progresso non e' quello dello scroll, e' un valore che lo insegue: cosi'
    il rimbalzo dello scroll di iOS non si vede.
@@ -653,7 +647,6 @@ var Sequenza = (function(){
     rendi();
   }
 
-  function smorza(t){ return t*t*(3-2*t); }
   function fascia(v,a,b){
     var m = .09;
     return smorza(mappa(v,a,a+m)) * (1 - smorza(mappa(v,b-m,b)));
@@ -796,6 +789,125 @@ var Sequenza = (function(){
 })();
 
 /* --------------------------------------------------------------------------
+   i pulsanti-bolla
+   Le piattaforme non sono righe: sono bolle, con la stessa forma irregolare
+   delle maschere che attraversano la pagina.
+
+   Stanno ferme finche' le guardi. Appena si scorre oltre si staccano e
+   salgono via, una dopo l'altra, girando e rimpicciolendo — come una bolla
+   che si stacca dal fondo. Tornando indietro tornano al loro posto, ma
+   **piu' piano di come se ne sono andate**: la partenza insegue lo scroll a
+   un decimo per frame, il ritorno a un trentesimo. E' quello che le fa
+   sembrare vive invece che agganciate a una barra di scorrimento.
+
+   Mentre volano non si possono premere (pointer-events), e se una ha il
+   fuoco da tastiera il volo non parte: un pulsante che scappa mentre lo stai
+   selezionando e' un pulsante rotto.
+   -------------------------------------------------------------------------- */
+function Bolle(box){
+  var TINTE  = ['#1B3BFF','#0B0E1C','#1B3BFF','#0B0E1C','#1B3BFF','#3A1BFF'];
+  var SCARTI = [0, 24, -12, 18, 4, -18];      /* px: rompono la griglia */
+
+  box.innerHTML = DATI.piattaforme.map(function(p,i){
+    return '<a href="'+p.href+'" '+(p.href!=='#'?'target="_blank" rel="noopener"':'')
+         +   ' style="--dy:'+SCARTI[i%SCARTI.length]+'px">'
+         +   '<span class="corpo" style="--tinta:'+TINTE[i%TINTE.length]
+         +     ';--gd:'+(6.4+i*0.9).toFixed(1)+'s;--gr:'+(-i*1.6).toFixed(1)+'s">'
+         +     '<span class="nm">'+p.nm+'</span>'
+         +   '</span></a>';
+  }).join('');
+
+  var bolle = $$('a', box), corpi = $$('.corpo', box), n = bolle.length;
+  var DERIVA = [], GIRO = [];
+  for (var i=0;i<n;i++){
+    DERIVA.push((i - (n-1)/2) * 26 + (i%2 ? 18 : -14));
+    GIRO.push((i%2 ? 1 : -1) * (14 + i*5));
+  }
+
+  /* la forma: una per bolla, che si deforma piano su tre versioni.
+     E la scritta dentro, misurata sulla larghezza utile della bolla: nomi
+     lunghi come SOUNDCLOUD altrimenti escono dal bordo. */
+  function vesti(){
+    corpi.forEach(function(c,i){
+      var nm = c.firstElementChild, lw = c.offsetWidth * .74;
+      if (nm && lw > 20){
+        nm.style.fontSize = '40px';
+        var largo = 0;
+        nm.textContent.split(' ').forEach(function(par){
+          var m = document.createElement('span');
+          m.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;font:inherit;letter-spacing:inherit';
+          m.textContent = par; nm.appendChild(m);
+          largo = Math.max(largo, m.offsetWidth); nm.removeChild(m);
+        });
+        nm.style.fontSize = largo ? clamp(40 * lw / largo, 9, 19).toFixed(1)+'px' : '';
+      }
+    });
+    if (!SUPPORTA_RITAGLIO) return;
+    corpi.forEach(function(c,i){
+      var w = c.offsetWidth, h = c.offsetHeight;
+      if (!w || !h) return;
+      var pu = 9 + (i%3), irr = .20 + (i%4)*.04, g = i*1.15;
+      var f1 = forma(w,h,pu,irr,g), f2 = forma(w,h,pu,irr,g+.5), f3 = forma(w,h,pu,irr,g+1);
+      c.style.borderRadius = '0';
+      c.style.clipPath = f1;
+      if (c.morfa){ c.morfa.cancel(); c.morfa = null; }
+      if (!CALMO && c.animate){
+        c.morfa = c.animate(
+          [{clipPath:f1},{clipPath:f2},{clipPath:f3},{clipPath:f1}],
+          { duration: 9000 + i*1900, iterations: Infinity, easing:'ease-in-out' });
+      }
+    });
+  }
+  vesti();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(vesti);
+  window.addEventListener('resize', function(){ alFrame(vesti); });
+
+  if (CALMO) return;   /* niente volo: restano dove sono */
+
+  var t = 0, obiettivo = 0, fermo = false;
+
+  function daScroll(){
+    var r = box.getBoundingClientRect(), vh = window.innerHeight;
+    /* zero finche' il blocco sta comodo in vista; uno quando e' uscito in alto */
+    obiettivo = clamp(-(r.top - vh*.34) / (r.height + vh*.5), 0, 1);
+    if (box.contains(document.activeElement)) obiettivo = 0;
+    fermo = false;
+  }
+
+  function rendi(){
+    var vh = window.innerHeight;
+    var corsa = vh*.85 + 260;
+    for (var i=0;i<n;i++){
+      /* una dopo l'altra: la prima parte subito, l'ultima con un po' di ritardo */
+      var p = clamp((t - i*.055) / (1 - .055*(n-1)), 0, 1);
+      var e = p*p;                     /* parte piano e poi accelera */
+      var op = 1 - smorza(mappa(p,.42,.92));
+      bolle[i].style.transform =
+        'translate3d('+(DERIVA[i]*e).toFixed(1)+'px,calc(var(--dy,0px) + '
+        + (-corsa*e).toFixed(1)+'px),0) scale('+(1-.28*e).toFixed(3)
+        +') rotate('+(GIRO[i]*e).toFixed(1)+'deg)';
+      bolle[i].style.opacity = op.toFixed(3);
+      bolle[i].style.pointerEvents = p > .12 ? 'none' : 'auto';
+    }
+  }
+
+  (function giro(){
+    requestAnimationFrame(giro);
+    if (fermo) return;
+    /* due velocita': se ne vanno svelte, tornano piano */
+    t += (obiettivo - t) * (obiettivo > t ? .10 : .028);
+    if (Math.abs(obiettivo - t) < .0006){ t = obiettivo; fermo = true; }
+    rendi();
+  })();
+
+  window.addEventListener('scroll', function(){ alFrame(daScroll); }, {passive:true});
+  window.addEventListener('resize', function(){ alFrame(daScroll); });
+  box.addEventListener('focusin', daScroll);
+  box.addEventListener('focusout', daScroll);
+  daScroll();
+}
+
+/* --------------------------------------------------------------------------
    ascolta: le uscite, le piattaforme, e la lastra che si apre di fianco
    -------------------------------------------------------------------------- */
 (function(){
@@ -813,11 +925,8 @@ var Sequenza = (function(){
          + '</a>';
   }).join('');
 
-  piatt.innerHTML = DATI.piattaforme.map(function(p){
-    return '<a href="'+p.href+'" '+(p.href!=='#'?'target="_blank" rel="noopener"':'')+'>'
-         +   '<span>'+p.nm+'</span><span class="fr">→</span>'
-         + '</a>';
-  }).join('');
+  /* le piattaforme sono bolle, e stanno in un modulo loro qui sotto */
+  Bolle(piatt);
 
   var righe = $$('.uscita', box);
 

@@ -8,7 +8,7 @@
 
    Ordine del file:
      00 variabili · 01 base · 02 tipografia · 03 strati fissi · 04 caricamento
-     05 testata · 06 copertina · 07 nastro · 09 il singolo · 10 ascolta
+     05 testata · 06 copertina · 09 il singolo · 10 ascolta
      12 chi e' · 13 contatti · 14 piede
      15 movimento ridotto
    =========================================================================== */
@@ -106,6 +106,10 @@ h2.tit{
 p.testo{max-width:44ch;color:var(--tenue);font-size:1rem;line-height:1.7}
 p.testo + p.testo{margin-top:1.1em}
 .sez{padding:clamp(72px,15vw,150px) 0;position:relative}
+/* il primo blocco dopo la copertina sta vicino: il taglio netto fra il nero
+   del girato e l'osso della pagina e' gia' un confine, non serve anche il
+   vuoto */
+#ascolta{padding-top:clamp(30px,6vw,58px)}
 
 /* i testi che devono toccare i due margini: la misura la fa il copione.
    overflow:hidden serve a impedire che una parola su una riga sola gonfi la
@@ -352,25 +356,6 @@ body.oltre #testata .marchio{opacity:1;transform:none;pointer-events:auto}
 @keyframes ago{0%{transform:translateY(-100%)}60%,100%{transform:translateY(100%)}}
 #cop .hud{position:absolute;left:var(--gut);top:24vh;writing-mode:vertical-rl}
 
-/* --- 07 nastro ----------------------------------------------------------- */
-/* il nastro era una fascia blu piena. Sotto la testata, che si fonde in
-   difference, il blu rovesciato dava giallo — e il giallo qui non esiste.
-   Fondo osso e scritta blu: stessa presenza, nessun colore fuori posto. */
-.nastro{
-  background:var(--fondo);color:var(--acc);overflow:hidden;
-  padding:.85rem 0;position:relative;z-index:3;
-  border-block:1px solid var(--linea);
-}
-.nastro .scorre{display:flex;width:max-content;animation:scorri 28s linear infinite}
-.nastro.b{color:var(--tenue)}
-.nastro.b .scorre{animation-direction:reverse;animation-duration:34s}
-.nastro span{
-  font-family:var(--mono);font-size:.76rem;letter-spacing:.24em;text-transform:uppercase;
-  padding-right:2.2rem;white-space:nowrap;
-}
-.nastro span b{color:inherit;font-weight:400;opacity:.5}
-@keyframes scorri{to{transform:translate3d(-50%,0,0)}}
-
 /* --- 09 immersione ------------------------------------------------------- */
 /* La sezione e' alta: quell'altezza e' la durata della scena. Dentro, una
    sola schermata inchiodata, e il girato fa da sfondo a quello che c'e' da
@@ -484,22 +469,54 @@ body.oltre #testata .marchio{opacity:1;transform:none;pointer-events:auto}
 #lastra.on i.scan{animation:scan 2s linear infinite}
 @keyframes scan{0%{top:-2px;opacity:0}10%{opacity:.7}90%{opacity:.5}100%{top:100%;opacity:0}}
 
-/* piattaforme */
-/* le piattaforme non sono schede: sono righe, come le uscite. Meno cornici,
-   meno rumore, e il dito ci arriva lo stesso. */
-.piatt{margin-top:clamp(26px,6vw,48px);display:grid;grid-template-columns:minmax(0,1fr)}
-@media(min-width:760px){.piatt{grid-template-columns:repeat(2,minmax(0,1fr));column-gap:clamp(24px,4vw,60px)}}
-.piatt a{
-  display:flex;align-items:center;justify-content:space-between;gap:1rem;
-  padding:1.05rem .2rem;border-bottom:1px solid var(--linea);
-  font-family:var(--disp);font-weight:700;text-transform:uppercase;
-  font-size:clamp(.95rem,4.2vw,1.25rem);letter-spacing:-.01em;
-  transition:color .3s var(--e),padding-inline .35s var(--e);
+/* --- i pulsanti-bolla ------------------------------------------------------
+   Le piattaforme non sono righe: sono bolle. Stessa forma irregolare delle
+   maschere — un giro di punti a raggio diverso raccordati con delle cubiche,
+   generato dal copione — e stesso comportamento: stanno ferme finche' le
+   guardi, e appena scorri oltre si staccano e salgono via.
+
+   La risalita e' comandata dallo scroll, non da un tempo: quindi tornando
+   indietro tornano al loro posto. Ma tornano piu' piano di come se ne sono
+   andate — lo decide il copione, con due velocita' diverse per l'andata e il
+   ritorno.                                                                  */
+.bolle-btn{
+  margin-top:clamp(30px,7vw,56px);
+  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:clamp(10px,3vw,20px);
 }
-.piatt a .fr{font-family:var(--mono);font-size:.66rem;letter-spacing:.2em;color:var(--tenue);
-  transition:transform .35s var(--e),color .3s}
-.piatt a:hover,.piatt a:active{color:var(--acc);padding-inline:.5rem}
-.piatt a:hover .fr,.piatt a:active .fr{color:var(--acc);transform:translateX(5px)}
+@media(min-width:760px){
+  .bolle-btn{grid-template-columns:repeat(5,minmax(0,1fr));gap:clamp(12px,1.6vw,26px)}
+}
+.bolle-btn a{
+  position:relative;display:block;aspect-ratio:1/1.06;
+  /* lo scarto verticale rompe la griglia: sono bolle, non caselle */
+  transform:translate3d(0,var(--dy,0px),0);
+  will-change:transform,opacity;
+}
+.bolle-btn a:last-child{grid-column:1/-1;justify-self:center;width:min(52%,190px)}
+@media(min-width:760px){.bolle-btn a:last-child{grid-column:auto;width:auto}}
+
+.bolle-btn .corpo{
+  position:absolute;inset:0;display:grid;place-items:center;
+  background:var(--tinta,#1B3BFF);color:var(--osso);
+  border-radius:54% 46% 42% 58% / 58% 44% 56% 42%;   /* rete: sostituito dal ritaglio */
+  animation:galla var(--gd,7s) ease-in-out var(--gr,0s) infinite;
+  transition:background .35s var(--e);
+}
+.bolle-btn .nm{
+  position:relative;font-family:var(--disp);font-weight:800;text-transform:uppercase;
+  letter-spacing:-.015em;line-height:1.06;text-align:center;padding:0 10%;
+}
+/* il galleggiamento: piccolo, lento, sfasato. Basta a non farle sembrare
+   incollate alla pagina. */
+@keyframes galla{
+  0%,100%{transform:translate3d(0,0,0)}
+  50%    {transform:translate3d(0,-7px,0)}
+}
+@media (hover:hover){
+  .bolle-btn a:hover .corpo{background:var(--nero)}
+}
+.bolle-btn a:active .corpo{background:var(--nero)}
 
 /* --- 12 chi e' ----------------------------------------------------------- */
 /* Tre righe grandi e basta. Dietro, il respiro: la stessa scena d'acqua del

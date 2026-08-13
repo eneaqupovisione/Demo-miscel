@@ -56,7 +56,7 @@ caricano aprendo il file con doppio clic.
 | | | |
 |---|---|---|
 | 01 | **Copertina** | il nome, e il volto sott'acqua in anello |
-| 02 | **Ascolta** | subito sotto il nome: le uscite e le piattaforme |
+| 02 | **Ascolta** | subito sotto il nome: le uscite e i pulsanti-bolla |
 | 03 | **Il singolo** | tre stacchi del girato come sfondo di due cose da dire |
 | 04 | **Chi è** | tre righe grandi, e dietro il respiro |
 | 05 | **Scrivi** | booking, e la silhouette |
@@ -134,6 +134,14 @@ Nessuna libreria. Scroll, `IntersectionObserver` e due canvas.
   accelerano**: non si tocca la durata (cambiarla farebbe ripartire
   l'animazione da capo), si alza il `playbackRate` dell'animazione già in
   corso, che va da 1 a circa 4.6.
+- **Pulsanti-bolla** — le piattaforme non sono righe: sono bolle, con la
+  stessa forma irregolare delle maschere. Stanno ferme finché le guardi;
+  appena si scorre oltre **si staccano e salgono via**, una dopo l'altra,
+  girando e rimpicciolendo. Tornando indietro tornano al loro posto, ma **più
+  piano di come se ne sono andate**: la partenza insegue lo scroll a un
+  decimo per frame, il ritorno a un trentesimo. Mentre volano non si possono
+  premere, e se una ha il fuoco da tastiera il volo non parte — un pulsante
+  che scappa mentre lo stai selezionando è un pulsante rotto.
 - **Chi è** — il respiro dietro alle righe. Lo sfondo è la stessa sequenza del
   singolo — ma solo l'ultimo pezzo, quello sott'acqua, che è il più calmo e non
   si porta dietro gli stacchi (nessun byte in più: le immagini sono caricate
