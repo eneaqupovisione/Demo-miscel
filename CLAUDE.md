@@ -78,7 +78,20 @@ servito da un server statico.
 - Per guardare cosa disegna un canvas WebGL **non serve** `drawImage` né
   `readPixels` da fuori del frame: senza `preserveDrawingBuffer` tornano
   sempre neri, e sembra che l'effetto non ci sia. Si guarda a schermo.
-- L'accensione delle gocce è un **interruttore a scatto**: passata metà
+- La **massa fluida** (`BlobMask.massa()`) è il raccordo fra copertina e
+  "Ascolta": non c'è più un taglio netto. È fatta di due parti — un corpo
+  pieno sotto il confine e una cresta di gocce piccole sopra — ma il profilo
+  irregolare **non viene dalla geometria**, viene dal domain warp dello
+  shader (`massaWarp`): gocce grandi abbastanza da riempire il corpo sono
+  anche troppo grandi per fare un bordo mosso, e davano una cupola liscia.
+- A pagina ferma il confine sta sul bordo basso dello schermo: tutta la massa
+  è spinta sotto (`giu = (1-gonfio)*0.34`) e **sale mentre il confine sale**.
+  Senza, la cupola si mangia il nome in copertina — le gocce fondendosi
+  gonfiano l'isosuperficie molto più del loro raggio.
+- L'allungamento dei pulsanti verso le vicine va sul **corpo**, non sul link,
+  con la scala inversa sulla scritta: se scala anche il testo, "SPOTIFY" si
+  schiaccia e il ritaglio se lo mangia.
+- L'accensione delle gocce sparse è un **interruttore a scatto**: passata metà
   copertina si accende e non si spegne più. Non è un inseguimento della
   visibilità — tornando su, le gocce invadono anche la copertina, ed è
   voluto: vederle sparire sarebbe peggio che vederle lì.

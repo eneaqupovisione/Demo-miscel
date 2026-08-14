@@ -693,7 +693,9 @@ function Bolle(box, cop){
       var st = stato[i]; if (!st) return;
       bolle[i].style.setProperty('--s', st.s.toFixed(0)+'px');
       var w = st.s, h = st.s*1.06;
-      var nm = c.firstElementChild, lw = w * .74;
+      /* .62 e non .74: la sagoma ora si scioglie e a volte si stringe, e una
+         scritta tarata sulla larghezza piena finisce fuori dal ritaglio */
+      var nm = c.firstElementChild, lw = w * .62;
       if (nm){
         nm.style.fontSize = '40px';
         var largo = 0;
@@ -706,15 +708,18 @@ function Bolle(box, cop){
         nm.style.fontSize = largo ? clamp(40 * lw / largo, 9, 17).toFixed(1)+'px' : '';
       }
       if (!SUPPORTA_RITAGLIO) return;
-      var pu = 9 + (i%3), irr = .20 + (i%4)*.04, g = i*1.15;
-      var f1 = forma(w,h,pu,irr,g), f2 = forma(w,h,pu,irr,g+.5), f3 = forma(w,h,pu,irr,g+1);
+      /* piu' punti e piu' irregolarita': la sagoma si scioglie invece di
+         sembrare una forma disegnata */
+      var pu = 11 + (i%3), irr = .28 + (i%4)*.05, g = i*1.15;
+      var f1 = forma(w,h,pu,irr,g), f2 = forma(w,h,pu,irr,g+.6),
+          f3 = forma(w,h,pu,irr,g+1.2), f4 = forma(w,h,pu,irr,g+1.8);
       c.style.borderRadius = '0';
       c.style.clipPath = f1;
       if (c.morfa){ c.morfa.cancel(); c.morfa = null; }
       if (!CALMO && c.animate){
         c.morfa = c.animate(
-          [{clipPath:f1},{clipPath:f2},{clipPath:f3},{clipPath:f1}],
-          { duration: 9000 + i*1900, iterations: Infinity, easing:'ease-in-out' });
+          [{clipPath:f1},{clipPath:f2},{clipPath:f3},{clipPath:f4},{clipPath:f1}],
+          { duration: 4200 + i*800, iterations: Infinity, easing:'ease-in-out' });
       }
     });
   }
@@ -749,6 +754,9 @@ function Bolle(box, cop){
      forza attraversa lo zero con continuita' — un gradino qui produrrebbe la
      stessa vibrazione ad alta frequenza che rovinerebbe le gocce. */
   var clock = 0;
+  /* non ci sono al primo istante: la copertina si presenta da sola per un
+     secondo, e solo dopo salgono le bolle */
+  var nato = performance.now() + 1000;
   function rendi(dt){
     var d = misuraBox();
     if (!d.h || !d.w) return;
@@ -799,7 +807,27 @@ function Bolle(box, cop){
       }
     }
 
-    /* 3 · integrazione, pareti morbide, scrittura */
+    /* 3 · quanto ognuna sente la vicina piu' prossima: si allunga verso di
+       lei invece di sormontarla. E' il residuo della tensione superficiale,
+       fatto con una scala anisotropa lungo la congiungente. */
+    var tira = [], ang = [];
+    for (i=0;i<n;i++){ tira.push(0); ang.push(0); }
+    for (i=0;i<n;i++){
+      var a2 = stato[i]; if (a2.attesa > 0) continue;
+      for (j=i+1;j<n;j++){
+        var c2 = stato[j]; if (c2.attesa > 0) continue;
+        var ddx = c2.x-a2.x, ddy = c2.y-a2.y;
+        var dd = Math.sqrt(ddx*ddx + ddy*ddy);
+        var portata = (a2.r + c2.r) * 2.1;
+        if (dd >= portata || dd < 1e-4) continue;
+        var e = (1 - dd/portata) * .34;
+        var an = Math.atan2(ddy, ddx) * 180/Math.PI;
+        if (e > tira[i]){ tira[i] = e; ang[i] = an; }
+        if (e > tira[j]){ tira[j] = e; ang[j] = an; }
+      }
+    }
+
+    /* 4 · integrazione, pareti morbide, scrittura */
     for (i=0;i<n;i++){
       var st2 = stato[i], el = bolle[i];
       if (st2.attesa > 0){
@@ -819,9 +847,31 @@ function Bolle(box, cop){
       /* svanisce ai due capi, cosi' non compare e non sparisce di colpo */
       var op = Math.min(1, (b.y - st2.y)/26 + .4)
              * Math.min(1, (st2.y + st2.s*0.6)/(st2.s*0.9));
+      var avvio = clamp((performance.now() - nato)/700, 0, 1);
+      op *= avvio;
       el.style.opacity = clamp(op, 0, 1).toFixed(3);
       el.style.pointerEvents = op > .55 ? 'auto' : 'none';
-      el.style.transform = 'translate3d('+st2.x.toFixed(1)+'px,'+st2.y.toFixed(1)+'px,0)';
+      el.style.transform = 'translate3d('+st2.x.toFixed(1)+'px,'+st2.y.toFixed(1)+'px,0)'
+        + ' scale('+(0.86 + .14*avvio).toFixed(3)+')';
+
+      /* L'allungamento verso la vicina va sul CORPO, non sul link: se scala
+         anche la scritta, "SPOTIFY" si schiaccia e il ritaglio se la mangia.
+         Sulla scritta si applica la scala inversa, cosi' la sagoma si tira e
+         la parola resta dritta. */
+      var e2 = tira[i], a3 = ang[i];
+      var corpo = corpi[i], nm2 = corpo && corpo.firstElementChild;
+      if (corpo){
+        if (e2 > .002){
+          var sx = 1 + e2, sy = 1 - e2*.55;
+          corpo.style.transform = 'rotate('+a3.toFixed(1)+'deg) scale('
+            + sx.toFixed(3)+','+sy.toFixed(3)+') rotate('+(-a3).toFixed(1)+'deg)';
+          if (nm2) nm2.style.transform = 'rotate('+a3.toFixed(1)+'deg) scale('
+            + (1/sx).toFixed(3)+','+(1/sy).toFixed(3)+') rotate('+(-a3).toFixed(1)+'deg)';
+        } else {
+          corpo.style.transform = '';
+          if (nm2) nm2.style.transform = '';
+        }
+      }
     }
   }
 
@@ -929,29 +979,31 @@ function Bolle(box, cop){
 })();
 
 /* --------------------------------------------------------------------------
-   la maschera a gocce
-   Il motore sta in blob-mask.js. Qui c'e' solo quando accenderlo: finche' si
-   e' nella prima meta' della copertina le gocce non ci sono — li' salgono
-   gia' i pulsanti, e due sciami insieme sarebbero rumore.
+   la massa fluida
+   Fra la copertina e "Ascolta" non c'e' piu' un taglio netto: c'e' una massa
+   blu che sta a cavallo del confine, sale dentro alla copertina e scende
+   dentro ad "Ascolta" — e siccome le gocce invertono quello che coprono, il
+   titolo ASCOLTA dentro alla massa si legge bianco su blu.
 
-   E' un interruttore a scatto, non un inseguimento: passata meta' copertina
-   si accende e non si spegne piu'. Tornando su, le gocce possono invadere
-   anche quella parte — a quel punto le si e' gia' viste, e vederle sparire
-   sarebbe peggio che vederle li'.
+   Sta ferma finche' la si guarda. Continuando a scorrere si scioglie: si
+   scompone in gocce che salgono e si sparpagliano, e la pagina torna com'e'.
+   Il bordo respira anche da ferma, ma non per via della fisica: e' il domain
+   warp dello shader, che costa niente e non muove niente.
    -------------------------------------------------------------------------- */
 (function(){
-  var palco = $('main.stage'), inv = $('#c-invert'), tin = $('#c-tint'), cop = $('#cop');
-  if (!palco || !inv || !cop || !window.BlobMask) return;
+  var palco = $('main.stage'), inv = $('#c-invert'), tin = $('#c-tint');
+  var cop = $('#cop'), asc = $('#ascolta');
+  if (!palco || !inv || !cop || !asc || !window.BlobMask) return;
   var mask = BlobMask.monta({ palco: palco, invert: inv, tint: tin });
   if (!mask) return;            /* niente WebGL: i canvas restano vuoti */
 
-  var scattato = false;
   function guarda(){
-    if (scattato) return;
-    if (window.scrollY > cop.offsetHeight * .5){
-      scattato = true;
-      mask.livello(1);
-    }
+    var vh = window.innerHeight;
+    /* il confine e' il fondo della copertina, in frazioni di schermo */
+    var bordo = cop.getBoundingClientRect().bottom / vh;
+    /* si scioglie mentre il confine sale oltre il terzo alto dello schermo */
+    var diss = clamp((0.34 - bordo) / 0.62, 0, 1);
+    mask.massa(bordo, diss);
   }
   window.addEventListener('scroll', function(){ alFrame(guarda); }, {passive:true});
   window.addEventListener('resize', function(){ alFrame(guarda); });

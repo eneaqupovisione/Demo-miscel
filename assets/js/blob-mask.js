@@ -67,7 +67,34 @@ var CONFIG = {
      specifica dice il contrario, ma comanda il codice. */
   direction:  1,
   tint:      '#1B3BFF',
-  mode:      'tinta'          /* 'tinta' = due livelli · 'negativo' = solo il primo */
+  mode:      'tinta',         /* 'tinta' = due livelli · 'negativo' = solo il primo */
+
+  /* --- modalita' MASSA ---------------------------------------------------
+     Le gocce non cadono: stanno ferme, disposte a griglia, e si fondono in
+     una massa sola che fa da raccordo fra due sezioni. Poi si scioglie.
+     Il moto lo da' il domain warp dello shader, non la fisica: la massa e'
+     immobile ma il suo bordo respira. */
+  /* La massa e' fatta di due cose. Un CORPO pieno sotto il confine, che non
+     ha bisogno di essere irregolare perche' esce dallo schermo ai lati; e una
+     CRESTA di gocce piccole sul bordo alto, che e' l'unica parte che si vede
+     davvero come profilo. Una griglia sola non funzionava: gocce abbastanza
+     grandi da riempire il corpo sono anche troppo grandi per fare un bordo
+     mosso, e veniva una cupola liscia. */
+  crestaQuota: 0.42,  /* frazione di gocce dedicate alla cresta */
+  crestaSu:    0.09,  /* di quanto la cresta sale sopra il confine, a pieno gonfiore */
+  crestaOnda:  0.085, /* ampiezza dei bitorzoli, in altezze di schermo */
+  crestaR:     0.92,  /* raggio della cresta in frazioni del passo */
+  massaGiu:    0.46,  /* quanto scende il corpo sotto il confine */
+  massaR:      0.80,  /* raggio del corpo in frazioni della cella */
+
+  /* Il profilo irregolare NON viene dalla geometria: viene da qui. La
+     deformazione del dominio sposta il punto prima di misurarlo, quindi
+     increspa il contorno di tutta la massa — comprese le parti dove sotto
+     c'e' una goccia grande che altrimenti darebbe una cupola liscia.
+     Sono i valori usati in modalita' massa, piu' forti di quelli delle
+     gocce sparse. */
+  massaWarp:      0.115,
+  massaWarpScale: 4.20
 };
 
 /* costanti della fisica, non esposte (specifica §4) */
@@ -205,8 +232,9 @@ function livello(canvas, inkHex, bordo, soglia){
       gl.uniform1f(U.uAspect, A);
       gl.uniform1f(U.uTime, orologio);
       gl.uniform1f(U.uMerge, CONFIG.merge);
-      gl.uniform1f(U.uWarp, CONFIG.warp);
-      gl.uniform1f(U.uWarpScale, CONFIG.warpScale);
+      var massa = CONFIG._massa;
+      gl.uniform1f(U.uWarp,      massa ? CONFIG.massaWarp * CONFIG._gonfio : CONFIG.warp);
+      gl.uniform1f(U.uWarpScale, massa ? CONFIG.massaWarpScale : CONFIG.warpScale);
       gl.uniform1f(U.uEdge, bordo());
       gl.uniform1f(U.uMergeK, soglia());
       gl.uniform3f(U.uInk, ink[0]*velo, ink[1]*velo, ink[2]*velo);
@@ -226,13 +254,15 @@ function monta(opz){
 
   var CALMO = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var stretto = window.innerWidth < 700;
-  if (stretto){ CONFIG.count = 22; CONFIG.sizeMax = 0.046; }
+  if (stretto){ CONFIG.count = 26; CONFIG.sizeMax = 0.046; }
 
   var TAU = Math.PI*2;
   var caso = function(a,b){ return a + Math.random()*(b-a); };
+  var clamp01 = function(v){ return v < 0 ? 0 : (v > 1 ? 1 : v); };
   var A = 1, gocce = [], data = null, legato = null, eta = null;
   var W = 0, H = 0, clock = 0, warp = 0;
   var velo = 0, obiettivo = 0, acceso = false, vista = true, seminate = false;
+  var modo = 'gocce', bordoT = 1.2, diss = 0, gonfio = 0;
 
   function raggioDi(t){ var M = CONFIG.sizeMax, m = M*CONFIG.spread; return m + t*(M-m); }
   function limite(r){ var M = Math.max(CONFIG.sizeMax,1e-4); return CONFIG.speed*(r*r)/(M*M); }
@@ -361,6 +391,72 @@ function monta(opz){
     }
   }
 
+  /* --- la massa -----------------------------------------------------------
+     Una griglia di gocce grandi abbastanza da fondersi, appoggiata al confine
+     fra due sezioni. `bordoT` e' la posizione del confine come frazione
+     dall'alto del viewport; `diss` da 0 a 1 e' quanto si e' sciolta.
+     Le irregolarita' sono deterministiche (seno dell'indice): la massa deve
+     essere identica a ogni frame, se no vibra invece di stare ferma. */
+  function disponiMassa(bordoT, diss){
+    var n = gocce.length;
+    /* Il gonfiore. A pagina ferma il confine sta sul bordo basso dello
+       schermo: se la cresta fosse gia' alta, si mangerebbe il nome in
+       copertina. Quindi la massa e' piatta finche' il confine e' in fondo e
+       si alza mentre sale — entra, non c'e' gia'. */
+    gonfio = clamp01((1.02 - bordoT) / 0.34);
+    /* A riposo tutta la massa e' spinta sotto il bordo dello schermo, non
+       solo la cresta: le gocce del corpo, fondendosi, gonfiano l'isosuperficie
+       molto piu' del loro raggio, ed erano loro a sporgere. Sale mentre il
+       confine sale. */
+    var giu = (1 - gonfio) * 0.34;
+    var nCre = Math.max(4, Math.round(n * CONFIG.crestaQuota));
+    var nCor = n - nCre;
+
+    /* la cresta: un filo di gocce piccole lungo il confine, sfalsate in alto
+       e in basso. E' quello che si legge come profilo della massa. */
+    var passo = A / nCre;
+    var rCre = passo * CONFIG.crestaR;
+
+    /* il corpo: griglia sotto il confine, gocce grandi che si fondono */
+    var cella = nCor > 0 ? Math.sqrt(A * CONFIG.massaGiu / nCor) : passo;
+    var col = Math.max(2, Math.round(A / cella));
+    var rig = Math.max(1, Math.ceil(nCor / col));
+    var cellaX = A / col, cellaY = CONFIG.massaGiu / rig;
+    var rCor = cella * CONFIG.massaR;
+
+    for (var i=0;i<n;i++){
+      var g = gocce[i];
+      var jx = Math.sin(i*12.9898 + 1.7) * .5 + .5;
+      var jy = Math.sin(i*78.2330 + 4.1) * .5 + .5;
+      var jz = Math.sin(i*45.1640 + 9.3) * .5 + .5;
+      var x, t, raggio;
+
+      if (i < nCre){
+        x = (i + .5) * passo + (jx-.5) * passo * .35;
+        t = bordoT + giu - CONFIG.crestaSu*gonfio
+          + (jy-.5) * CONFIG.crestaOnda * 2 * gonfio;
+        raggio = rCre * (0.78 + jz*0.5);
+      } else {
+        var k = i - nCre, c = k % col, r = (k / col) | 0;
+        x = (c + .5) * cellaX + (jx-.5) * cella * .3;
+        /* il corpo parte sotto al confine di un raggio abbondante: se no e'
+           lui, non la cresta, a sporgere sopra — e a pagina ferma la cupola
+           si mangiava il nome in copertina */
+        t = bordoT + giu + rCor*1.25 + (r + .5) * cellaY * .88 + (jy-.5) * cella * .3;
+        raggio = rCor * (0.86 + jz*0.28);
+      }
+
+      /* sciogliendosi salgono, si sparpagliano e rimpiccioliscono: la massa
+         si scompone in gocce invece di svanire tutta insieme */
+      t -= diss * (0.35 + jz*1.15);
+      x += (jx - .5) * diss * A * .55;
+
+      g.X = x;
+      g.Y = 1 - t;                 /* nello shader la y cresce verso l'alto */
+      g.r = raggio * (1 - diss*.42);
+    }
+  }
+
   function scrivi(){
     for (var i=0;i<gocce.length;i++){
       var g = gocce[i];
@@ -411,8 +507,18 @@ function monta(opz){
     if (Math.abs(obiettivo - velo) < .002) velo = obiettivo;
 
     /* fermo e invisibile: non si disegna nemmeno */
-    if (velo < .002 && !acceso) return;
+    if (velo < .002 && modo !== 'massa') return;
     if (document.hidden || !vista) return;
+
+    if (modo === 'massa'){
+      disponiMassa(bordoT, diss);
+      CONFIG._gonfio = 0.18 + gonfio*0.82;
+      scrivi();
+      lInv.disegna(data, W, H, A, warp, velo);
+      if (lTin && CONFIG.mode === 'tinta') lTin.disegna(data, W, H, A, warp, velo);
+      warp += dt*CONFIG.warpSpeed;
+      return;
+    }
 
     raggi();
     if (acceso && !CALMO){
@@ -447,7 +553,19 @@ function monta(opz){
         acceso = false;
       }
     },
-    semina: semina
+    semina: semina,
+    /* bordo: dove sta il confine, frazione dall'alto del viewport.
+       diss:  0 massa compatta · 1 sciolta e sparita. */
+    massa: function(bordo, dissoluzione){
+      modo = 'massa';
+      CONFIG._massa = true;
+      bordoT = bordo;
+      diss = clamp01(dissoluzione);
+      acceso = true;
+      /* l'inchiostro si spegne solo sul finale dello scioglimento */
+      obiettivo = 1 - Math.max(0, (diss - .72) / .28);
+      velo = obiettivo;
+    }
   };
 }
 
