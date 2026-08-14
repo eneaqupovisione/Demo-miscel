@@ -68,6 +68,24 @@ servito da un server statico.
   attraversa il campo salendo, non perché scandisce un ciclo. La versione
   precedente era un `animate()` fra quattro ritagli in `iterations:Infinity`:
   respirava, e il ritorno al primo fotogramma chiave si sentiva.
+- Una bolla **nasce gonfiandosi sulla bocca**, non compare già fatta. `nasc`
+  va da 0 a 1 in un paio di secondi, `gonfiore()` ne fa il raggio (radice
+  cubica: il volume cresce a ritmo costante, quindi il raggio è svelto
+  all'inizio), e il centro sale perché il fondo resta sulla bocca. Mentre si
+  gonfia è **ferma e non viene spostata** da niente — spinge le altre, ma con
+  il raggio che ha adesso, non con quello finale. La scritta compare fra il
+  55% e il 94%: quando è tutta lì, la bolla si stacca. A `nasc = 1` scatta
+  `stacca()` — parte più svelta della sua velocità di crociera, si allunga nel
+  verso in cui va, e il collo (`attacco`) si ritira in tre decimi di secondo.
+  È lo `snap` della specifica applicato all'unico legame che una bolla appena
+  nata ha: quello con la bocca.
+- Fra due bolle c'è **tutta la fisica delle coppie della specifica** (§6):
+  repulsione sotto `CONTATTO`, coesione oltre, smorzamento sulla velocità
+  relativa, legame con isteresi `FORMA`/`ROTTURA` e rinculo `STRAPPO` quando
+  un collo si spezza — con lo stesso allungamento della nascita. La forza
+  attraversa lo zero con continuità: un gradino lì produce una vibrazione ad
+  alta frequenza, ed è l'errore che ha già rotto una versione delle gocce.
+  C'è un tetto alla velocità: dopo uno strappo nessuna deve poter schizzare.
 - La sagoma si riscrive a **ogni fotogramma** in `rendi()`. `vesti()` decide
   solo le misure e disegna la prima sagoma — serve perché il ciclo può non
   partire per un pezzo (scheda in secondo piano, finestra di larghezza zero)

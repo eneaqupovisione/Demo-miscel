@@ -372,16 +372,26 @@ var NUCLEO = 0.235,   /* il raggio che non scende mai */
     CRESCE = 0.050,   /* di quanto si gonfia salendo */
     ONDA   = 0.160,   /* l'increspatura del campo */
     LOBO   = 0.085,   /* l'allungamento verso la vicina */
+    COLLO  = 0.150,   /* la coda verso la bocca, finche' e' attaccata */
     TETTO  = 0.490;   /* il raggio che il riquadro puo' contenere */
+
+/* Quanto e' gonfia una bolla che sta nascendo. Il volume cresce a ritmo
+   costante, quindi il raggio va come la radice cubica: svelta all'inizio,
+   che e' come si gonfia una bolla vera su un ugello. Non parte da zero — un
+   punto di un pixel non si vede, si vede solo comparire. */
+function gonfiore(nasc){ return 0.05 + 0.95*Math.pow(nasc, 0.55); }
 
 function bordo(st, clock, tira, ang, punti){
   var w = st.s, h = st.s*1.06, pt = [], i;
+  /* la nascita: tutto il raggio e' moltiplicato per quanto e' gonfia, cosi'
+     la bolla cresce sul posto invece di comparire fatta */
+  var g = gonfiore(st.nasc);
   /* gonfia salendo, e non torna indietro: la crescita segue il tragitto,
      non un orologio */
-  var nucleo = NUCLEO + CRESCE*smorza(st.cresc);
+  var nucleo = (NUCLEO + CRESCE*smorza(st.cresc)) * g;
   /* anche l'ampiezza dell'increspatura e' rumore, non un seno: cosi' ci sono
      momenti mossi e momenti calmi, e non si sente il tempo */
-  var onda = ONDA * (0.58 + 0.42*fbm(st.seme*7.3 + clock*0.07, st.seme*3.1 - clock*0.05));
+  var onda = ONDA * g * (0.58 + 0.42*fbm(st.seme*7.3 + clock*0.07, st.seme*3.1 - clock*0.05));
 
   for (i=0;i<punti;i++){
     var a = (i/punti)*TAU, cx = Math.cos(a), cy = Math.sin(a);
@@ -406,6 +416,18 @@ function bordo(st, clock, tira, ang, punti){
       var k = Math.cos(a - ang);
       if (k > 0) r += tira*k*k*k;
     }
+    /* il collo verso la bocca: una coda stretta (quinta potenza invece di
+       terza) che tiene la bolla attaccata mentre si gonfia e si ritira da
+       sola nei tre decimi di secondo dopo lo stacco. E' quello che si vede
+       come "si e' staccata" — senza, la bolla partirebbe e basta. */
+    if (st.attacco > 0){
+      var kc = Math.sin(a);                   /* la bocca sta sotto: y cresce in giu' */
+      if (kc > 0){ var kc2 = kc*kc; r += COLLO*st.attacco*kc2*kc2*kc*g; }
+    }
+    /* l'allungamento nel verso in cui va: uno strappo al distacco, e la
+       coda di quello che resta della velocita'. Si allunga in verticale e si
+       stringe appena in orizzontale, come fa una goccia che parte. */
+    if (st.allunga > 0.002) r *= 1 + st.allunga*(cy*cy - 0.3*cx*cx);
     /* Tetto morbido. I tre contributi al massimo insieme passerebbero il
        riquadro, e li' il ritaglio taglia dritto: un lato piatto su una bolla
        si vede subito. Cosi' invece il raggio si avvicina a TETTO senza mai
@@ -743,6 +765,22 @@ function Bolle(box, cop){
 
   var bolle = $$('a', box), corpi = $$('.corpo', box), n = bolle.length;
   var stato = [];
+  /* lo stato di ogni coppia: legata o no, e da quanto. Serve all'isteresi e
+     al rinculo di quando un collo si spezza. */
+  var legato = new Uint8Array(n*n), eta = new Float32Array(n*n);
+
+  /* Le costanti delle coppie vengono dalla specifica delle gocce (§6), che
+     le da' in frazioni di schermo: qui sono px e px/s², perche' le bolle
+     stanno in un riquadro e non nel viewport. */
+  var CONTATTO = 1.00,   /* sotto, i bordi si compenetrano e si respingono */
+      PORTATA  = 1.34,   /* oltre, non si sentono piu' */
+      FORMA    = 1.06,   /* il legame si forma qui... */
+      ROTTURA  = 1.30,   /* ...e si spezza qui. L'isteresi evita lo sfarfallio */
+      MIN_LEGAME = 0.45; /* un legame piu' breve di cosi' non fa rinculo */
+  var REPULSIONE = 900,  /* la spinta di nucleo, zero esatto al contatto */
+      COESIONE   = 130,  /* la tensione superficiale fra due bordi vicini */
+      SMORZO     = 14,   /* mangia la velocita' relativa, se no oscillano */
+      STRAPPO    = 16;   /* il rinculo di quando un collo si spezza */
 
   function misuraBox(){
     var r = cop.getBoundingClientRect();
@@ -766,14 +804,27 @@ function Bolle(box, cop){
        puo' mostrare colore dove il colore non e' dipinto. Il 1.25 rimette
        la bolla alla misura di prima nonostante il riquadro cresciuto. */
     var s = lato * (0.86 + (i%3)*0.10) * 1.25;
+    var f = 0.86 + (i%3)*0.10;
     return {
       /* `r` e' il raggio che si vede, non il riquadro: e' quello che decide
          quando due bolle si toccano, e vale NUCLEO piu' mezza ONDA */
       s: s, r: s*0.32,
+      /* la massa va col cubo del raggio, come nella specifica: la piccola
+         schizza via, la grande quasi non se ne accorge */
+      m: Math.max(0.35, Math.pow(f/1.06, 3)),
       /* il posto della bolla nel campo di rumore: due bolle non si increspano
          mai allo stesso modo nello stesso istante */
       seme: i*3.77 + Math.random()*7,
       cresc: 0,
+      /* la nascita: 0 = appena spuntata sulla bocca, 1 = staccata.
+         Alla prima passata solo la prima si gonfia davanti agli occhi, le
+         altre sono gia' per strada — se no si aspetta il primo giro per
+         vedere la cosa piu' bella che fanno. */
+      nasc:    subito ? (i === 0 ? 0 : 1) : 0,
+      attacco: subito ? (i === 0 ? 1 : 0) : 1,
+      allunga: 0,
+      /* fra un secondo e mezzo e due e mezzo per gonfiarsi */
+      vNasc: 1/(1.5 + Math.random()),
       /* nascono sparse in orizzontale, se no salgono in colonna */
       x: b.x + (Math.random()*2-1) * dim.w * .17,
       /* alla prima passata sono gia' sparse lungo il tragitto, cosi' si
@@ -838,9 +889,12 @@ function Bolle(box, cop){
       f.y = Math.min(vecchio.y, b.y);      /* non le si rimanda giu' di colpo */
       f.x = Math.min(Math.max(vecchio.x, f.r), d.w - f.r);
       f.attesa = vecchio.attesa;
-      /* il posto nel campo e il gonfiore restano quelli: ridimensionare la
-         finestra non e' una ragione per rifare la sagoma da capo */
+      /* il posto nel campo, il gonfiore e la nascita restano quelli:
+         ridimensionare la finestra non e' una ragione per rifare la sagoma
+         da capo, ne' per rinascere */
       f.seme = vecchio.seme; f.cresc = vecchio.cresc;
+      f.nasc = vecchio.nasc; f.attacco = vecchio.attacco;
+      f.allunga = vecchio.allunga; f.vNasc = vecchio.vNasc;
       stato[i] = f;
     }
     vesti();
@@ -857,6 +911,17 @@ function Bolle(box, cop){
   /* non ci sono al primo istante: la copertina si presenta da sola per un
      secondo, e solo dopo salgono le bolle */
   var nato = performance.now() + 1000;
+
+  /* Lo stacco. Il collo si spezza e la tensione superficiale ritira i due
+     monconi: la bolla parte piu' svelta della sua velocita' di crociera e si
+     allunga nel verso in cui va, poi la viscosita' la rimette al passo. E'
+     lo `snap` della specifica applicato all'unico legame che una bolla appena
+     nata ha — quello con la bocca. */
+  function stacca(st){
+    st.vy = -st.vel*1.8;
+    st.vx = (Math.random()*2-1)*24;
+    st.allunga = 0.34;
+  }
   function rendi(dt){
     var d = misuraBox();
     if (!d.h || !d.w) return;
@@ -864,7 +929,7 @@ function Bolle(box, cop){
     var i, j;
     clock += dt;
 
-    /* 1 · spinta di base: sale, e ondeggia piano */
+    /* 1 · nascita, gonfiaggio, spinta di base */
     var relax = 1 - Math.exp(-dt/0.55);
     for (i=0;i<n;i++){
       var st = stato[i];
@@ -877,36 +942,96 @@ function Bolle(box, cop){
            spariva una volta e non tornava piu'. */
         if (st.attesa <= 0){
           st.attesa = 0;
-          st.y = b.y;
+          st.nasc = 0; st.attacco = .5; st.allunga = 0;
+          /* gia' nella posizione che avra' da appena spuntata: mettendola
+             sulla bocca e lasciando che sia il giro dopo ad ancorarla si
+             perdevano sei pixel in un fotogramma solo */
+          st.y = b.y - st.r*gonfiore(0);
           st.x = b.x + (Math.random()*2-1)*d.w*.17;
           st.vx = 0; st.vy = 0;
+          st.vNasc = 1/(1.5 + Math.random());
           st.fase = Math.random()*Math.PI*2;
         }
         continue;
       }
+
+      /* Il gonfiaggio. La bolla e' attaccata alla bocca: il fondo resta li'
+         e il centro sale mentre il raggio cresce, quindi si gonfia sul posto
+         invece di comparire gia' fatta. Non si muove e non sente le altre —
+         e' l'unico momento in cui una bolla e' ferma. */
+      if (st.nasc < 1){
+        /* con `prefers-reduced-motion` la bolla c'e' gia' fatta: e' un
+           movimento anche questo */
+        st.nasc = CALMO ? 1 : Math.min(1, st.nasc + st.vNasc*dt);
+        st.y = b.y - st.r*gonfiore(st.nasc);
+        st.vx = 0; st.vy = 0;
+        /* il collo si allunga mentre la bolla cresce — e' il peso che tira —
+           e comincia a ritirarsi solo dopo lo strappo */
+        st.attacco = 0.5 + 0.5*st.nasc;
+        if (st.nasc >= 1){ if (CALMO) st.attacco = 0; else stacca(st); }
+        continue;
+      }
+
+      /* dopo lo stacco il collo si ritira e l'allungamento si riassorbe:
+         due code esponenziali, che finiscono senza un bordo */
+      if (st.attacco > 0) st.attacco = Math.max(0, st.attacco - dt/0.30);
+      if (st.allunga > 0) st.allunga *= Math.exp(-dt/0.42);
+
       st.vy += (-st.vel - st.vy) * relax;
       st.vx += (Math.sin(clock*st.freq*6.2832 + st.fase)*st.amp - st.vx) * relax;
     }
 
-    /* 2 · repulsione: si toccano, non si sormontano.
-       Lo 0.92 lascia che i bordi si compenetrino un poco: e' li' che i due
-       lobi si incontrano e le bolle sembrano una cosa sola invece di due
-       palle appoggiate. */
+    /* 2 · le coppie, con la fisica delle gocce (specifica §6)
+       Sotto CONTATTO si respingono, oltre si attraggono, e la forza
+       attraversa lo zero con CONTINUITA': un gradino qui produce una
+       vibrazione ad alta frequenza, ed e' l'errore che ha gia' rotto una
+       versione delle gocce.
+       Chi si sta gonfiando non viene spostato — e' attaccata alla bocca —
+       ma spinge e attira lo stesso. */
     for (i=0;i<n;i++){
       var a = stato[i]; if (a.attesa > 0) continue;
       for (j=i+1;j<n;j++){
         var c = stato[j]; if (c.attesa > 0) continue;
+        var k = i*n + j;
         var dx = c.x-a.x, dy = c.y-a.y;
-        var somma = (a.r + c.r) * 0.92;
+        /* i raggi sono quelli che si vedono adesso, non quelli finali: una
+           bolla che si sta gonfiando spinge via le altre man mano che cresce,
+           non da subito.
+           Lo 0.92 lascia che i bordi si compenetrino un poco: e' li' che i
+           due lobi si incontrano e le bolle sembrano una cosa sola invece di
+           due palle appoggiate. */
+        var somma = (a.r*gonfiore(a.nasc) + c.r*gonfiore(c.nasc)) * 0.92;
         var dist = Math.sqrt(dx*dx + dy*dy);
-        if (dist >= somma || dist < 1e-4) continue;
-        var nx = dx/dist, ny = dy/dist;
-        var t = 1 - dist/somma;
-        var f = 900 * t * t;                    /* zero al contatto: continua */
+        if (dist > somma*PORTATA || dist < 1e-4){ legato[k] = 0; eta[k] = 0; continue; }
+        var nx = dx/dist, ny = dy/dist, sn = dist/somma;
+
+        var f;
+        if (sn < CONTATTO){ var t = 1 - sn/CONTATTO; f = REPULSIONE*t*t; }
+        else { var u = (sn-CONTATTO)/(PORTATA-CONTATTO); f = -COESIONE*Math.sin(Math.PI*u); }
         var vrel = (c.vx-a.vx)*nx + (c.vy-a.vy)*ny;
-        var sm = -14 * vrel * t;
-        a.vx -= nx*(f+sm)*dt; a.vy -= ny*(f+sm)*dt;
-        c.vx += nx*(f+sm)*dt; c.vy += ny*(f+sm)*dt;
+        var acc = (f - SMORZO*vrel*(1 - sn/PORTATA)) * dt;
+        if (a.nasc >= 1){ a.vx -= nx*acc/a.m; a.vy -= ny*acc/a.m; }
+        if (c.nasc >= 1){ c.vx += nx*acc/c.m; c.vy += ny*acc/c.m; }
+
+        /* Il legame, con isteresi: si forma sotto FORMA e si spezza sopra
+           ROTTURA, se no sul confine sfarfalla. Quando si spezza, e se e'
+           durato abbastanza da essere un legame e non uno sfioramento, le due
+           si danno il rinculo e si allungano un istante: e' lo stesso collo
+           che si ritira alla nascita, fra due bolle invece che sulla bocca. */
+        var era = legato[k];
+        var ora = era ? (sn < ROTTURA) : (sn < FORMA);
+        if (era && ora) eta[k] += dt;
+        if (era && !ora){
+          if (eta[k] > MIN_LEGAME){
+            if (a.nasc >= 1){ a.vx -= nx*STRAPPO/a.m; a.vy -= ny*STRAPPO/a.m;
+                              if (a.allunga < .16) a.allunga = .16; }
+            if (c.nasc >= 1){ c.vx += nx*STRAPPO/c.m; c.vy += ny*STRAPPO/c.m;
+                              if (c.allunga < .16) c.allunga = .16; }
+          }
+          eta[k] = 0;
+        }
+        if (!era && ora) eta[k] = 0;
+        legato[k] = ora ? 1 : 0;
       }
     }
 
@@ -924,7 +1049,7 @@ function Bolle(box, cop){
         var c2 = stato[j]; if (c2.attesa > 0) continue;
         var ddx = c2.x-a2.x, ddy = c2.y-a2.y;
         var dd = Math.sqrt(ddx*ddx + ddy*ddy);
-        var portata = (a2.r + c2.r) * 2.1;
+        var portata = (a2.r*gonfiore(a2.nasc) + c2.r*gonfiore(c2.nasc)) * 2.1;
         if (dd >= portata || dd < 1e-4) continue;
         var e = LOBO * (1 - Math.exp(-2.4*(1 - dd/portata)));
         var an = Math.atan2(ddy, ddx);
@@ -941,7 +1066,15 @@ function Bolle(box, cop){
         el.style.pointerEvents = 'none';
         continue;
       }
-      if (!CALMO){ st2.x += st2.vx*dt; st2.y += st2.vy*dt; }
+      /* chi si gonfia sta ferma: la sua posizione l'ha gia' decisa il
+         gonfiaggio, e integrarla la staccherebbe dalla bocca */
+      if (!CALMO && st2.nasc >= 1){
+        /* tetto alla velocita': dopo uno strappo o una rottura di legame
+           nessuna deve poter schizzare via */
+        var sp = Math.sqrt(st2.vx*st2.vx + st2.vy*st2.vy), vMax = st2.vel*4 + 90;
+        if (sp > vMax){ st2.vx *= vMax/sp; st2.vy *= vMax/sp; }
+        st2.x += st2.vx*dt; st2.y += st2.vy*dt;
+      }
       var m = st2.r*0.8;
       if (st2.x < m)         { st2.x = m;         st2.vx =  Math.abs(st2.vx)*0.4; }
       if (st2.x > d.w - m)   { st2.x = d.w - m;   st2.vx = -Math.abs(st2.vx)*0.4; }
@@ -955,13 +1088,17 @@ function Bolle(box, cop){
          quando rinasce, che succede a schermo vuoto. */
       st2.cresc = clamp((b.y - st2.y) / Math.max(b.y + st2.s*0.6, 1), 0, 1);
 
-      /* svanisce ai due capi, cosi' non compare e non sparisce di colpo */
-      var op = Math.min(1, (b.y - st2.y)/26 + .4)
-             * Math.min(1, (st2.y + st2.s*0.6)/(st2.s*0.9));
+      /* svanisce in cima, cosi' non sparisce di colpo. In basso non serve
+         piu': adesso la bolla non compare, si gonfia. */
+      var op = Math.min(1, (st2.y + st2.s*0.6)/(st2.s*0.9));
       var avvio = clamp((performance.now() - nato)/700, 0, 1);
-      op *= avvio;
+      /* il primo istante della nascita: la bolla e' larga tre pixel, e un
+         puntino che compare dal niente si legge come un difetto. Emerge. */
+      op *= avvio * mappa(st2.nasc, 0, .10);
       el.style.opacity = clamp(op, 0, 1).toFixed(3);
-      el.style.pointerEvents = op > .55 ? 'auto' : 'none';
+      /* non si preme una bolla che si sta ancora gonfiando: e' piccola, si
+         muove sotto il dito e la scritta non si legge */
+      el.style.pointerEvents = (op > .55 && st2.nasc > .9) ? 'auto' : 'none';
       el.style.transform = 'translate3d('+st2.x.toFixed(1)+'px,'+st2.y.toFixed(1)+'px,0)'
         + ' scale('+(0.86 + .14*avvio).toFixed(3)+')';
 
@@ -975,6 +1112,12 @@ function Bolle(box, cop){
         corpo.style.clipPath = bordo(st2, clock, tira[i], ang[i], PUNTI);
         corpo.ferma = true;
       }
+      /* la scritta compare mentre la bolla si gonfia, ed e' li' tutta un
+         attimo prima che si stacchi: e' il segnale che la bolla e' pronta.
+         Il ritaglio da solo non basterebbe — mezze lettere tagliate si
+         leggono come un errore. */
+      var nm2 = corpo && corpo.firstElementChild;
+      if (nm2) nm2.style.opacity = mappa(st2.nasc, .55, .94).toFixed(3);
     }
   }
 
