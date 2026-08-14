@@ -250,9 +250,18 @@ body.giu #testata{transform:translate3d(0,-115%,0)}
   opacity:0;transform:translate3d(0,-6px,0);pointer-events:none;
   transition:opacity .45s var(--e),transform .45s var(--e)}
 body.oltre #testata .marchio{opacity:1;transform:none;pointer-events:auto}
-#testata .mono{color:rgba(242,239,232,.72)}
-#apri{font-family:var(--mono);font-size:.66rem;letter-spacing:.22em;
-  text-transform:uppercase;color:var(--osso)}
+/* Il pulsante del menu sta fuori dalla testata: la sua fusione in
+   `difference` gli farebbe diventare il blu un arancio sulla carta chiara.
+   Qui il blu resta blu, ed e' l'unica voce colorata dello schermo — che e'
+   il ruolo che il blu ha in tutto il sito: dove si tocca. */
+#apri{
+  position:fixed;top:0;right:0;z-index:112;
+  padding:1rem var(--gut);
+  font-family:var(--mono);font-size:.66rem;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--blu);
+  transition:transform .45s var(--e);
+}
+body.giu #apri{transform:translate3d(0,-115%,0)}
 
 #menu{
   position:fixed;inset:0;z-index:150;background:var(--nero);color:var(--osso);
@@ -309,7 +318,8 @@ body.oltre #testata .marchio{opacity:1;transform:none;pointer-events:auto}
   transition:opacity .7s var(--e),transform .9s var(--e);transition-delay:var(--d)}
 #cop .claim{font-family:var(--disp);font-weight:600;font-size:clamp(1rem,4.6vw,1.6rem);
   letter-spacing:-.01em;text-transform:uppercase;line-height:1}
-#cop .riga{display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;
+/* resta il solo "Scorri", e sta a destra: la riga di servizio non c'e' piu' */
+#cop .riga{display:flex;justify-content:flex-end;align-items:flex-end;gap:1rem;
   border-top:1px solid var(--linea);padding-top:.7rem;margin-top:.9rem}
 #cop .giu{display:inline-flex;flex-direction:column;align-items:center;gap:.4rem}
 #cop .giu .ago{width:1px;height:34px;background:var(--acc);position:relative;overflow:hidden}

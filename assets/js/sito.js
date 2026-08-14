@@ -208,15 +208,9 @@ if (PUNTATORE && !CALMO) (function(){
   });
 })();
 
-(function(){
-  var ora = $('#ora');
-  function agg(){
-    var d = new Date();
-    ora.textContent = ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2);
-  }
-  agg(); setInterval(agg, 20000);
-  $('#anno').textContent = new Date().getFullYear();
-})();
+/* l'orologio in testata non c'e' piu': diceva l'ora, che il telefono dice
+   gia' due centimetri piu' su */
+$('#anno').textContent = new Date().getFullYear();
 
 /* --------------------------------------------------------------------------
    menu

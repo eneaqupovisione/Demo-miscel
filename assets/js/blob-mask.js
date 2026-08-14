@@ -118,6 +118,14 @@ function frag(count, deriv){ return (deriv
 'uniform vec3  uInk;',
 'uniform float uEdge;',
 'uniform float uMergeK;',
+/* Fin dove arriva questo livello, in quota di schermo (0 = fondo, 1 = cima).
+   Serve a UNA cosa sola, ed e' quella che rende blu la massa sul girato:
+   l'inversione si ferma al confine fra le due sezioni, e sopra resta la sola
+   tinta in `screen`. Su un fondo scuro `screen` con il blu da' il blu, e il
+   bianco che ci trova sopra — il nome — resta bianco. E' esattamente il
+   verso della specifica ribaltato, perche' qui il fondo e' scuro e non
+   chiaro. Negativo = il livello vale dappertutto. */
+'uniform float uSotto;',
 'float hash21(vec2 p){',
 '  p = fract(p * vec2(123.34, 456.21));',
 '  p += dot(p, p + 45.32);',
@@ -165,6 +173,12 @@ function frag(count, deriv){ return (deriv
 '  #else',
 '    float mask = smoothstep(soglia * 0.97, soglia * 1.03, field);',
 '  #endif',
+/* Il taglio e' quasi netto, e deve esserlo. Una sfumatura larga cade sul
+   girato scuro e li' l'inversione a meta' strada da' un grigio, che sotto la
+   tinta diventa una fascia azzurra per tutta la larghezza dello schermo. Il
+   confine e' anche il punto in cui il contenuto sotto cambia di netto — dal
+   video alla carta — quindi un taglio secco non si vede. */
+'  if (uSotto >= 0.0) mask *= smoothstep(uSotto + 0.004, uSotto - 0.004, p.y);',
 '  gl_FragColor = vec4(uInk * mask, 1.0);',   /* fuori = nero = neutro */
 '}'].join('\n');
 }
@@ -175,7 +189,7 @@ function rgb(h){
 }
 
 /* --- un livello = un canvas + un contesto ------------------------------- */
-function livello(canvas, inkHex, bordo, soglia){
+function livello(canvas, inkHex, bordo, soglia, sotto){
   var gl = null;
   try {
     gl = canvas.getContext('webgl', { antialias:false, alpha:false })
@@ -217,7 +231,7 @@ function livello(canvas, inkHex, bordo, soglia){
       gl.enableVertexAttribArray(loc);
       gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
       U = {};
-      ['uBlobs','uRes','uAspect','uTime','uMerge','uWarp','uWarpScale','uInk','uEdge','uMergeK']
+      ['uBlobs','uRes','uAspect','uTime','uMerge','uWarp','uWarpScale','uInk','uEdge','uMergeK','uSotto']
         .forEach(function(k){ U[k] = gl.getUniformLocation(prog, k); });
     },
     tinta: function(hex){ ink = rgb(hex); },
@@ -237,6 +251,7 @@ function livello(canvas, inkHex, bordo, soglia){
       gl.uniform1f(U.uWarpScale, massa ? CONFIG.massaWarpScale : CONFIG.warpScale);
       gl.uniform1f(U.uEdge, bordo());
       gl.uniform1f(U.uMergeK, soglia());
+      gl.uniform1f(U.uSotto, sotto ? sotto() : -1);
       gl.uniform3f(U.uInk, ink[0]*velo, ink[1]*velo, ink[2]*velo);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     }
@@ -246,8 +261,12 @@ function livello(canvas, inkHex, bordo, soglia){
 /* --- il motore ----------------------------------------------------------- */
 function monta(opz){
   var cInv = opz.invert, cTin = opz.tint, palco = opz.palco;
+  /* L'inversione si ferma al confine; la tinta vale dappertutto. E' questa
+     riga a decidere di che colore si vede la massa sul girato: senza il
+     freno, sul fondo scuro l'inversione la fa bianca. */
   var lInv = livello(cInv, '#ffffff',
-        function(){ return CONFIG.edgeInvert; }, function(){ return CONFIG.mergeInvert; });
+        function(){ return CONFIG.edgeInvert; }, function(){ return CONFIG.mergeInvert; },
+        function(){ return CONFIG._sotto === undefined ? -1 : CONFIG._sotto; });
   var lTin = cTin ? livello(cTin, CONFIG.tint,
         function(){ return CONFIG.edgeTint; }, function(){ return CONFIG.mergeTint; }) : null;
   if (!lInv) return null;          /* niente WebGL: i canvas restano vuoti */
@@ -260,7 +279,7 @@ function monta(opz){
   var caso = function(a,b){ return a + Math.random()*(b-a); };
   var clamp01 = function(v){ return v < 0 ? 0 : (v > 1 ? 1 : v); };
   var A = 1, gocce = [], data = null, legato = null, eta = null;
-  var W = 0, H = 0, clock = 0, warp = 0;
+  var W = 0, H = 0, clock = 0, warp = 0, vita = 0;
   var velo = 0, obiettivo = 0, acceso = false, vista = true, seminate = false;
   var modo = 'gocce', bordoT = 1.2, diss = 0, gonfio = 0;
 
@@ -399,16 +418,27 @@ function monta(opz){
      essere identica a ogni frame, se no vibra invece di stare ferma. */
   function disponiMassa(bordoT, diss){
     var n = gocce.length;
-    /* Il gonfiore. A pagina ferma il confine sta sul bordo basso dello
-       schermo: se la cresta fosse gia' alta, si mangerebbe il nome in
-       copertina. Quindi la massa e' piatta finche' il confine e' in fondo e
-       si alza mentre sale — entra, non c'e' gia'. */
-    gonfio = clamp01((1.02 - bordoT) / 0.34);
-    /* A riposo tutta la massa e' spinta sotto il bordo dello schermo, non
-       solo la cresta: le gocce del corpo, fondendosi, gonfiano l'isosuperficie
-       molto piu' del loro raggio, ed erano loro a sporgere. Sale mentre il
-       confine sale. */
-    var giu = (1 - gonfio) * 0.34;
+    /* Il gonfiore. Da lui dipende TUTTO quello che rende la massa una massa e
+       non una cupola: l'altezza della cresta, i bitorzoli, e l'ampiezza del
+       domain warp nello shader. Quando partiva da zero, a pagina ferma non ne
+       restava niente — un mezzo cerchio liscio. Adesso parte da meta': la
+       massa e' gia' viva prima che la si guardi, e cresce mentre il confine
+       sale. */
+    gonfio = 0.5 + 0.5*clamp01((1.02 - bordoT) / 0.34);
+    /* Quanto sta sotto il bordo basso dello schermo a pagina ferma. Era 0.34,
+       cioe' tutta nascosta: la cupola si mangiava il nome in copertina, e
+       allora era un difetto. Adesso e' voluto — la massa deve sfociare un po'
+       sopra il nome — quindi si alza, ma non tanto da coprirlo: il nome ci
+       sta DENTRO, e siccome sopra il confine c'e' la sola tinta, resta
+       bianco sul blu. */
+    /* Il termine con A e' un correttivo di forma, non un gusto. Lo spazio e'
+       isotropo — X da 0 ad A, Y da 0 a 1 — quindi su uno schermo largo le
+       gocce della griglia vengono piu' grandi IN ALTEZZE DI SCHERMO, e la
+       stessa massa monta molto piu' su: in verticale il bordo arrivava sopra
+       il nome, in orizzontale a meta' schermo. Si spinge giu' di quanto e'
+       larga. Vale solo a riposo: appena il confine sale, gonfio va a 1 e la
+       massa deve poter allagare "Ascolta" come prima. */
+    var giu = (1 - gonfio) * (0.19 + Math.max(0, A - 0.62)*0.60);
     var nCre = Math.max(4, Math.round(n * CONFIG.crestaQuota));
     var nCor = n - nCre;
 
@@ -424,26 +454,39 @@ function monta(opz){
     var cellaX = A / col, cellaY = CONFIG.massaGiu / rig;
     var rCor = cella * CONFIG.massaR;
 
+    /* LA VITA DELLA MASSA
+       La massa sta ferma, ma non e' morta: ogni goccia fa un giro
+       lentissimo, e le tre frequenze non sono multiple una dell'altra —
+       quindi il profilo non torna mai uguale e non si sente un ritmo. Un
+       giro completo del piu' veloce dei tre e' un minuto abbondante.
+       Non e' rumore vero e non usa Math.random: la massa deve essere la
+       stessa a ogni fotogramma per lo stesso istante, se no vibra invece di
+       muoversi. */
+    var v = vita * 0.16;
+
     for (var i=0;i<n;i++){
       var g = gocce[i];
       var jx = Math.sin(i*12.9898 + 1.7) * .5 + .5;
       var jy = Math.sin(i*78.2330 + 4.1) * .5 + .5;
       var jz = Math.sin(i*45.1640 + 9.3) * .5 + .5;
+      var respiro = 1 + 0.11*Math.sin(v*0.83 + i*3.11);
       var x, t, raggio;
 
       if (i < nCre){
-        x = (i + .5) * passo + (jx-.5) * passo * .35;
+        x = (i + .5) * passo + (jx-.5) * passo * .35
+          + Math.sin(v*0.63 + i*2.39) * passo * 0.30;
         t = bordoT + giu - CONFIG.crestaSu*gonfio
-          + (jy-.5) * CONFIG.crestaOnda * 2 * gonfio;
-        raggio = rCre * (0.78 + jz*0.5);
+          + (jy-.5) * CONFIG.crestaOnda * 2 * gonfio
+          + Math.sin(v*0.41 + i*1.77) * CONFIG.crestaOnda * 0.6;
+        raggio = rCre * (0.78 + jz*0.5) * respiro;
       } else {
         var k = i - nCre, c = k % col, r = (k / col) | 0;
-        x = (c + .5) * cellaX + (jx-.5) * cella * .3;
+        x = (c + .5) * cellaX + (jx-.5) * cella * .3
+          + Math.sin(v*0.52 + i*1.31) * cella * 0.16;
         /* il corpo parte sotto al confine di un raggio abbondante: se no e'
-           lui, non la cresta, a sporgere sopra — e a pagina ferma la cupola
-           si mangiava il nome in copertina */
+           lui, non la cresta, a sporgere sopra, e viene una cupola liscia */
         t = bordoT + giu + rCor*1.25 + (r + .5) * cellaY * .88 + (jy-.5) * cella * .3;
-        raggio = rCor * (0.86 + jz*0.28);
+        raggio = rCor * (0.86 + jz*0.28) * respiro;
       }
 
       /* sciogliendosi salgono, si sparpagliano e rimpiccioliscono: la massa
@@ -511,6 +554,9 @@ function monta(opz){
     if (document.hidden || !vista) return;
 
     if (modo === 'massa'){
+      /* l'orologio lento della massa: e' l'unica cosa che si muove quando la
+         pagina sta ferma */
+      vita += dt;
       disponiMassa(bordoT, diss);
       CONFIG._gonfio = 0.18 + gonfio*0.82;
       scrivi();
@@ -560,6 +606,11 @@ function monta(opz){
       modo = 'massa';
       CONFIG._massa = true;
       bordoT = bordo;
+      /* l'inversione arriva fino al confine e non oltre: sopra c'e' il
+         girato scuro, e li' la sola tinta in `screen` da' il blu invece del
+         bianco. In quota di schermo dal fondo, che e' come la vede lo
+         shader. */
+      CONFIG._sotto = clamp01(1 - bordo);
       diss = clamp01(dissoluzione);
       acceso = true;
       /* l'inchiostro si spegne solo sul finale dello scioglimento */

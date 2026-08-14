@@ -56,6 +56,11 @@ servito da un server statico.
 - Tutto ciò che non deve essere toccato dalle gocce va tenuto **fuori** da
   `main.stage`. Oggi ci sono già: testata, menu, loader, lastra, grana,
   righe, barra di avanzamento, cursore.
+- Il pulsante **Menu sta fuori dalla testata**, che è un elemento a sé. La
+  testata si fonde in `difference` per restare leggibile sul girato scuro e
+  sulla carta chiara, e dentro a quella fusione il blu diventa arancio sulla
+  carta. Un `mix-blend-mode` sul figlio non lo salva: la testata è già un
+  contesto di impilamento, i figli ci finiscono dentro comunque.
 - La sagoma dei **pulsanti-bolla** (`bordo()` in `sito.js`) è la stessa
   matematica delle gocce ridotta a **una metaball sola**: il punto del
   contorno viene spostato dal rumore prima di essere misurato, e con una
@@ -120,10 +125,31 @@ servito da un server statico.
   irregolare **non viene dalla geometria**, viene dal domain warp dello
   shader (`massaWarp`): gocce grandi abbastanza da riempire il corpo sono
   anche troppo grandi per fare un bordo mosso, e davano una cupola liscia.
-- A pagina ferma il confine sta sul bordo basso dello schermo: tutta la massa
-  è spinta sotto (`giu = (1-gonfio)*0.34`) e **sale mentre il confine sale**.
-  Senza, la cupola si mangia il nome in copertina — le gocce fondendosi
-  gonfiano l'isosuperficie molto più del loro raggio.
+- **La massa a pagina ferma sfocia sopra il nome, ed è voluto.** Prima era il
+  contrario — era spinta tutta sotto lo schermo perché la cupola si mangiava
+  il nome — e la nota di allora diceva di lasciarla lì. Adesso il nome ci sta
+  *dentro*, bianco su blu, e per farlo funzionare servono tre cose insieme:
+  `giu` che la tiene sotto solo in parte, `gonfio` che **non parte più da
+  zero** (da lui dipendono cresta, bitorzoli e ampiezza del domain warp: a
+  zero restava un mezzo cerchio liscio), e il taglio dell'inversione qui
+  sotto.
+- **Perché la massa si vede blu e non bianca.** L'effetto rimappa due toni: su
+  carta chiara la goccia diventa blu, ma sul girato scuro l'inversione la fa
+  *bianca*. Quindi l'inversione si ferma al confine fra le due sezioni
+  (`uSotto` nello shader, `CONFIG._sotto` da `massa()`): sopra resta la sola
+  tinta in `screen`, che su fondo scuro dà blu e lascia bianco il bianco che
+  ci trova — il nome. È il verso della specifica ribaltato, perché qui il
+  fondo è scuro e non chiaro. Il taglio è quasi netto apposta: una sfumatura
+  larga cade sul girato e produce una fascia azzurra per tutto lo schermo.
+- La massa **è viva anche da ferma**: ogni goccia fa un giro lentissimo
+  (`vita`, tre seni di frequenze non multiple, un giro dura un minuto
+  abbondante). Deterministico e senza `Math.random`: per lo stesso istante la
+  massa dev'essere identica, se no vibra invece di muoversi.
+- Nel posizionamento della massa c'è un **correttivo sull'aspect** (`A`) ed è
+  di forma, non di gusto: lo spazio è isotropo, quindi su uno schermo largo le
+  gocce vengono più grandi *in altezze di schermo* e la stessa massa monta il
+  doppio. Vale solo a riposo — appena il confine sale deve poter allagare
+  "Ascolta" come prima.
 - L'allungamento dei pulsanti verso le vicine va nel **raggio del bordo**, non
   in una scala sul corpo: una scala che tira da una parte stringe dall'altra,
   e per tenere dritta la scritta serviva la scala inversa su di lei — due
