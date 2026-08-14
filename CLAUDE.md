@@ -56,9 +56,27 @@ servito da un server statico.
 - Tutto ciò che non deve essere toccato dalle gocce va tenuto **fuori** da
   `main.stage`. Oggi ci sono già: testata, menu, loader, lastra, grana,
   righe, barra di avanzamento, cursore.
-- I **pulsanti-bolla** (`Bolle()` in `sito.js`) e le maschere condividono la
-  stessa funzione `forma()`: se cambi la forma, cambiano tutti e due. È
-  voluto.
+- La sagoma dei **pulsanti-bolla** (`bordo()` in `sito.js`) è la stessa
+  matematica delle gocce ridotta a **una metaball sola**: il punto del
+  contorno viene spostato dal rumore prima di essere misurato, e con una
+  metaball sola quello spostamento è una variazione del raggio lungo il giro.
+  `hash21`/`vnoise`/`fbm` sono quelli della specifica, tradotti in JS.
+  Due cose non vanno rovesciate, perché sono la richiesta a cui risponde:
+  **il raggio non scende mai sotto `NUCLEO`** — una bolla si gonfia, si
+  allunga, si mescola, non si stringe da sola — e **il rumore si campiona
+  nello spazio della pagina**, quindi il profilo cambia perché la bolla
+  attraversa il campo salendo, non perché scandisce un ciclo. La versione
+  precedente era un `animate()` fra quattro ritagli in `iterations:Infinity`:
+  respirava, e il ritorno al primo fotogramma chiave si sentiva.
+- La sagoma si riscrive a **ogni fotogramma** in `rendi()`. `vesti()` decide
+  solo le misure e disegna la prima sagoma — serve perché il ciclo può non
+  partire per un pezzo (scheda in secondo piano, finestra di larghezza zero)
+  e nel frattempo un quadrato blu resterebbe un quadrato blu.
+- Il riquadro del pulsante è **più largo della bolla**: il ritaglio non può
+  mostrare colore fuori dal riquadro, e al raggio serve posto per gonfiarsi.
+  La somma `NUCLEO + CRESCE + ONDA + LOBO` sta sotto `TETTO`, e sopra 0.44 c'è
+  un tetto morbido esponenziale — se il raggio arriva al riquadro il ritaglio
+  taglia dritto, e un lato piatto su una bolla si vede subito.
 - I **pulsanti-bolla** vivono dentro `#cop` e salgono dal punto definito da
   `--bocca-x` / `--bocca-y`. Il primo posizionamento avviene **subito**, non
   al primo frame: senza, restano nell'angolo in alto a sinistra finché rAF
@@ -88,9 +106,13 @@ servito da un server statico.
   è spinta sotto (`giu = (1-gonfio)*0.34`) e **sale mentre il confine sale**.
   Senza, la cupola si mangia il nome in copertina — le gocce fondendosi
   gonfiano l'isosuperficie molto più del loro raggio.
-- L'allungamento dei pulsanti verso le vicine va sul **corpo**, non sul link,
-  con la scala inversa sulla scritta: se scala anche il testo, "SPOTIFY" si
-  schiaccia e il ritaglio se lo mangia.
+- L'allungamento dei pulsanti verso le vicine va nel **raggio del bordo**, non
+  in una scala sul corpo: una scala che tira da una parte stringe dall'altra,
+  e per tenere dritta la scritta serviva la scala inversa su di lei — due
+  rimedi a un problema che non deve esistere. Adesso è un lobo additivo verso
+  la vicina (cubo del coseno, così anche la derivata è zero dove finisce), e
+  la repulsione lascia che i bordi si compenetrino un poco: è lì che le due
+  bolle sembrano una cosa sola invece di due palle appoggiate.
 - L'accensione delle gocce sparse è un **interruttore a scatto**: passata metà
   copertina si accende e non si spegne più. Non è un inseguimento della
   visibilità — tornando su, le gocce invadono anche la copertina, ed è
@@ -103,11 +125,9 @@ servito da un server statico.
   in un ramo piu' in basso: al giro in cui l'attesa finisce in quel ramo non
   si entra piu', la bolla resta fuori schermo e si rimette in attesa da capo.
   Spariva una volta e non tornava piu'.
-- La forma delle maschere è generata dal copione (`forma()` in `sito.js`) e
-  animata con la Web Animations API, non con un `@keyframes`: servono tre
-  ritagli con lo **stesso numero di segmenti**, altrimenti il passaggio
-  dall'uno all'altro non interpola. Il `border-radius` nel CSS è solo la rete
-  per dove `clip-path: path()` non c'è.
+- Il `border-radius` nel CSS dei pulsanti-bolla è solo la rete per dove
+  `clip-path: path()` non c'è: lì la sagoma resta tonda e ferma, e va bene
+  così.
 
 ## Pubblicazione
 

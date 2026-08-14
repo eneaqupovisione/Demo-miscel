@@ -299,13 +299,54 @@ if (PUNTATORE && !CALMO) (function(){
 })();
 
 /* --------------------------------------------------------------------------
-   la forma irregolare
-   La usano i pulsanti-bolla della copertina: forme piene a bordo netto, mai
-   tonde.
-   --------------------------------------------------------------------------
-   Non una goccia tonda: un giro di punti a raggio irregolare, raccordati
-   con delle cubiche. Ne servono tre per bolla, con lo stesso numero di
-   segmenti, perche' l'animazione possa passare dall'una all'altra. */
+   la forma dei pulsanti-bolla: UNA metaball sola
+
+   La matematica e' quella delle gocce (`blob-mask-spec.md` §5), ridotta al
+   caso di una metaball sola: il punto del contorno viene spostato dal rumore
+   PRIMA di essere misurato, quindi l'irregolarita' non viene dalla geometria
+   ma dal campo. Con una metaball sola quello spostamento si riduce a una
+   variazione del raggio lungo il giro, e si puo' fare in JS senza WebGL.
+
+   Due regole tengono in piedi il movimento, ed erano le due cose sbagliate
+   nella versione a fotogrammi chiave che c'era prima:
+
+   · lo spostamento va sempre verso FUORI. Il raggio di base non scende mai
+     sotto `NUCLEO` e cresce mentre la bolla sale: una bolla si gonfia, si
+     allunga verso una vicina, si smuove — non si stringe mai da sola.
+   · il rumore si campiona nello spazio della PAGINA, non della bolla. Il
+     profilo cambia perche' la bolla attraversa il campo salendo, non perche'
+     scandisce un ciclo. Niente fotogrammi chiave, niente ritorno al punto di
+     partenza, nessun tempo: non respira, evolve. E siccome il campo e' uno
+     solo per tutte, due bolle vicine si increspano allo stesso modo — sono
+     nello stesso fluido.
+   -------------------------------------------------------------------------- */
+var TAU = Math.PI*2;
+
+/* value noise a tre ottave: hash21 / vnoise / fbm della specifica, tradotti
+   in JS senza cambiare un numero. */
+function frazione(v){ return v - Math.floor(v); }
+function hash21(x, y){
+  var px = frazione(x*123.34), py = frazione(y*456.21);
+  var d = px*(px+45.32) + py*(py+45.32);
+  px += d; py += d;
+  return frazione(px*py);
+}
+function vnoise(x, y){
+  var ix = Math.floor(x), iy = Math.floor(y);
+  var fx = x-ix, fy = y-iy;
+  var ux = fx*fx*(3-2*fx), uy = fy*fy*(3-2*fy);
+  return lerp(lerp(hash21(ix,iy),   hash21(ix+1,iy),   ux),
+              lerp(hash21(ix,iy+1), hash21(ix+1,iy+1), ux), uy);
+}
+/* riportato a [0,1]: le tre ottave da sole si fermano a 0.875 */
+function fbm(x, y){
+  var v = 0, a = .5;
+  for (var i=0;i<3;i++){ v += a*vnoise(x,y); x = x*2.03 + 11.7; y = y*2.03 + 11.7; a *= .5; }
+  return v*1.1428;
+}
+
+/* un giro di punti raccordati con delle cubiche (Catmull-Rom): la tangente
+   in ogni punto guarda i due vicini, quindi il giro si chiude senza spigoli */
 function orlo(pt){
   var n = pt.length;
   var d = 'M' + pt[0][0].toFixed(1) + ',' + pt[0][1].toFixed(1);
@@ -317,16 +358,61 @@ function orlo(pt){
   }
   return d + 'Z';
 }
-function forma(w, h, punti, irr, giro){
-  var pt = [];
-  for (var i=0;i<punti;i++){
-    var a = (i/punti)*Math.PI*2 + giro;
-    /* raggio diverso a ogni punto, e i due assi indipendenti: e' quello che
-       toglie la simmetria e la fa sembrare una cosa e non una figura */
-    var r = 1 - irr*Math.random();
-    var q = 1 - irr*.6*Math.random();
-    pt.push([ w/2 + Math.cos(a)*(w/2)*r*.98,
-              h/2 + Math.sin(a)*(h/2)*q*.98 ]);
+
+/* Quanti pixel vale un'unita' di rumore. Piu' e' piccolo, piu' il bordo e'
+   increspato — e piu' in fretta cambia mentre la bolla sale. */
+var GRANA  = 132;
+var DERIVA = 0.05;          /* di quanto il campo scorre da solo, al secondo */
+
+/* Le misure sono frazioni del LATO del riquadro: 0.5 e' il bordo esatto, e
+   oltre il bordo non c'e' colore da mostrare. Sommate tutte al massimo lo
+   passerebbero — capita di rado, e a tenerle dentro ci pensa il tetto
+   morbido qui sotto. */
+var NUCLEO = 0.235,   /* il raggio che non scende mai */
+    CRESCE = 0.050,   /* di quanto si gonfia salendo */
+    ONDA   = 0.160,   /* l'increspatura del campo */
+    LOBO   = 0.085,   /* l'allungamento verso la vicina */
+    TETTO  = 0.490;   /* il raggio che il riquadro puo' contenere */
+
+function bordo(st, clock, tira, ang, punti){
+  var w = st.s, h = st.s*1.06, pt = [], i;
+  /* gonfia salendo, e non torna indietro: la crescita segue il tragitto,
+     non un orologio */
+  var nucleo = NUCLEO + CRESCE*smorza(st.cresc);
+  /* anche l'ampiezza dell'increspatura e' rumore, non un seno: cosi' ci sono
+     momenti mossi e momenti calmi, e non si sente il tempo */
+  var onda = ONDA * (0.58 + 0.42*fbm(st.seme*7.3 + clock*0.07, st.seme*3.1 - clock*0.05));
+
+  for (i=0;i<punti;i++){
+    var a = (i/punti)*TAU, cx = Math.cos(a), cy = Math.sin(a);
+    /* il punto del bordo, in unita' di rumore, nel posto in cui si trova
+       davvero sulla pagina */
+    var px = (st.x + cx*w*0.40)/GRANA, py = (st.y + cy*w*0.40)/GRANA;
+    /* due strati che scorrono in direzioni e a velocita' diverse: non si
+       riallineano mai, quindi il profilo non si ripete mai */
+    var n = 0.76*fbm(px + st.seme + clock*DERIVA,      py - clock*DERIVA*0.7)
+          + 0.24*fbm(px*1.8 + 19.3 - clock*DERIVA*0.5, py*1.8 + st.seme*2.7 + clock*DERIVA*0.9);
+    /* il rumore da solo sta quasi sempre a meta' strada e viene fuori un
+       cerchio appena ammaccato: si allarga il contrasto perche' i gonfiori
+       si leggano come gonfiori. Con smorza() ai due capi la derivata e' zero,
+       quindi dove il conto si appiattisce non nasce uno spigolo. */
+    n = smorza(clamp((n - 0.28)/0.5, 0, 1));
+    var r = nucleo + onda*n;
+    /* il lobo verso la vicina: da quella parte la bolla si allunga fino a
+       toccarla, dall'altra non succede niente. Cubo del coseno perche' anche
+       la derivata sia zero dove il lobo finisce: un raccordo netto qui
+       girerebbe attorno alla bolla come uno spigolo. */
+    if (tira > 0){
+      var k = Math.cos(a - ang);
+      if (k > 0) r += tira*k*k*k;
+    }
+    /* Tetto morbido. I tre contributi al massimo insieme passerebbero il
+       riquadro, e li' il ritaglio taglia dritto: un lato piatto su una bolla
+       si vede subito. Cosi' invece il raggio si avvicina a TETTO senza mai
+       arrivarci, e nel punto di innesto la curva e la sua pendenza sono le
+       stesse — non c'e' un ginocchio. */
+    if (r > 0.44) r = TETTO - (TETTO-0.44)*Math.exp((0.44-r)/(TETTO-0.44));
+    pt.push([ w*0.5 + cx*w*r, h*0.5 + cy*h*r ]);
   }
   return 'path("' + orlo(pt) + '")';
 }
@@ -639,6 +725,13 @@ var Sequenza = (function(){
 function Bolle(box, cop){
   var TINTE = ['#1B3BFF','#F2EFE8','#1B3BFF','#3A1BFF'];
   var SCURE = { '#F2EFE8': true };          /* su queste il testo va nero */
+  /* quanti punti fanno il giro del bordo. Sono raccordati con delle cubiche,
+     quindi anche pochi danno una curva: su un telefono lento se ne fanno di
+     meno e non si vede la differenza. */
+  var PUNTI = LEGGERO ? 16 : 24;
+  /* l'orologio del campo: sta qui in alto perche' lo usa anche `vesti()`,
+     che disegna la prima sagoma prima che il ciclo parta */
+  var clock = 0;
 
   box.innerHTML = DATI.bolle.map(function(p,i){
     var t = TINTE[i%TINTE.length];
@@ -667,9 +760,20 @@ function Bolle(box, cop){
   function nasce(i, dim, subito){
     var b = bocca(dim);
     var lato = Math.max(84, Math.min(dim.w * .30, 132));
-    var s = lato * (0.86 + (i%3)*0.10);
+    /* Il riquadro e' piu' largo della bolla che ci sta dentro: al raggio
+       serve il posto per gonfiarsi e per allungarsi verso una vicina, e
+       quello che esce dal riquadro non viene disegnato — il ritaglio non
+       puo' mostrare colore dove il colore non e' dipinto. Il 1.25 rimette
+       la bolla alla misura di prima nonostante il riquadro cresciuto. */
+    var s = lato * (0.86 + (i%3)*0.10) * 1.25;
     return {
-      s: s, r: s*0.52,
+      /* `r` e' il raggio che si vede, non il riquadro: e' quello che decide
+         quando due bolle si toccano, e vale NUCLEO piu' mezza ONDA */
+      s: s, r: s*0.32,
+      /* il posto della bolla nel campo di rumore: due bolle non si increspano
+         mai allo stesso modo nello stesso istante */
+      seme: i*3.77 + Math.random()*7,
+      cresc: 0,
       /* nascono sparse in orizzontale, se no salgono in colonna */
       x: b.x + (Math.random()*2-1) * dim.w * .17,
       /* alla prima passata sono gia' sparse lungo il tragitto, cosi' si
@@ -687,15 +791,17 @@ function Bolle(box, cop){
     };
   }
 
+  /* Qui si decidono solo le misure: il riquadro e il corpo della scritta.
+     La sagoma non si tocca — la disegna `rendi()` a ogni fotogramma, e
+     rifarla da qui vorrebbe dire interromperla proprio mentre si guarda. */
   function vesti(){
-    var dim = misuraBox();
     corpi.forEach(function(c,i){
       var st = stato[i]; if (!st) return;
       bolle[i].style.setProperty('--s', st.s.toFixed(0)+'px');
-      var w = st.s, h = st.s*1.06;
-      /* .62 e non .74: la sagoma ora si scioglie e a volte si stringe, e una
-         scritta tarata sulla larghezza piena finisce fuori dal ritaglio */
-      var nm = c.firstElementChild, lw = w * .62;
+      var w = st.s;
+      /* la scritta sta dentro al NUCLEO, cioe' al raggio che la bolla non
+         scende mai: quello che c'e' oltre puo' andare e venire */
+      var nm = c.firstElementChild, lw = w * .40;
       if (nm){
         nm.style.fontSize = '40px';
         var largo = 0;
@@ -707,19 +813,14 @@ function Bolle(box, cop){
         });
         nm.style.fontSize = largo ? clamp(40 * lw / largo, 9, 17).toFixed(1)+'px' : '';
       }
-      if (!SUPPORTA_RITAGLIO) return;
-      /* piu' punti e piu' irregolarita': la sagoma si scioglie invece di
-         sembrare una forma disegnata */
-      var pu = 11 + (i%3), irr = .28 + (i%4)*.05, g = i*1.15;
-      var f1 = forma(w,h,pu,irr,g), f2 = forma(w,h,pu,irr,g+.6),
-          f3 = forma(w,h,pu,irr,g+1.2), f4 = forma(w,h,pu,irr,g+1.8);
-      c.style.borderRadius = '0';
-      c.style.clipPath = f1;
-      if (c.morfa){ c.morfa.cancel(); c.morfa = null; }
-      if (!CALMO && c.animate){
-        c.morfa = c.animate(
-          [{clipPath:f1},{clipPath:f2},{clipPath:f3},{clipPath:f4},{clipPath:f1}],
-          { duration: 4200 + i*800, iterations: Infinity, easing:'ease-in-out' });
+      /* La prima sagoma la si da' subito: il ciclo puo' non partire per un
+         pezzo — scheda in secondo piano, finestra di larghezza zero — e nel
+         frattempo un quadrato blu resterebbe un quadrato blu.
+         Senza clip-path: path() resta il border-radius del CSS, che e' piu'
+         tondo ma vivo. */
+      if (SUPPORTA_RITAGLIO){
+        c.style.borderRadius = '0';
+        c.style.clipPath = bordo(st, clock, 0, 0, PUNTI);
       }
     });
   }
@@ -737,14 +838,14 @@ function Bolle(box, cop){
       f.y = Math.min(vecchio.y, b.y);      /* non le si rimanda giu' di colpo */
       f.x = Math.min(Math.max(vecchio.x, f.r), d.w - f.r);
       f.attesa = vecchio.attesa;
+      /* il posto nel campo e il gonfiore restano quelli: ridimensionare la
+         finestra non e' una ragione per rifare la sagoma da capo */
+      f.seme = vecchio.seme; f.cresc = vecchio.cresc;
       stato[i] = f;
     }
     vesti();
   }); });
 
-  /* Il posizionamento non puo' aspettare il primo frame: senza questo le
-     bolle restano ferme nell'angolo in alto a sinistra finche' rAF non parte,
-     e su una scheda in secondo piano puo' voler dire parecchio. */
   /* Il posizionamento non puo' aspettare il primo frame: senza questo le
      bolle restano ferme nell'angolo in alto a sinistra finche' rAF non parte,
      e su una scheda in secondo piano puo' voler dire parecchio.
@@ -753,7 +854,6 @@ function Bolle(box, cop){
      deriva laterale, e una repulsione a coppie che le tiene separate. La
      forza attraversa lo zero con continuita' — un gradino qui produrrebbe la
      stessa vibrazione ad alta frequenza che rovinerebbe le gocce. */
-  var clock = 0;
   /* non ci sono al primo istante: la copertina si presenta da sola per un
      secondo, e solo dopo salgono le bolle */
   var nato = performance.now() + 1000;
@@ -788,13 +888,16 @@ function Bolle(box, cop){
       st.vx += (Math.sin(clock*st.freq*6.2832 + st.fase)*st.amp - st.vx) * relax;
     }
 
-    /* 2 · repulsione: non si sormontano mai */
+    /* 2 · repulsione: si toccano, non si sormontano.
+       Lo 0.92 lascia che i bordi si compenetrino un poco: e' li' che i due
+       lobi si incontrano e le bolle sembrano una cosa sola invece di due
+       palle appoggiate. */
     for (i=0;i<n;i++){
       var a = stato[i]; if (a.attesa > 0) continue;
       for (j=i+1;j<n;j++){
         var c = stato[j]; if (c.attesa > 0) continue;
         var dx = c.x-a.x, dy = c.y-a.y;
-        var somma = (a.r + c.r) * 1.06;
+        var somma = (a.r + c.r) * 0.92;
         var dist = Math.sqrt(dx*dx + dy*dy);
         if (dist >= somma || dist < 1e-4) continue;
         var nx = dx/dist, ny = dy/dist;
@@ -809,7 +912,10 @@ function Bolle(box, cop){
 
     /* 3 · quanto ognuna sente la vicina piu' prossima: si allunga verso di
        lei invece di sormontarla. E' il residuo della tensione superficiale,
-       fatto con una scala anisotropa lungo la congiungente. */
+       e va a finire nel raggio del bordo — non in una scala sul corpo, che
+       tirando da una parte stringeva dall'altra.
+       L'ampiezza sale come 1-e^(-x): non arriva mai al tetto di scatto, e
+       quando due bolle si staccano il lobo si ritira senza uno scalino. */
     var tira = [], ang = [];
     for (i=0;i<n;i++){ tira.push(0); ang.push(0); }
     for (i=0;i<n;i++){
@@ -820,10 +926,10 @@ function Bolle(box, cop){
         var dd = Math.sqrt(ddx*ddx + ddy*ddy);
         var portata = (a2.r + c2.r) * 2.1;
         if (dd >= portata || dd < 1e-4) continue;
-        var e = (1 - dd/portata) * .34;
-        var an = Math.atan2(ddy, ddx) * 180/Math.PI;
+        var e = LOBO * (1 - Math.exp(-2.4*(1 - dd/portata)));
+        var an = Math.atan2(ddy, ddx);
         if (e > tira[i]){ tira[i] = e; ang[i] = an; }
-        if (e > tira[j]){ tira[j] = e; ang[j] = an; }
+        if (e > tira[j]){ tira[j] = e; ang[j] = an + Math.PI; }
       }
     }
 
@@ -836,13 +942,18 @@ function Bolle(box, cop){
         continue;
       }
       if (!CALMO){ st2.x += st2.vx*dt; st2.y += st2.vy*dt; }
-      var m = st2.r*0.55;
+      var m = st2.r*0.8;
       if (st2.x < m)         { st2.x = m;         st2.vx =  Math.abs(st2.vx)*0.4; }
       if (st2.x > d.w - m)   { st2.x = d.w - m;   st2.vx = -Math.abs(st2.vx)*0.4; }
 
       /* uscita dal bordo alto: sparisce e viene risputata dopo un paio di
          secondi, sfalsata rispetto alle altre */
       if (st2.y < -st2.s*0.6){ st2.attesa = 1.0 + Math.random()*1.4; continue; }
+
+      /* quanto e' avanti nel tragitto: 0 alla bocca, 1 quando esce in cima.
+         Sale sempre, quindi la bolla si gonfia e basta. Riparte da zero solo
+         quando rinasce, che succede a schermo vuoto. */
+      st2.cresc = clamp((b.y - st2.y) / Math.max(b.y + st2.s*0.6, 1), 0, 1);
 
       /* svanisce ai due capi, cosi' non compare e non sparisce di colpo */
       var op = Math.min(1, (b.y - st2.y)/26 + .4)
@@ -854,23 +965,15 @@ function Bolle(box, cop){
       el.style.transform = 'translate3d('+st2.x.toFixed(1)+'px,'+st2.y.toFixed(1)+'px,0)'
         + ' scale('+(0.86 + .14*avvio).toFixed(3)+')';
 
-      /* L'allungamento verso la vicina va sul CORPO, non sul link: se scala
-         anche la scritta, "SPOTIFY" si schiaccia e il ritaglio se la mangia.
-         Sulla scritta si applica la scala inversa, cosi' la sagoma si tira e
-         la parola resta dritta. */
-      var e2 = tira[i], a3 = ang[i];
-      var corpo = corpi[i], nm2 = corpo && corpo.firstElementChild;
-      if (corpo){
-        if (e2 > .002){
-          var sx = 1 + e2, sy = 1 - e2*.55;
-          corpo.style.transform = 'rotate('+a3.toFixed(1)+'deg) scale('
-            + sx.toFixed(3)+','+sy.toFixed(3)+') rotate('+(-a3).toFixed(1)+'deg)';
-          if (nm2) nm2.style.transform = 'rotate('+a3.toFixed(1)+'deg) scale('
-            + (1/sx).toFixed(3)+','+(1/sy).toFixed(3)+') rotate('+(-a3).toFixed(1)+'deg)';
-        } else {
-          corpo.style.transform = '';
-          if (nm2) nm2.style.transform = '';
-        }
+      /* La sagoma si ridisegna qui, a ogni fotogramma, dal campo di rumore e
+         dalla vicina piu' prossima. Non e' un'animazione con un inizio e una
+         fine: e' lo stato di adesso, quindi non c'e' un fotogramma chiave da
+         raggiungere ne' un ciclo da ricominciare, e niente scatta.
+         Con `prefers-reduced-motion` la si disegna una volta e resta li'. */
+      var corpo = corpi[i];
+      if (corpo && SUPPORTA_RITAGLIO && (!CALMO || !corpo.ferma)){
+        corpo.style.clipPath = bordo(st2, clock, tira[i], ang[i], PUNTI);
+        corpo.ferma = true;
       }
     }
   }
