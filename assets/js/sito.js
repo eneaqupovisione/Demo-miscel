@@ -564,92 +564,6 @@ var Sequenza = (function(){
 })();
 
 /* --------------------------------------------------------------------------
-   il singolo: la sequenza comandata dallo scroll
-   Il progresso non e' quello dello scroll, e' un valore che lo insegue: cosi'
-   il rimbalzo dello scroll di iOS non si vede.
-   -------------------------------------------------------------------------- */
-(function(){
-  var sez = $('#imm'), cv = $('#cvImm');
-  var barra = $('#immBarra'), pct = $('#immPct');
-  var tappe = $$('#imm .tappa');
-  var ctx = cv.getContext('2d', { alpha:true });
-  var W=0,H=0,DPR=1;
-  var pT = 0, p = 0, entrata = 0, dentro = false;
-
-  /* i contenuti veri di questa scena stanno in DATI, come tutto il resto */
-  var uscita = (DATI.uscite && DATI.uscite[0]) || { t:'—', href:'#' };
-  $('#immTit').textContent = uscita.t;
-  var cta = $('#immCta');
-  var dove = uscita.href !== '#' ? uscita.href
-           : (DATI.bolle[0] && DATI.bolle[0].href) || '#';
-  cta.href = dove;
-  if (dove !== '#'){ cta.target = '_blank'; cta.rel = 'noopener'; }
-
-  function misura(){
-    DPR = Math.min(window.devicePixelRatio || 1, 2);
-    W = cv.clientWidth; H = cv.clientHeight;
-    if (!W) return;
-    cv.width = Math.round(W*DPR); cv.height = Math.round(H*DPR);
-    ctx.setTransform(DPR,0,0,DPR,0,0);
-    rendi();
-  }
-
-  function fascia(v,a,b){
-    var m = .09;
-    return smorza(mappa(v,a,a+m)) * (1 - smorza(mappa(v,b-m,b)));
-  }
-
-  function rendi(){
-    var s = mappa(p, .04, .96);
-    Sequenza.disegna(ctx, W, H, s, '#0B0E1C');
-    cv.style.opacity = (entrata * (1 - mappa(p,.95,1))).toFixed(3);
-
-    barra.style.width = (s*100).toFixed(1)+'%';
-    pct.textContent = ('0'+Math.round(s*99)).slice(-2);
-
-    for (var i=0;i<tappe.length;i++){
-      var t = tappe[i];
-      var v = fascia(p, parseFloat(t.dataset.a), parseFloat(t.dataset.b));
-      t.style.opacity = v.toFixed(3);
-      t.style.transform = 'translate3d(0,'+((1-v)*26).toFixed(1)+'px,0)';
-      t.style.pointerEvents = v > .62 ? 'auto' : 'none';
-    }
-
-    document.body.classList.toggle('notte', p > .02 && p < .985);
-  }
-
-  /* si carica solo quando la sezione si avvicina: non pesa sull'apertura */
-  var pre = new IntersectionObserver(function(vs){
-    if (!vs[0].isIntersecting) return;
-    pre.disconnect();
-    Sequenza.carica();
-    Sequenza.quandoPronta(misura);
-  }, { rootMargin: '160% 0px' });
-  pre.observe(sez);
-
-  function daScroll(){
-    var r = sez.getBoundingClientRect();
-    var alt = sez.offsetHeight - window.innerHeight;
-    pT = clamp(-r.top / (alt||1), 0, 1);
-    entrata = clamp(1 - r.top / (window.innerHeight * .8), 0, 1);
-    dentro = r.top < window.innerHeight && r.bottom > 0;
-  }
-
-  (function giro(){
-    requestAnimationFrame(giro);
-    if (!dentro && Math.abs(p - pT) < .0008) return;
-    p += (pT - p) * (CALMO ? 1 : .13);
-    if (Math.abs(pT - p) < .0004) p = pT;
-    rendi();
-  })();
-
-  window.addEventListener('scroll', function(){ alFrame(daScroll); }, {passive:true});
-  window.addEventListener('resize', function(){ alFrame(function(){ misura(); daScroll(); }); });
-  document.addEventListener('entrati', function(){ misura(); daScroll(); });
-  daScroll();
-})();
-
-/* --------------------------------------------------------------------------
    chi e': il respiro dietro alle righe
    Lo sfondo non compare in dissolvenza: si apre da destra come un taglio, e
    solo quando la sezione e' arrivata davvero. E' la differenza fra "c'era gia'
@@ -1204,7 +1118,8 @@ function Bolle(box, cop){
   var social = DATI.social.map(function(s){
     return '<a href="'+s.href+'" '+(s.href!=='#'?'target="_blank" rel="noopener"':'')+'>'+s.nm+'</a>';
   }).join('');
-  $('#social').innerHTML = social;
+  /* i social stanno nel menu e basta: in fondo ai contatti erano una fila di
+     pulsanti che portava via dalla pagina proprio dove si deve scrivere */
   $('#menuSocial').innerHTML = social;
 
   function mostra(t){
@@ -1277,8 +1192,7 @@ function Bolle(box, cop){
    -------------------------------------------------------------------------- */
 (function(){
   var attese = [
-    immagine('assets/media/copertina.jpg'),
-    immagine('assets/media/profilo.jpg')
+    immagine('assets/media/copertina.jpg')
   ];
   if (document.fonts && document.fonts.ready) attese.push(document.fonts.ready);
   var v = $('#vCop');

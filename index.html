@@ -19,11 +19,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Archivo:wght@300;400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-<link rel="preload" as="image" href="assets/media/copertina.jpg?v=49">
+<link rel="preload" as="image" href="assets/media/copertina.jpg?v=50">
 <!-- il ?v= serve: GitHub Pages tiene i file in cache dieci minuti, e chi
      ha gia' aperto il sito continuerebbe a vedere la versione vecchia.
      Si alza il numero a ogni pubblicazione. -->
-<link rel="stylesheet" href="assets/css/sito.css?v=49">
+<link rel="stylesheet" href="assets/css/sito.css?v=50">
 </head>
 <body>
 
@@ -46,7 +46,7 @@
 <!-- la lastra a raggi X delle uscite -->
 <div id="lastra" aria-hidden="true">
   <i class="scan"></i>
-  <img src="assets/media/colonna.jpg?v=49" alt="">
+  <img src="assets/media/colonna.jpg?v=50" alt="">
   <div class="c"><span class="k">lastra · 001</span><div class="h"></div></div>
 </div>
 
@@ -77,7 +77,6 @@
   <button id="chiudi">Chiudi</button>
   <nav>
     <a href="#ascolta" data-va>Ascolta</a>
-    <a href="#imm" data-va>Singolo</a>
     <a href="#chi" data-va>Chi è</a>
     <a href="#contatti" data-va>Scrivi</a>
   </nav>
@@ -92,9 +91,9 @@
 <!-- ========================== 01 · COPERTINA ========================== -->
 <section id="cop">
   <div class="med">
-    <video id="vCop" poster="assets/media/copertina.jpg?v=49" muted loop playsinline autoplay preload="auto"
+    <video id="vCop" poster="assets/media/copertina.jpg?v=50" muted loop playsinline autoplay preload="auto"
            disablepictureinpicture aria-hidden="true">
-      <source src="assets/media/copertina.mp4?v=49" type="video/mp4">
+      <source src="assets/media/copertina.mp4?v=50" type="video/mp4">
     </video>
   </div>
 
@@ -129,37 +128,7 @@
   </div>
 </section>
 
-<!-- ========================== 03 · IL SINGOLO ==========================
-     La scena — il viso che entra dal lato, l'acqua che lo prende, le bolle —
-     non e' il contenuto: e' lo sfondo di quello che c'e' da dire. -->
-<section id="imm" aria-labelledby="immTit">
-  <div class="pin">
-    <canvas id="cvImm" aria-hidden="true"></canvas>
-    <div class="velo" aria-hidden="true"></div>
-
-    <div class="dentro">
-      <div class="tappa" data-a="-.02" data-b=".54">
-        <span class="mono">Nuovo singolo</span>
-        <h2 class="tit-imm" id="immTit" data-adatta data-max="150">—</h2>
-        <p class="sotto">Fuori ora.</p>
-      </div>
-
-      <div class="tappa" data-a=".50" data-b="1.02">
-        <span class="mono">Il modo giusto</span>
-        <p class="grande">Cuffie. Volume alto.</p>
-        <a class="btn" id="immCta" href="#">Ascolta <span aria-hidden="true">&rarr;</span></a>
-      </div>
-    </div>
-
-    <div class="hud" aria-hidden="true">
-      <span class="mono">03 &mdash; Il singolo</span>
-      <span class="barra"><i id="immBarra"></i></span>
-      <span class="mono" id="immPct">00</span>
-    </div>
-  </div>
-</section>
-
-<!-- ========================== 04 · CHI È ==========================
+<!-- ========================== 03 · CHI È ==========================
      Poche righe grandi. Dietro, il respiro: la stessa scena d'acqua, che
      entra dal lato quando la sezione arriva e si muove con lo scroll. -->
 <section id="chi" class="sez">
@@ -170,7 +139,7 @@
 
   <div class="wrap in">
     <div class="occhiello rev">
-      <span class="mono n">04</span><span class="mono">Chi è</span>
+      <span class="mono n">03</span><span class="mono">Chi è</span>
     </div>
 
     <p class="dire" data-righe>
@@ -183,31 +152,21 @@
   </div>
 </section>
 
-<!-- ========================== 05 · SCRIVI ========================== -->
+<!-- ========================== 04 · SCRIVI ========================== -->
 <section id="contatti">
   <div class="wrap in">
     <div class="occhiello rev">
-      <span class="mono n">05</span><span class="mono">Booking</span>
+      <span class="mono n">04</span><span class="mono">Booking</span>
     </div>
     <h2 class="tit" data-adatta data-max="180"><span class="gx" data-t="Scrivi">Scrivi</span></h2>
 
-    <div class="fila">
-      <div class="col-a">
-        <p class="azione rev"><a class="btn" id="ctaBooking" href="#">Scrivi per una data <span aria-hidden="true">&rarr;</span></a></p>
-        <a class="mail rev" id="mailBooking" href="#" data-copia>—</a>
-        <p class="mono rev">Tocca per copiare</p>
-        <ul class="altri rev">
-          <li><span class="mono">Management</span><a id="cMgmt" href="#">—</a></li>
-          <li><span class="mono">Stampa</span><a id="cPress" href="#">—</a></li>
-        </ul>
-      </div>
-
-      <div class="col-b rev">
-        <img class="silhouette" src="assets/media/profilo.jpg?v=49" alt="Michelle, di profilo, sott'acqua">
-      </div>
-    </div>
-
-    <div class="social" id="social"></div>
+    <p class="azione rev"><a class="btn" id="ctaBooking" href="#">Scrivi per una data <span aria-hidden="true">&rarr;</span></a></p>
+    <a class="mail rev" id="mailBooking" href="#" data-copia>—</a>
+    <p class="mono rev">Tocca per copiare</p>
+    <ul class="altri rev">
+      <li><span class="mono">Management</span><a id="cMgmt" href="#">—</a></li>
+      <li><span class="mono">Stampa</span><a id="cPress" href="#">—</a></li>
+    </ul>
   </div>
 </section>
 
@@ -225,7 +184,7 @@
   </div>
 </footer>
 
-<script src="assets/js/blob-mask.js?v=49"></script>
-<script src="assets/js/sito.js?v=49"></script>
+<script src="assets/js/blob-mask.js?v=50"></script>
+<script src="assets/js/sito.js?v=50"></script>
 </body>
 </html>

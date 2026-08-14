@@ -8,7 +8,7 @@
 
    Ordine del file:
      00 variabili · 01 base · 02 tipografia · 03 strati fissi · 04 caricamento
-     05 testata · 06 copertina · 09 il singolo · 10 ascolta
+     05 testata · 06 copertina · 10 ascolta
      12 chi e' · 13 contatti · 14 piede
      15 movimento ridotto
    =========================================================================== */
@@ -331,70 +331,6 @@ body.giu #apri{transform:translate3d(0,-115%,0)}
 @keyframes ago{0%{transform:translateY(-100%)}60%,100%{transform:translateY(100%)}}
 #cop .hud{position:absolute;left:var(--gut);top:24vh;writing-mode:vertical-rl}
 
-/* --- 09 immersione ------------------------------------------------------- */
-/* La sezione e' alta: quell'altezza e' la durata della scena. Dentro, una
-   sola schermata inchiodata, e il girato fa da sfondo a quello che c'e' da
-   dire — non il contrario. */
-#imm{height:320vh;position:relative}
-/* il pinnaggio non ha fondo proprio: se ne avesse uno, taglierebbe di netto
-   quello che gli scorre dietro, e il taglio si vede */
-#imm .pin{position:sticky;top:0;height:100svh;min-height:100dvh;overflow:hidden;background:transparent}
-#imm canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0}
-
-/* il velo: il girato passa dal quasi bianco al quasi nero, quindi la
-   leggibilita' non puo' dipendere da lui. Il fondo del testo se lo porta
-   dietro il testo. */
-#imm .velo{
-  position:absolute;inset:0;z-index:2;pointer-events:none;
-  background:
-    linear-gradient(180deg,rgba(5,7,15,.30) 0%,rgba(5,7,15,0) 18%),
-    linear-gradient(0deg,rgba(5,7,15,.93) 0%,rgba(5,7,15,.74) 22%,rgba(5,7,15,.12) 52%,rgba(5,7,15,0) 70%);
-}
-#imm .dentro{
-  position:absolute;left:0;right:0;bottom:0;z-index:3;
-  display:grid;grid-template-columns:minmax(0,1fr);
-  padding:0 var(--gut) calc(var(--gut) + 40px);
-}
-/* minmax(0,1fr) non e' una rifinitura: una colonna `auto` si allarga sul
-   contenuto piu' largo che ha dentro, e un titolo che non va mai a capo e'
-   largo quanto vuole. La misura leggerebbe quella larghezza e il titolo
-   uscirebbe dallo schermo. Vale per ogni griglia che ospita un
-   [data-adatta]. */
-#imm .tappa{
-  grid-area:1/1;align-self:end;color:var(--osso);min-width:0;max-width:100%;
-  opacity:0;transform:translate3d(0,26px,0);will-change:opacity,transform;
-}
-#imm .tappa .mono{color:var(--blu-l);display:block;margin-bottom:.7rem}
-#imm .tit-imm{
-  font-family:var(--disp);font-weight:800;text-transform:uppercase;
-  line-height:.84;letter-spacing:-.045em;color:var(--osso);margin:0;
-}
-#imm .grande{
-  font-family:var(--disp);font-weight:700;text-transform:uppercase;
-  font-size:clamp(1.55rem,7.6vw,3.4rem);line-height:.98;letter-spacing:-.032em;
-  max-width:15ch;margin:0;
-}
-#imm .sotto{
-  font-family:var(--disp);font-weight:600;text-transform:uppercase;
-  font-size:clamp(1rem,4.6vw,1.6rem);line-height:1;letter-spacing:-.01em;
-  margin:.6rem 0 0;color:var(--grigio);
-}
-#imm .elenco{
-  font-family:var(--mono);font-size:.64rem;letter-spacing:.18em;text-transform:uppercase;
-  color:var(--grigio);margin:1rem 0 0;line-height:1.9;
-}
-#imm .tappa .btn{
-  margin-top:1.2rem;background:var(--blu);border-color:var(--blu);color:var(--osso);
-}
-#imm .tappa .btn::before{background:var(--osso)}
-#imm .tappa .btn:hover,#imm .tappa .btn:active{color:var(--nero)}
-#imm .hud{
-  position:absolute;z-index:4;left:var(--gut);bottom:calc(var(--gut) - 8px);
-  display:flex;gap:.9rem;align-items:center;color:var(--grigio);
-}
-#imm .hud .barra{width:56px;height:1px;background:currentColor;opacity:.4;position:relative}
-#imm .hud .barra i{position:absolute;inset:0 auto 0 0;width:0;background:var(--blu-l)}
-
 /* --- 10 ascolta ---------------------------------------------------------- */
 .uscite{margin-top:clamp(20px,5vw,42px);border-top:1px solid var(--linea)}
 .uscita{
@@ -515,26 +451,10 @@ body.giu #apri{transform:translate3d(0,-115%,0)}
 /* --- 13 contatti --------------------------------------------------------- */
 #contatti{background:var(--nero);color:var(--osso);position:relative;overflow:hidden;
   padding-block:clamp(80px,16vw,150px)}
-#contatti .fila{display:grid;grid-template-columns:minmax(0,1fr);
-  gap:clamp(34px,7vw,64px);align-items:start;margin-top:clamp(24px,5vw,44px)}
-@media(min-width:820px){#contatti .fila{grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr)}}
-
-/* la silhouette: un blocco fermo, non una cosa da toccare. Invertita, il
-   nero del girato diventa la figura chiara dentro alla sezione scura; i due
-   bordi sfumano per non lasciare in mezzo un rettangolo. */
-.silhouette{
-  /* un ritaglio, non il fotogramma intero: verticale per intero era un
-     blocco alto due terzi di schermo che si mangiava la sezione */
-  width:100%;aspect-ratio:5/6;object-fit:cover;object-position:66% 14%;display:block;
-  filter:invert(1) contrast(1.28) brightness(.94);opacity:.9;
-  -webkit-mask-image:linear-gradient(0deg,transparent 0,#000 14%,#000 88%,transparent 100%);
-  mask-image:linear-gradient(0deg,transparent 0,#000 14%,#000 88%,transparent 100%);
-}
-
 #contatti .in{position:relative;z-index:2}
 #contatti .occhiello{border-color:rgba(243,236,210,.2)}
 #contatti .tit{color:var(--osso)}
-#contatti .azione{margin:clamp(22px,5vw,38px) 0 clamp(18px,4vw,28px)}
+#contatti .azione{margin:clamp(30px,6vw,52px) 0 clamp(18px,4vw,28px)}
 #contatti .azione .btn{border-color:var(--blu);background:var(--blu);color:var(--osso);
   font-size:.78rem;padding:1.15rem 1.6rem}
 #contatti .azione .btn::before{background:var(--osso)}
@@ -551,13 +471,6 @@ body.giu #apri{transform:translate3d(0,-115%,0)}
   padding:.8rem 0;border-bottom:1px solid rgba(243,236,210,.16)}
 #contatti .altri a{font-size:.92rem;color:var(--osso);text-align:right;word-break:break-word}
 #contatti .altri a:hover{color:var(--blu-l)}
-#contatti .social{display:flex;flex-wrap:wrap;gap:.55rem;margin-top:2.4rem}
-#contatti .social a{border:1px solid rgba(243,236,210,.28);padding:.7rem 1rem;
-  font-family:var(--mono);font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;
-  transition:background .3s,color .3s,border-color .3s}
-#contatti .social a:hover,#contatti .social a:active{
-  background:var(--blu);border-color:var(--blu);color:var(--osso)}
-
 #copiato{
   position:fixed;left:50%;bottom:2rem;transform:translate3d(-50%,20px,0);z-index:135;
   background:var(--blu);color:var(--osso);padding:.7rem 1.1rem;opacity:0;
@@ -579,10 +492,6 @@ body.giu #apri{transform:translate3d(0,-115%,0)}
     transition-duration:.001ms !important}
   .rev,.rev-p{opacity:1;transform:none;filter:none}
   #grana{animation:none}
-  /* la scena resta, ma corta: la sequenza e' comandata dal dito, non da un
-     tempo che scorre per conto suo */
-  #imm{height:200vh}
-  #imm canvas{opacity:1 !important}
   /* "Chi e'" si apre subito e le righe stanno ferme: il taglio che scorre e'
      proprio il tipo di movimento che qui va tolto */
   #chi .sfondo{clip-path:none}

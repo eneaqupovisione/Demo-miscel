@@ -8,7 +8,7 @@ servito da un server statico.
 
 | | |
 |---|---|
-| `index.html` | la pagina. Sezioni numerate 01→07 nei commenti. |
+| `index.html` | la pagina. Sezioni numerate 01→04 nei commenti. |
 | `assets/css/sito.css` | stili. In testa l'indice delle 15 parti, in ordine. |
 | `assets/js/sito.js` | comportamento. **`DATI`, in cima, è l'unico punto dei contenuti.** |
 | `assets/media/` | **artefatti**: rigenerati da `strumenti/media.sh`, mai a mano. |
@@ -42,14 +42,21 @@ servito da un server statico.
 
 ## Da sapere prima di toccare
 
-- Le sezioni sono cinque e numerate 01→05 nei commenti di `index.html`. Il
-  manifesto non esiste più: la sua frase è diventata le tre righe di `#chi`.
-- La sequenza dell'acqua è **una sola** (`Sequenza` in `sito.js`), caricata
-  una volta e disegnata da due canvas: la scena del singolo e il respiro
-  dietro a `#chi`. Non duplicarla.
-- La sezione **del singolo** è alta 320vh: quell'altezza *è* la durata della
-  scena. Cambiarla cambia il ritmo di tutto. Il numero di fotogrammi (`N` in
-  `sito.js`) deve corrispondere a quello che produce `strumenti/media.sh`.
+- Le sezioni sono **quattro**, numerate 01→04 nei commenti di `index.html`.
+  Il manifesto non esiste più: la sua frase è diventata le tre righe di `#chi`.
+- **La sezione del singolo non c'è più** (tolta il 15/08/2026, `git log`): era
+  320vh di scroll per una schermata inchiodata su un contenuto — «Nuovo
+  singolo», «Cuffie. Volume alto.» — che non esiste ancora. Con lei sono usciti
+  il ritratto e la fila di social in fondo ai contatti. Il posto che occupava è
+  quello dove va deciso cosa mostrare davvero.
+- La sequenza dell'acqua (`Sequenza` in `sito.js`) adesso ha **un solo
+  cliente**: il respiro dietro a `#chi`. Il numero di fotogrammi (`N`) deve
+  corrispondere a quello che produce `strumenti/media.sh`.
+- **Due cose sono pronte e non collegate**, e vanno considerate morte finché
+  qualcuno non le riattacca (`repo-in-ordine`): la classe `body.notte` con
+  tutta la sua palette — la accendeva la scena del singolo e adesso non la
+  accende nessuno — e `assets/media/profilo.jpg`, che `strumenti/media.sh`
+  continua a generare e nessuno usa.
 - La **blob mask** sta in `assets/js/blob-mask.js` e implementa
   `blob-mask-spec.md`, che è autoritativo: matematica, shader e costanti
   vengono da lì e non vanno reinterpretati. Tre regole che rompono tutto se
