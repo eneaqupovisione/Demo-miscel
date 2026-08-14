@@ -55,8 +55,7 @@ caricano aprendo il file con doppio clic.
 
 | | | |
 |---|---|---|
-| 01 | **Copertina** | il nome, e il volto sott'acqua in anello |
-| — | **Pulsanti-bolla** | subito sotto il nome: dove ascoltarla |
+| 01 | **Copertina** | il nome, il volto in anello, e i pulsanti che salgono |
 | 02 | **Ascolta** | le uscite |
 | 03 | **Il singolo** | tre stacchi del girato come sfondo di due cose da dire |
 | 04 | **Chi è** | tre righe grandi, e dietro il respiro |
@@ -118,35 +117,32 @@ Nessuna libreria. Scroll, `IntersectionObserver` e due canvas.
   quindi 52 fotogrammi si comportano come qualche centinaio; e sopra i due
   punti di stacco la trasparenza si toglie, perché uno stacco sfumato non è
   uno stacco. La pagina si ribalta in negativo per tutta la scena.
-- **Maschere** — non sono nuvole sfumate: sono forme piene, a bordo netto, che
-  salgono dal basso e **ribaltano quello che coprono**. Dentro la sagoma il
-  fondo diventa blu e il testo bianco; fuori non cambia un pixel.
-  `backdrop-filter: grayscale(1) invert(1)` rovescia il fondo, poi il colore
-  della forma in `screen` tinge ciò che è diventato nero e lascia stare ciò che
-  è diventato bianco. Il `grayscale` non è un vezzo: senza, il blu del sito
-  rovesciato diventa giallo, e il giallo qui dentro non esiste. Una forma nera
-  al posto del blu dà l'inversione pura.
-  La forma **non è tonda**: è un giro di nove-dodici punti a raggio irregolare
-  raccordati con delle cubiche, generato diverso per ogni maschera e morfato
-  fra tre versioni — quindi grande, molle e asimmetrica, non una goccia.
-  Escono a **gruppi sparsi** di due-tre, sfalsate di un paio di secondi l'una
-  dall'altra perché non salgano tutte alla stessa altezza, e ci mettono dai
-  dodici ai venticinque secondi ad attraversare. **Mentre si scorre
-  accelerano**: non si tocca la durata (cambiarla farebbe ripartire
-  l'animazione da capo), si alza il `playbackRate` dell'animazione già in
-  corso, che va da 1 a circa 4.6.
-- **Pulsanti-bolla** — stanno subito sotto la copertina, prima di "Ascolta":
-  tre bolle con la stessa forma irregolare delle maschere. Non è una corsa
-  continua legata allo scroll né un tempo: è una **soglia**. Finché il blocco
-  sta in mezzo allo schermo restano ferme; quando il suo bordo basso sale
-  oltre il 42% del viewport — cioè quando stai passando alla sezione dopo —
-  **se ne vanno tutte insieme**, girando e rimpicciolendo. Scendendo sotto il
-  62% rientrano, più piano di come se ne sono andate.
-  Le due soglie non coincidono di proposito: se fossero la stessa, fermandosi
-  sul bordo le bolle sbatterebbero avanti e indietro a ogni pixel di scroll.
-  E non si stacca niente mentre hai il dito o il puntatore sopra, né mentre
-  una ha il fuoco da tastiera: un pulsante che scappa proprio mentre stai per
-  premerlo è un pulsante rotto.
+- **Blob mask** — gocce di metaball che attraversano la pagina e **rimappano i
+  colori** di quello che sta sotto: dentro la sagoma il fondo diventa blu e il
+  testo bianco, fuori non cambia un pixel. Il testo resta testo — selezionabile
+  e cliccabile — perché le gocce non ci sono disegnate sopra: sono una
+  finestra.
+  Due canvas WebGL, entrambi con le gocce su **fondo nero**, che è l'elemento
+  neutro sia di `difference` sia di `screen`. Il primo inverte, il secondo
+  colora. Un motore fisico solo li alimenta tutti e due: metaball con
+  tensione superficiale, legami che si formano e si spezzano, e velocità di
+  caduta che va col **quadrato del raggio** — le piccole restano indietro, le
+  grandi le raggiungono e si fondono. Da lì nasce quasi tutto il movimento.
+  Sta in [`assets/js/blob-mask.js`](assets/js/blob-mask.js), senza dipendenze,
+  con `CONFIG` in cima. La specifica completa è in
+  [`blob-mask-spec.md`](blob-mask-spec.md).
+  **Non arrivano finché si è sulla copertina**: lì salgono già i pulsanti, e
+  due sciami insieme sarebbero rumore. Cominciano quando la copertina scende
+  sotto il 30% di schermo visibile.
+- **Pulsanti-bolla** — stanno **dentro la copertina**, e sono la seconda cosa
+  che si vede dopo il nome. Escono all'altezza della bocca del volto e salgono
+  piano — dai venti ai trenta secondi per attraversare lo schermo, perché una
+  bolla che schizza via non la si fa in tempo a premere. Quando escono dal
+  bordo alto vengono **risputate** dopo un paio di secondi. Le velocità sono
+  scalate per indice, se no dopo un giro uscirebbero all'unisono.
+  Il punto di emissione sta in un posto solo: `--bocca-x` e `--bocca-y` su
+  `#cop`, frazioni del riquadro. Sono link veri e si possono premere mentre
+  galleggiano.
 - **Chi è** — il respiro dietro alle righe. Lo sfondo è la stessa sequenza del
   singolo — ma solo l'ultimo pezzo, quello sott'acqua, che è il più calmo e non
   si porta dietro gli stacchi (nessun byte in più: le immagini sono caricate

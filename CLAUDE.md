@@ -46,20 +46,23 @@ servito da un server statico.
 - La sezione **del singolo** è alta 320vh: quell'altezza *è* la durata della
   scena. Cambiarla cambia il ritmo di tutto. Il numero di fotogrammi (`N` in
   `sito.js`) deve corrispondere a quello che produce `strumenti/media.sh`.
-- Le **maschere** (`.maschera`) invertono e tingono ciò che coprono. Tre
-  vincoli: il `grayscale(1)` prima di `invert(1)` toglie il giallo che
-  altrimenti nasce dal blu rovesciato; le tinte devono reggere il bianco
-  sopra, perché una maschera passa sul testo mentre lo si legge; e ognuna
-  costa un `backdrop-filter` a tutto schermo, quindi la curva delle misure
-  tiene basse le dimensioni (tante piccole, ogni tanto una grande). La spinta
-  dello scroll passa dal `playbackRate` dell'animazione: **non** dalla durata,
-  che cambiandola farebbe ripartire tutto da capo.
+- La **blob mask** sta in `assets/js/blob-mask.js` e implementa
+  `blob-mask-spec.md`, che è autoritativo: matematica, shader e costanti
+  vengono da lì e non vanno reinterpretati. Tre regole che rompono tutto se
+  si toccano: `isolation:isolate` su `main.stage` (senza, la fusione tinge
+  anche testata e menu); il fondo dei canvas **nero**, che è il neutro di
+  `difference` e `screen`; e la forza fra coppie **continua** — un gradino
+  fra repulsione e attrazione produce una vibrazione ad alta frequenza.
+- Tutto ciò che non deve essere toccato dalle gocce va tenuto **fuori** da
+  `main.stage`. Oggi ci sono già: testata, menu, loader, lastra, grana,
+  righe, barra di avanzamento, cursore.
 - I **pulsanti-bolla** (`Bolle()` in `sito.js`) e le maschere condividono la
   stessa funzione `forma()`: se cambi la forma, cambiano tutti e due. È
   voluto.
-- Il volo dei pulsanti è una **soglia con isteresi** (42% per andarsene, 62%
-  per tornare), non una corsa continua. Se le due soglie diventano una sola,
-  fermandosi sul bordo le bolle sbattono avanti e indietro.
+- I **pulsanti-bolla** vivono dentro `#cop` e salgono dal punto definito da
+  `--bocca-x` / `--bocca-y`. Il primo posizionamento avviene **subito**, non
+  al primo frame: senza, restano nell'angolo in alto a sinistra finché rAF
+  non parte.
 - La forma delle maschere è generata dal copione (`forma()` in `sito.js`) e
   animata con la Web Animations API, non con un `@keyframes`: servono tre
   ritagli con lo **stesso numero di segmenti**, altrimenti il passaggio

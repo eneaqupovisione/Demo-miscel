@@ -300,11 +300,11 @@ if (PUNTATORE && !CALMO) (function(){
 
 /* --------------------------------------------------------------------------
    la forma irregolare
-   La usano le maschere che attraversano la pagina e i pulsanti-bolla: e' la
-   stessa lingua, quindi e' lo stesso codice.
+   La usano i pulsanti-bolla della copertina: forme piene a bordo netto, mai
+   tonde.
    --------------------------------------------------------------------------
    Non una goccia tonda: un giro di punti a raggio irregolare, raccordati
-   con delle cubiche. Ne servono tre per maschera, con lo stesso numero di
+   con delle cubiche. Ne servono tre per bolla, con lo stesso numero di
    segmenti, perche' l'animazione possa passare dall'una all'altra. */
 function orlo(pt){
   var n = pt.length;
@@ -330,161 +330,6 @@ function forma(w, h, punti, irr, giro){
   }
   return 'path("' + orlo(pt) + '")';
 }
-
-/* --------------------------------------------------------------------------
-   le maschere
-   Forme piene a bordo netto che salgono dal basso e ribaltano quello che
-   coprono: dentro la sagoma il fondo diventa blu e il testo bianco, fuori non
-   cambia niente. Il lavoro lo fa il CSS (backdrop-filter + screen); qui c'e'
-   chi le lancia, quando, con che misure — e quanto vanno veloci.
-
-   Non e' un flusso ordinato: escono a gruppi sparsi, misure diverse dentro
-   allo stesso gruppo, e quando si scorre accelerano invece di restare ferme.
-   -------------------------------------------------------------------------- */
-var Maschere = (function(){
-  if (CALMO) return { lancia:function(){}, gruppo:function(){}, sciame:function(){} };
-
-  /* solo tinte su cui il bianco resta leggibile: una maschera passa sopra al
-     testo, e mentre passa il testo deve restare testo */
-  var TINTE = ['#1B3BFF','#1B3BFF','#1B3BFF','#3A1BFF','#0A18A8','#0B0E1C'];
-  /* il costo di una maschera e' un backdrop-filter senza sfocatura — una
-     operazione per pixel, non un blur. Ma ora sono grandi e restano in scena
-     a lungo, quindi il gruppo e' piccolo: quattro-cinque insieme bastano a
-     riempire lo schermo, e sei lo coprirebbero. */
-  var POOL  = LEGGERO ? 3 : 5;
-  var liberi = [], attive = [];
-
-  /* clip-path: path() non c'e' ovunque. Dove manca si torna al border-radius,
-     che e' piu' tondo ma vivo. */
-  var RITAGLIO = SUPPORTA_RITAGLIO;
-
-  /* il gruppo di maschere esiste dall'inizio e si riusa: crearle e buttarle a
-     ogni lancio farebbe lavorare il compositore per niente */
-  for (var i=0;i<POOL;i++){
-    var el0 = document.createElement('div');
-    el0.className = 'maschera';
-    el0.setAttribute('aria-hidden','true');
-    document.body.appendChild(el0);
-    liberi.push(el0);
-  }
-
-  function lancia(centro){
-    var el = liberi.pop();
-    if (!el) return false;
-    var vw = window.innerWidth;
-    var base = Math.min(vw, 820);
-    /* grandi: la curva alza il minimo invece di tenerlo giu' */
-    var q  = Math.pow(Math.random(), 1.25);
-    var s  = base * (0.30 + q * 0.52);
-    var h  = s * (1.02 + Math.random()*0.34);
-    var x0 = (centro === undefined ? 30 + Math.random()*(vw-60)
-                                   : centro + (Math.random()*2-1) * vw * .34);
-    x0 = clamp(x0, -s*.25, vw + s*.25);
-    var x1 = x0 + (Math.random()*2-1) * vw * .34;
-    /* lente: fra i dodici e i venticinque secondi per attraversare. Chi scorre
-       le vede accelerare, chi sta fermo le vede salire piano. */
-    var d  = 12 + q*8 + Math.random()*5;
-
-    el.style.setProperty('--s',  s.toFixed(0)+'px');
-    el.style.setProperty('--h',  h.toFixed(0)+'px');
-    el.style.setProperty('--x0', x0.toFixed(0)+'px');
-    el.style.setProperty('--x1', x1.toFixed(0)+'px');
-    el.style.setProperty('--d',  d.toFixed(2)+'s');
-    el.style.setProperty('--dm', (d/2.6).toFixed(2)+'s');
-    el.style.setProperty('--r',  ((Math.random()*2-1)*40).toFixed(0)+'deg');
-    el.style.setProperty('--tinta', TINTE[(Math.random()*TINTE.length)|0]);
-
-    if (RITAGLIO){
-      var n = 9 + (Math.random()*4|0), irr = .30 + Math.random()*.22;
-      var g = Math.random()*Math.PI*2;
-      var f1 = forma(s,h,n,irr,g), f2 = forma(s,h,n,irr,g), f3 = forma(s,h,n,irr,g);
-      el.classList.remove('tonda');
-      el.style.clipPath = f1;
-      el.morfa = el.animate(
-        [{clipPath:f1},{clipPath:f2},{clipPath:f3},{clipPath:f1}],
-        { duration: d*1000/2.6, iterations: Infinity, easing:'ease-in-out' }
-      );
-    } else {
-      el.classList.add('tonda');
-    }
-
-    /* il reflow forzato serve: senza, riaggiungere la classe nello stesso
-       frame in cui e' stata tolta non fa ripartire l'animazione */
-    void el.offsetWidth;
-    el.classList.add('sale');
-    el.anim = el.getAnimations ? el.getAnimations() : [];
-    for (var k=0;k<el.anim.length;k++) el.anim[k].playbackRate = spinta;
-    attive.push(el);
-
-    el.addEventListener('animationend', function fine(e){
-      if (e.animationName !== 'msale') return;
-      el.removeEventListener('animationend', fine);
-      el.classList.remove('sale');
-      if (el.morfa){ el.morfa.cancel(); el.morfa = null; }
-      el.style.clipPath = '';
-      el.anim = null;
-      var j = attive.indexOf(el); if (j >= 0) attive.splice(j,1);
-      liberi.push(el);
-    });
-    return true;
-  }
-
-  /* un gruppo: due-tre maschere che escono vicine, sfalsate, di misure
-     diverse. Sparse, non in fila. */
-  function gruppo(quante){
-    var n = quante || (2 + (Math.random()*2|0));
-    var cx = 30 + Math.random()*(window.innerWidth - 60);
-    for (var k=0;k<n;k++){
-      (function(k){ setTimeout(function(){ lancia(cx); }, k*(110 + Math.random()*260)); })(k);
-    }
-  }
-  function sciame(n, passo){
-    for (var k=0;k<n;k++) setTimeout(lancia, k*(passo||300));
-  }
-
-  /* --- la spinta dello scroll -------------------------------------------
-     Chiesto esplicitamente: mentre si scorre non devono restare ferme, devono
-     andare piu' su. Non si tocca la durata (cambiarla farebbe ripartire
-     l'animazione da capo): si alza il playbackRate, che accelera quello che
-     e' gia' in corso senza uno scatto. */
-  var spinta = 1, velocita = 0, ultimaY = window.scrollY, ultimoT = performance.now();
-  window.addEventListener('scroll', function(){
-    var y = window.scrollY, t = performance.now();
-    var dt = Math.max(t - ultimoT, 8);
-    velocita = Math.max(velocita, Math.abs(y - ultimaY) / dt * 16.7);
-    ultimaY = y; ultimoT = t;
-  }, {passive:true});
-
-  (function giro(){
-    requestAnimationFrame(giro);
-    velocita *= .90;
-    var k = 1 + Math.min(velocita / 11, 3.6);
-    if (Math.abs(k - spinta) < .03) return;
-    spinta = k;
-    for (var i=0;i<attive.length;i++){
-      var a = attive[i].anim;
-      if (!a) continue;
-      for (var j=0;j<a.length;j++) a[j].playbackRate = spinta;
-    }
-  })();
-
-  /* il ritmo: gruppi ravvicinati, senza una regola che si senta */
-  (function programma(){
-    setTimeout(function(){
-      if (!document.hidden) gruppo();
-      programma();
-    }, 5200 + Math.random()*7000);
-  })();
-
-  /* le prime si vedono subito: appena il sipario si alza ce n'e' gia' un
-     gruppo in mezzo alla copertina, se no il motivo si scopre solo scorrendo */
-  document.addEventListener('entrati', function(){
-    gruppo(2);
-    setTimeout(function(){ gruppo(LEGGERO ? 1 : 2); }, 5200);
-  });
-
-  return { lancia: lancia, gruppo: gruppo, sciame: sciame };
-})();
 
 /* --------------------------------------------------------------------------
    la sequenza dell'acqua
@@ -627,7 +472,7 @@ var Sequenza = (function(){
   var tappe = $$('#imm .tappa');
   var ctx = cv.getContext('2d', { alpha:true });
   var W=0,H=0,DPR=1;
-  var pT = 0, p = 0, entrata = 0, dentro = false, sciamato = false;
+  var pT = 0, p = 0, entrata = 0, dentro = false;
 
   /* i contenuti veri di questa scena stanno in DATI, come tutto il resto */
   var uscita = (DATI.uscite && DATI.uscite[0]) || { t:'—', href:'#' };
@@ -667,10 +512,6 @@ var Sequenza = (function(){
       t.style.transform = 'translate3d(0,'+((1-v)*26).toFixed(1)+'px,0)';
       t.style.pointerEvents = v > .62 ? 'auto' : 'none';
     }
-
-    /* lo sciame arriva una volta sola per passaggio, sull'ultima tappa */
-    if (p > .68 && !sciamato){ sciamato = true; Maschere.gruppo(LEGGERO ? 2 : 3); }
-    if (p < .5) sciamato = false;
 
     document.body.classList.toggle('notte', p > .02 && p < .985);
   }
@@ -764,7 +605,6 @@ var Sequenza = (function(){
     if (!vs[0].isIntersecting) return;
     oss.disconnect();
     sez.classList.add('svelato');
-    Maschere.gruppo(2);
   }, { threshold:.28 });
   oss.observe(sez);
 
@@ -790,47 +630,68 @@ var Sequenza = (function(){
 
 /* --------------------------------------------------------------------------
    i pulsanti-bolla
-   Le piattaforme non sono righe: sono bolle, con la stessa forma irregolare
-   delle maschere che attraversano la pagina.
+   Escono all'altezza della bocca del volto in copertina e salgono, piano.
+   Quando escono dal bordo alto vengono risputati dopo un paio di secondi, e
+   ricominciano. Non partono mai tutte insieme: velocita' e ritardi diversi.
 
-   Stanno ferme finche' le guardi. Appena si scorre oltre si staccano e
-   salgono via, una dopo l'altra, girando e rimpicciolendo — come una bolla
-   che si stacca dal fondo. Tornando indietro tornano al loro posto, ma
-   **piu' piano di come se ne sono andate**: la partenza insegue lo scroll a
-   un decimo per frame, il ritorno a un trentesimo. E' quello che le fa
-   sembrare vive invece che agganciate a una barra di scorrimento.
-
-   Mentre volano non si possono premere (pointer-events), e se una ha il
-   fuoco da tastiera il volo non parte: un pulsante che scappa mentre lo stai
-   selezionando e' un pulsante rotto.
+   Sono link veri: si possono premere mentre galleggiano.
    -------------------------------------------------------------------------- */
-function Bolle(box){
-  var TINTE  = ['#1B3BFF','#0B0E1C','#1B3BFF','#0B0E1C','#1B3BFF','#3A1BFF'];
-  var SCARTI = [0, 24, -12, 18, 4, -18];      /* px: rompono la griglia */
+function Bolle(box, cop){
+  var TINTE = ['#1B3BFF','#F2EFE8','#1B3BFF','#3A1BFF'];
+  var SCURE = { '#F2EFE8': true };          /* su queste il testo va nero */
 
   box.innerHTML = DATI.bolle.map(function(p,i){
-    return '<a href="'+p.href+'" '+(p.href!=='#'?'target="_blank" rel="noopener"':'')
-         +   ' style="--dy:'+SCARTI[i%SCARTI.length]+'px">'
-         +   '<span class="corpo" style="--tinta:'+TINTE[i%TINTE.length]
-         +     ';--gd:'+(6.4+i*0.9).toFixed(1)+'s;--gr:'+(-i*1.6).toFixed(1)+'s">'
+    var t = TINTE[i%TINTE.length];
+    return '<a href="'+p.href+'" '+(p.href!=='#'?'target="_blank" rel="noopener"':'')+'>'
+         +   '<span class="corpo" style="--tinta:'+t+(SCURE[t]?';color:var(--nero)':'')+'">'
          +     '<span class="nm">'+p.nm+'</span>'
          +   '</span></a>';
   }).join('');
 
   var bolle = $$('a', box), corpi = $$('.corpo', box), n = bolle.length;
-  var DERIVA = [], GIRO = [];
-  for (var i=0;i<n;i++){
-    DERIVA.push((i - (n-1)/2) * 26 + (i%2 ? 18 : -14));
-    GIRO.push((i%2 ? 1 : -1) * (14 + i*5));
+  var stato = [];
+
+  function misuraBox(){
+    var r = cop.getBoundingClientRect();
+    return { w: r.width, h: r.height };
   }
 
-  /* la forma: una per bolla, che si deforma piano su tre versioni.
-     E la scritta dentro, misurata sulla larghezza utile della bolla: nomi
-     lunghi come SOUNDCLOUD altrimenti escono dal bordo. */
+  /* il punto di emissione arriva dal CSS: --bocca-x e --bocca-y su #cop */
+  function bocca(dim){
+    var cs = getComputedStyle(cop);
+    var fx = parseFloat(cs.getPropertyValue('--bocca-x')) || 66;
+    var fy = parseFloat(cs.getPropertyValue('--bocca-y')) || 46;
+    return { x: dim.w * fx/100, y: dim.h * fy/100 };
+  }
+
+  function nasce(i, dim, subito){
+    var b = bocca(dim);
+    var lato = Math.max(84, Math.min(dim.w * .30, 132));
+    return {
+      s: lato * (0.86 + (i%3)*0.10),
+      x0: b.x + (Math.random()*2-1) * dim.w * .08,
+      /* piano: dalla bocca al bordo alto ci mette venti secondi buoni. Una
+         bolla che schizza via non la si fa in tempo a premere. E le velocita'
+         sono scalate per indice, se no dopo un giro escono all'unisono. */
+      vel: 12 + i*4.5 + Math.random()*5,
+      amp: dim.w * (0.05 + Math.random()*0.07),
+      freq: 0.10 + Math.random()*0.10,
+      fase: Math.random()*Math.PI*2,
+      /* alla prima passata sono gia' sparse lungo il tragitto, cosi' si
+         vedono tutte da subito invece di uscire una alla volta */
+      y: subito ? b.y - i * b.y * .30 : b.y,
+      attesa: 0
+    };
+  }
+
   function vesti(){
+    var dim = misuraBox();
     corpi.forEach(function(c,i){
-      var nm = c.firstElementChild, lw = c.offsetWidth * .74;
-      if (nm && lw > 20){
+      var st = stato[i]; if (!st) return;
+      bolle[i].style.setProperty('--s', st.s.toFixed(0)+'px');
+      var w = st.s, h = st.s*1.06;
+      var nm = c.firstElementChild, lw = w * .74;
+      if (nm){
         nm.style.fontSize = '40px';
         var largo = 0;
         nm.textContent.split(' ').forEach(function(par){
@@ -839,13 +700,9 @@ function Bolle(box){
           m.textContent = par; nm.appendChild(m);
           largo = Math.max(largo, m.offsetWidth); nm.removeChild(m);
         });
-        nm.style.fontSize = largo ? clamp(40 * lw / largo, 9, 19).toFixed(1)+'px' : '';
+        nm.style.fontSize = largo ? clamp(40 * lw / largo, 9, 17).toFixed(1)+'px' : '';
       }
-    });
-    if (!SUPPORTA_RITAGLIO) return;
-    corpi.forEach(function(c,i){
-      var w = c.offsetWidth, h = c.offsetHeight;
-      if (!w || !h) return;
+      if (!SUPPORTA_RITAGLIO) return;
       var pu = 9 + (i%3), irr = .20 + (i%4)*.04, g = i*1.15;
       var f1 = forma(w,h,pu,irr,g), f2 = forma(w,h,pu,irr,g+.5), f3 = forma(w,h,pu,irr,g+1);
       c.style.borderRadius = '0';
@@ -858,72 +715,71 @@ function Bolle(box){
       }
     });
   }
+
+  var dim = misuraBox();
+  for (var i=0;i<n;i++) stato.push(nasce(i, dim, true));
   vesti();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(vesti);
-  window.addEventListener('resize', function(){ alFrame(vesti); });
 
-  if (CALMO) return;   /* niente volo: restano dove sono */
-
-  /* --- il volo -----------------------------------------------------------
-     Non un tempo e non una corsa continua: una soglia. Finche' il blocco sta
-     in mezzo allo schermo le bolle stanno; quando il suo bordo basso sale
-     oltre il 42% del viewport — cioe' quando si sta passando alla sezione
-     dopo — se ne vanno **tutte insieme**. Tornando indietro rientrano, piu'
-     piano di come se ne sono andate.
-
-     Le due soglie non coincidono (42% per andarsene, 62% per tornare): se
-     fossero la stessa, fermandosi sul bordo le bolle sbatterebbero avanti e
-     indietro a ogni pixel di scroll.                                        */
-  var p = 0, via = false, dorme = false;
-  /* col dito o col puntatore sopra non si stacca niente: una bolla che
-     scappa proprio mentre stai per premerla e' un dispetto, non un effetto */
-  var toccata = false;
-  box.addEventListener('pointerenter', function(){ toccata = true; });
-  box.addEventListener('pointerleave', function(){ toccata = false; });
-
-  function soglia(){
-    var r = box.getBoundingClientRect(), vh = window.innerHeight;
-    var prima = via;
-    if (!via){
-      if (r.bottom < vh*.42 && !toccata && !box.contains(document.activeElement)) via = true;
-    } else if (r.bottom > vh*.62){
-      via = false;
+  window.addEventListener('resize', function(){ alFrame(function(){
+    var d = misuraBox();
+    for (var i=0;i<n;i++){
+      var b = bocca(d), vecchio = stato[i];
+      var f = nasce(i, d, false);
+      f.y = Math.min(vecchio.y, b.y);      /* non le si rimanda giu' di colpo */
+      f.attesa = vecchio.attesa;
+      stato[i] = f;
     }
-    if (prima !== via) dorme = false;
+    vesti();
+  }); });
+
+  /* Il posizionamento non puo' aspettare il primo frame: senza questo le
+     bolle restano ferme nell'angolo in alto a sinistra finche' rAF non parte,
+     e su una scheda in secondo piano puo' voler dire parecchio. */
+  function rendi(dt){
+    var d = misuraBox();
+    if (!d.h || !d.w) return;
+    var b = bocca(d);
+
+    for (var i=0;i<n;i++){
+      var st = stato[i], a = bolle[i];
+      if (st.attesa > 0){
+        st.attesa -= dt;
+        a.style.opacity = '0';
+        a.style.pointerEvents = 'none';
+        if (st.attesa <= 0){ st.y = b.y; st.fase = Math.random()*Math.PI*2; }
+        continue;
+      }
+      if (!CALMO) st.y -= st.vel * dt;
+      var x = st.x0 + Math.sin(st.y * st.freq * 0.02 + st.fase) * st.amp;
+
+      /* uscita dal bordo alto: sparisce e viene risputata dopo un paio di
+         secondi, sfalsata rispetto alle altre */
+      if (st.y < -st.s * 0.6){
+        st.attesa = 1.1 + Math.random()*1.3;
+        continue;
+      }
+      /* svanisce ai due capi, cosi' non compare e non sparisce di colpo */
+      var op = Math.min(1, (b.y - st.y) / 26 + .35)
+             * Math.min(1, (st.y + st.s*0.6) / (st.s*0.9));
+      a.style.opacity = clamp(op, 0, 1).toFixed(3);
+      a.style.pointerEvents = op > .55 ? 'auto' : 'none';
+      a.style.transform = 'translate3d('+x.toFixed(1)+'px,'+st.y.toFixed(1)+'px,0)';
+    }
   }
 
-  (function giro(){
+  rendi(0);
+
+  var ultimo = performance.now();
+  (function giro(ora){
     requestAnimationFrame(giro);
-    if (dorme) return;
-
-    var ob = via ? 1 : 0;
-    /* se ne vanno con calma e tornano ancora piu' piano: e' l'asimmetria che
-       le fa sembrare bolle e non pannelli che scorrono */
-    p += (ob - p) * (via ? .026 : .015);
-    if (Math.abs(ob - p) < .0015){ p = ob; dorme = true; }
-
-    var vh = window.innerHeight, corsa = vh*.9 + 300;
-    var e = p * p;                      /* parte piano, poi accelera */
-    var op = (1 - smorza(mappa(p,.42,.94))).toFixed(3);
-    for (var i=0;i<n;i++){
-      /* tutte insieme, ma non come un blocco unico: deriva e rotazione
-         restano diverse, se no sembrerebbe un pannello che scivola */
-      bolle[i].style.transform =
-        'translate3d('+(DERIVA[i]*e).toFixed(1)+'px,calc(var(--dy,0px) + '
-        + (-corsa*e).toFixed(1)+'px),0) scale('+(1-.26*e).toFixed(3)
-        +') rotate('+(GIRO[i]*e).toFixed(1)+'deg)';
-      bolle[i].style.opacity = op;
-      bolle[i].style.pointerEvents = p > .12 ? 'none' : 'auto';
-    }
-  })();
-
-  window.addEventListener('scroll', function(){ alFrame(soglia); }, {passive:true});
-  window.addEventListener('resize', function(){ alFrame(soglia); });
-  box.addEventListener('focusin', function(){ via = false; dorme = false; });
-  soglia();
+    var dt = Math.min((ora - ultimo)/1000, 1/20); ultimo = ora;
+    if (document.hidden) return;
+    rendi(dt);
+  })(performance.now());
 }
 
-(function(){ var b = $('#piatt'); if (b) Bolle(b); })();
+(function(){ var b = $('#piatt'), c = $('#cop'); if (b && c) Bolle(b, c); })();
 
 /* --------------------------------------------------------------------------
    ascolta: le uscite e la lastra che si apre di fianco
@@ -982,14 +838,6 @@ function Bolle(box){
     scorri();
   }
 
-  /* il motivo torna anche fuori dalla scena: una maschera sola, quando la
-     sezione entra, e non tutte le volte */
-  var oss = new IntersectionObserver(function(vs){
-    vs.forEach(function(v){
-      if (v.isIntersecting) setTimeout(function(){ Maschere.gruppo(2); }, 420);
-    });
-  }, { threshold:.35 });
-  [$('#ascolta'), $('#contatti')].forEach(function(s){ if(s) oss.observe(s); });
 })();
 
 /* --------------------------------------------------------------------------
@@ -1021,6 +869,29 @@ function Bolle(box){
       mostra('Indirizzo copiato');
     }, function(){ window.location.href = 'mailto:'+DATI.booking; });
   });
+})();
+
+/* --------------------------------------------------------------------------
+   la maschera a gocce
+   Il motore sta in blob-mask.js. Qui c'e' solo quando accenderlo: finche' si
+   e' sulla copertina le gocce non arrivano — li' salgono gia' i pulsanti, e
+   due sciami insieme sarebbero rumore. Appena la copertina scende sotto il
+   30% di schermo visibile, cominciano.
+   -------------------------------------------------------------------------- */
+(function(){
+  var palco = $('main.stage'), inv = $('#c-invert'), tin = $('#c-tint'), cop = $('#cop');
+  if (!palco || !inv || !cop || !window.BlobMask) return;
+  var mask = BlobMask.monta({ palco: palco, invert: inv, tint: tin });
+  if (!mask) return;            /* niente WebGL: i canvas restano vuoti */
+
+  function guarda(){
+    var r = cop.getBoundingClientRect(), vh = window.innerHeight;
+    var visto = Math.max(0, Math.min(vh, r.bottom) - Math.max(0, r.top)) / vh;
+    mask.livello(visto < .30 ? 1 : 0);
+  }
+  window.addEventListener('scroll', function(){ alFrame(guarda); }, {passive:true});
+  window.addEventListener('resize', function(){ alFrame(guarda); });
+  guarda();
 })();
 
 /* --------------------------------------------------------------------------

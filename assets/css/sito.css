@@ -76,7 +76,18 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 :focus-visible{outline:2px solid var(--acc);outline-offset:3px}
 svg.defs{position:absolute;width:0;height:0;overflow:hidden}
 .wrap{max-width:var(--max);margin:0 auto;padding-inline:var(--gut)}
-main{position:relative;z-index:1}
+/* Il palcoscenico della maschera a gocce. `isolation:isolate` non e'
+   opzionale: senza, la fusione risale alla radice del documento e tinge
+   anche testata e menu. E un fondo dichiarato ci vuole: la fusione ha
+   bisogno di qualcosa su cui operare. */
+main.stage{position:relative;z-index:1;isolation:isolate;background:var(--fondo);
+  transition:background-color .55s var(--e)}
+main.stage > canvas{
+  position:fixed;inset:0;width:100%;height:100%;display:block;
+  pointer-events:none;                 /* il testo sotto resta selezionabile */
+}
+#c-invert{mix-blend-mode:difference}   /* inverte */
+#c-tint  {mix-blend-mode:screen}       /* colora  */
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 
 /* --- 02 tipografia ------------------------------------------------------- */
@@ -195,58 +206,6 @@ body.notte #righe{background:repeating-linear-gradient(180deg,
   background:var(--blu);box-shadow:0 0 14px rgba(27,59,255,.6);
 }
 
-/* --- le maschere -----------------------------------------------------------
-   Non sono nuvole sfumate: sono forme piene, a bordo netto, che ribaltano
-   quello che coprono. Dentro alla sagoma il fondo diventa blu e il testo
-   bianco; fuori non cambia un pixel.
-
-   Come: backdrop-filter rovescia il fondo (bianco -> nero, testo nero ->
-   bianco), poi il colore della forma in `screen` tinge cio' che e' diventato
-   nero e lascia stare cio' che e' diventato bianco. Una forma nera al posto
-   del blu da' l'inversione pura.
-
-   grayscale(1) prima di invert(1) non e' un vezzo: senza, il blu del sito
-   rovesciato diventa giallo, e il giallo qui dentro non esiste. Cosi' tutto
-   quello che finisce sotto la maschera cade sull'asse blu-bianco.
-
-   Perche' non e' un canvas: cosi' la forma vive di transform e border-radius,
-   che il compositore muove da solo, e il testo sotto resta testo vero.       */
-.maschera{
-  /* sopra alla testata: una maschera che si ferma davanti alla barra fissa
-     si vede che si ferma */
-  position:fixed;left:0;top:0;z-index:115;pointer-events:none;
-  width:var(--s);height:var(--h,calc(var(--s) * 1.16));margin-left:calc(var(--s) / -2);
-  background:var(--tinta,#1B3BFF);
-  mix-blend-mode:screen;
-  -webkit-backdrop-filter:grayscale(1) invert(1);
-  backdrop-filter:grayscale(1) invert(1);
-  /* la forma vera la mette il copione con un clip-path irregolare; questo
-     border-radius e' solo la rete se clip-path: path() non c'e' */
-  border-radius:62% 38% 46% 54% / 55% 48% 52% 45%;
-  transform:translate3d(0,130vh,0);
-  will-change:transform,clip-path;
-}
-/* dove backdrop-filter non c'e', la forma fa comunque il suo mestiere:
-   inverte e basta, senza tinta */
-@supports not ((backdrop-filter:grayscale(1) invert(1)) or (-webkit-backdrop-filter:grayscale(1) invert(1))){
-  .maschera{background:#FFFFFF;mix-blend-mode:difference}
-}
-.maschera.sale{animation:msale var(--d) cubic-bezier(.36,.02,.28,1) forwards}
-/* la deformazione: dove il ritaglio irregolare non c'e', si torna al
-   border-radius che almeno respira */
-.maschera.tonda.sale{animation:msale var(--d) cubic-bezier(.36,.02,.28,1) forwards,
-                               mmorfa var(--dm) ease-in-out infinite}
-@keyframes msale{
-  from{transform:translate3d(var(--x0),128vh,0) rotate(0deg) scale(.78)}
-  to  {transform:translate3d(var(--x1),-58vh,0) rotate(var(--r)) scale(1.08)}
-}
-@keyframes mmorfa{
-  0%,100%{border-radius:62% 38% 46% 54% / 55% 48% 52% 45%}
-  25%    {border-radius:41% 59% 63% 37% / 43% 62% 38% 57%}
-  50%    {border-radius:54% 46% 33% 67% / 64% 38% 62% 36%}
-  75%    {border-radius:35% 65% 52% 48% / 50% 56% 44% 50%}
-}
-
 /* cursore: solo dove c'e' un puntatore vero */
 #cur,#cur2{position:fixed;top:0;left:0;z-index:140;pointer-events:none;
   border-radius:50%;opacity:0;transition:opacity .3s}
@@ -321,6 +280,9 @@ body.oltre #testata .marchio{opacity:1;transform:none;pointer-events:auto}
   overflow:hidden;isolation:isolate}
 #cop .med{position:absolute;inset:0;z-index:0}
 #cop .med video,#cop .med img{width:100%;height:100%;object-fit:cover;
+  /* il fotogramma scende: si vede piu' testa in alto e resta meno vuoto in
+     basso, dove ora galleggiano i pulsanti */
+  object-position:50% 40%;
   filter:contrast(1.1) saturate(0)}
 /* La copertina adesso e' una scena scura, non piu' il caleidoscopio chiaro:
    il velo va nell'altro verso, e tutto quello che ci sta sopra si rilegge in
@@ -334,7 +296,7 @@ body.oltre #testata .marchio{opacity:1;transform:none;pointer-events:auto}
 #cop .mono{color:var(--grigio)}
 #cop .riga{border-top-color:rgba(242,239,232,.24)}
 #cop .giu .ago::after{background:var(--nero-2)}
-#cop .in{position:relative;width:100%;padding:0 var(--gut) clamp(24px,7vw,58px)}
+#cop .in{position:relative;width:100%;padding:0 var(--gut) clamp(14px,4vw,34px)}
 #cop .nome{
   font-family:var(--disp);font-weight:800;text-transform:uppercase;
   font-size:clamp(2.6rem,17vw,13rem);line-height:.8;letter-spacing:-.045em;
@@ -348,7 +310,7 @@ body.oltre #testata .marchio{opacity:1;transform:none;pointer-events:auto}
 #cop .claim{font-family:var(--disp);font-weight:600;font-size:clamp(1rem,4.6vw,1.6rem);
   letter-spacing:-.01em;text-transform:uppercase;line-height:1}
 #cop .riga{display:flex;justify-content:space-between;align-items:flex-end;gap:1rem;
-  border-top:1px solid var(--linea);padding-top:.9rem;margin-top:1.4rem}
+  border-top:1px solid var(--linea);padding-top:.7rem;margin-top:.9rem}
 #cop .giu{display:inline-flex;flex-direction:column;align-items:center;gap:.4rem}
 #cop .giu .ago{width:1px;height:34px;background:var(--acc);position:relative;overflow:hidden}
 #cop .giu .ago::after{content:'';position:absolute;inset:0;background:var(--fondo);
@@ -470,54 +432,32 @@ body.oltre #testata .marchio{opacity:1;transform:none;pointer-events:auto}
 @keyframes scan{0%{top:-2px;opacity:0}10%{opacity:.7}90%{opacity:.5}100%{top:100%;opacity:0}}
 
 /* --- i pulsanti-bolla ------------------------------------------------------
-   Le piattaforme non sono righe: sono bolle. Stessa forma irregolare delle
-   maschere — un giro di punti a raggio diverso raccordati con delle cubiche,
-   generato dal copione — e stesso comportamento: stanno ferme finche' le
-   guardi, e appena scorri oltre si staccano e salgono via.
+   Non stanno piu' in una griglia: escono all'altezza della bocca e salgono,
+   dentro alla copertina. Quando escono dal bordo alto vengono risputati dopo
+   un paio di secondi. Sono link veri: si possono premere mentre galleggiano.
 
-   La risalita e' comandata dallo scroll, non da un tempo: quindi tornando
-   indietro tornano al loro posto. Ma tornano piu' piano di come se ne sono
-   andate — lo decide il copione, con due velocita' diverse per l'andata e il
-   ritorno.                                                                  */
-.bolle-btn{
-  max-width:var(--max);margin:0 auto;
-  padding:clamp(34px,8vw,72px) var(--gut) clamp(4px,1.5vw,14px);
-  display:grid;grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:clamp(10px,3vw,22px);
+   Il punto di emissione e' qui sotto, in un posto solo: --bocca-x e --bocca-y
+   sono frazioni del riquadro della copertina.                                */
+#cop{--bocca-x:66%;--bocca-y:46%}
+#cop .bolle-btn{position:absolute;inset:0;z-index:3;pointer-events:none}
+#cop .bolle-btn a{
+  position:absolute;left:0;top:0;
+  width:var(--s);height:calc(var(--s) * 1.06);
+  margin:calc(var(--s) * -0.53) 0 0 calc(var(--s) * -0.5);
+  pointer-events:auto;will-change:transform,opacity;
 }
-@media(min-width:760px){
-  .bolle-btn{grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(14px,2.4vw,40px)}
-}
-.bolle-btn a{
-  position:relative;display:block;aspect-ratio:1/1.06;
-  /* lo scarto verticale rompe la griglia: sono bolle, non caselle */
-  transform:translate3d(0,var(--dy,0px),0);
-  will-change:transform,opacity;
-}
-.bolle-btn a:last-child{grid-column:1/-1;justify-self:center;width:min(52%,190px)}
-@media(min-width:760px){.bolle-btn a:last-child{grid-column:auto;width:auto}}
-
 .bolle-btn .corpo{
   position:absolute;inset:0;display:grid;place-items:center;
   background:var(--tinta,#1B3BFF);color:var(--osso);
-  border-radius:54% 46% 42% 58% / 58% 44% 56% 42%;   /* rete: sostituito dal ritaglio */
-  animation:galla var(--gd,7s) ease-in-out var(--gr,0s) infinite;
+  border-radius:54% 46% 42% 58% / 58% 44% 56% 42%;   /* rete se manca il ritaglio */
   transition:background .35s var(--e);
 }
 .bolle-btn .nm{
   position:relative;font-family:var(--disp);font-weight:800;text-transform:uppercase;
   letter-spacing:-.015em;line-height:1.06;text-align:center;padding:0 10%;
 }
-/* il galleggiamento: piccolo, lento, sfasato. Basta a non farle sembrare
-   incollate alla pagina. */
-@keyframes galla{
-  0%,100%{transform:translate3d(0,0,0)}
-  50%    {transform:translate3d(0,-7px,0)}
-}
-@media (hover:hover){
-  .bolle-btn a:hover .corpo{background:var(--nero)}
-}
-.bolle-btn a:active .corpo{background:var(--nero)}
+@media (hover:hover){ .bolle-btn a:hover .corpo{background:var(--osso);color:var(--nero)} }
+.bolle-btn a:active .corpo{background:var(--osso);color:var(--nero)}
 
 /* --- 12 chi e' ----------------------------------------------------------- */
 /* Tre righe grandi e basta. Dietro, il respiro: la stessa scena d'acqua del
@@ -625,7 +565,6 @@ body.oltre #testata .marchio{opacity:1;transform:none;pointer-events:auto}
   *,*::before,*::after{animation-duration:.001ms !important;animation-iteration-count:1 !important;
     transition-duration:.001ms !important}
   .rev,.rev-p{opacity:1;transform:none;filter:none}
-  .maschera{display:none}
   #grana{animation:none}
   /* la scena resta, ma corta: la sequenza e' comandata dal dito, non da un
      tempo che scorre per conto suo */
