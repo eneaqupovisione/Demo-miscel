@@ -598,6 +598,30 @@ var Sequenza = (function(){
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(misuraRighe);
   window.addEventListener('resize', function(){ alFrame(misuraRighe); });
 
+  /* --- le chiuse che si scrivono ------------------------------------------
+     La frase che apre sta ferma. Le chiuse arrivano una alla volta mentre si
+     scende, e il taglio passa DENTRO alla lettera invece che carattere per
+     carattere: e' la differenza fra scritto e digitato.
+
+     Il tempo non c'entra: la maschera la comanda lo scroll. Un'animazione a
+     tempo si scriverebbe da sola mentre uno guarda altrove, e chi torna su
+     la trova gia' fatta. Cosi' invece la riga si scrive quando la si sta
+     leggendo, e chi risale la vede tornare indietro.
+
+     Le fette sono strette e si sovrappongono appena: una riga finisce di
+     scriversi mentre la successiva comincia, che e' come si legge. */
+  var chiuse = $$('[data-scrive] > span', sez);
+  chiuse.forEach(function(sp){ sp.innerHTML = '<i>' + sp.innerHTML + '</i>'; });
+  var DA = 0.30, FETTA = 0.15, PASSO = 0.115;
+
+  function scriviChiuse(){
+    for (var i=0;i<chiuse.length;i++){
+      var da = DA + i*PASSO;
+      var k = CALMO ? 1 : smorza(mappa(p, da, da + FETTA));
+      chiuse[i].firstChild.style.clipPath = 'inset(0 ' + ((1-k)*100).toFixed(1) + '% 0 0)';
+    }
+  }
+
   function misura(){
     DPR = Math.min(window.devicePixelRatio || 1, 2);
     W = cv.clientWidth; H = cv.clientHeight;
@@ -606,7 +630,11 @@ var Sequenza = (function(){
     ctx.setTransform(DPR,0,0,DPR,0,0);
     rendi();
   }
-  function rendi(){ Sequenza.disegna(ctx, W, H, p, null, Sequenza.RESPIRO); }
+  function rendi(){
+    Sequenza.disegna(ctx, W, H, p, null, Sequenza.RESPIRO);
+    scriviChiuse();
+  }
+  scriviChiuse();
 
   var pre = new IntersectionObserver(function(vs){
     if (!vs[0].isIntersecting) return;

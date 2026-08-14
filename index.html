@@ -19,11 +19,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Archivo:wght@300;400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-<link rel="preload" as="image" href="assets/media/copertina.jpg?v=50">
+<link rel="preload" as="image" href="assets/media/copertina.jpg?v=52">
 <!-- il ?v= serve: GitHub Pages tiene i file in cache dieci minuti, e chi
      ha gia' aperto il sito continuerebbe a vedere la versione vecchia.
      Si alza il numero a ogni pubblicazione. -->
-<link rel="stylesheet" href="assets/css/sito.css?v=50">
+<link rel="stylesheet" href="assets/css/sito.css?v=52">
 </head>
 <body>
 
@@ -46,7 +46,7 @@
 <!-- la lastra a raggi X delle uscite -->
 <div id="lastra" aria-hidden="true">
   <i class="scan"></i>
-  <img src="assets/media/colonna.jpg?v=50" alt="">
+  <img src="assets/media/colonna.jpg?v=52" alt="">
   <div class="c"><span class="k">lastra · 001</span><div class="h"></div></div>
 </div>
 
@@ -76,8 +76,8 @@
 <div id="menu" aria-hidden="true">
   <button id="chiudi">Chiudi</button>
   <nav>
-    <a href="#ascolta" data-va>Ascolta</a>
     <a href="#chi" data-va>Chi è</a>
+    <a href="#ascolta" data-va>Ascolta</a>
     <a href="#contatti" data-va>Scrivi</a>
   </nav>
   <div class="pie" id="menuSocial"></div>
@@ -91,9 +91,9 @@
 <!-- ========================== 01 · COPERTINA ========================== -->
 <section id="cop">
   <div class="med">
-    <video id="vCop" poster="assets/media/copertina.jpg?v=50" muted loop playsinline autoplay preload="auto"
+    <video id="vCop" poster="assets/media/copertina.jpg?v=52" muted loop playsinline autoplay preload="auto"
            disablepictureinpicture aria-hidden="true">
-      <source src="assets/media/copertina.mp4?v=50" type="video/mp4">
+      <source src="assets/media/copertina.mp4?v=52" type="video/mp4">
     </video>
   </div>
 
@@ -115,22 +115,11 @@
   </div>
 </section>
 
-<!-- ========================== 02 · ASCOLTA ==========================
-     Subito sotto il nome: la cosa per cui uno e' venuto qui. -->
-<section id="ascolta" class="sez">
-  <div class="wrap">
-    <div class="occhiello rev">
-      <span class="mono n">02</span><span class="mono">Ascolta</span>
-    </div>
-    <h2 class="tit" data-adatta data-max="180"><span class="gx" data-t="Ascolta">Ascolta</span></h2>
-
-    <div class="uscite" id="uscite"></div>
-  </div>
-</section>
-
-<!-- ========================== 03 · CHI È ==========================
-     Poche righe grandi. Dietro, il respiro: la stessa scena d'acqua, che
-     entra dal lato quando la sezione arriva e si muove con lo scroll. -->
+<!-- ========================== 02 · CHI È ==========================
+     Prima dell'ascolto, perche' e' lei a dire chi e' — e lo dice con parole
+     sue, prese da un suo pezzo. La frase che apre sta ferma ed e' li' da
+     subito; le tre chiuse si scrivono mentre si scende, una alla volta.
+     Dietro, il respiro: la scena d'acqua che entra dal lato. -->
 <section id="chi" class="sez">
   <div class="sfondo" aria-hidden="true">
     <canvas id="cvChi"></canvas>
@@ -139,16 +128,35 @@
 
   <div class="wrap in">
     <div class="occhiello rev">
-      <span class="mono n">03</span><span class="mono">Chi è</span>
+      <span class="mono n">02</span><span class="mono">Chi è</span>
     </div>
 
     <p class="dire" data-righe>
-      <span><em>Sott'acqua</em></span>
-      <span>un secondo</span>
-      <span>in più.</span>
+      <span>Un cuore puro</span>
+      <span>che si <em>mescola</em></span>
+    </p>
+
+    <!-- si scrivono con lo scroll, una alla volta e nell'ordine in cui
+         stanno qui: la fetta di scroll di ognuna la calcola il copione -->
+    <p class="segue" data-scrive>
+      <span>con la delicatezza,</span>
+      <span>o con la rabbia,</span>
+      <span>ai traumi d'infanzia.</span>
     </p>
 
     <p class="mono nota rev">Voce e chitarra &nbsp;·&nbsp; niente altro</p>
+  </div>
+</section>
+
+<!-- ========================== 03 · ASCOLTA ========================== -->
+<section id="ascolta" class="sez">
+  <div class="wrap">
+    <div class="occhiello rev">
+      <span class="mono n">03</span><span class="mono">Ascolta</span>
+    </div>
+    <h2 class="tit" data-adatta data-max="180"><span class="gx" data-t="Ascolta">Ascolta</span></h2>
+
+    <div class="uscite" id="uscite"></div>
   </div>
 </section>
 
@@ -184,7 +192,7 @@
   </div>
 </footer>
 
-<script src="assets/js/blob-mask.js?v=50"></script>
-<script src="assets/js/sito.js?v=50"></script>
+<script src="assets/js/blob-mask.js?v=52"></script>
+<script src="assets/js/sito.js?v=52"></script>
 </body>
 </html>
