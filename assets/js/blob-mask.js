@@ -417,9 +417,15 @@ function monta(opz){
     livello: function(v){
       obiettivo = v < 0 ? 0 : (v > 1 ? 1 : v);
       if (obiettivo > 0){
-        if (!acceso && !seminate) semina();
-        acceso = true;
-        ultimo = performance.now();
+        /* SOLO alla transizione. Rimettere l'orologio a ogni chiamata voleva
+           dire azzerare il dt a ogni evento di scroll — e siccome la soglia
+           si ricontrolla mentre si scorre, la simulazione si fermava proprio
+           mentre la si guardava scorrere. */
+        if (!acceso){
+          if (!seminate) semina();
+          ultimo = performance.now();
+          acceso = true;
+        }
       } else {
         acceso = false;
       }

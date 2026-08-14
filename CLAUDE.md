@@ -69,6 +69,14 @@ servito da un server statico.
 - Per guardare cosa disegna un canvas WebGL **non serve** `drawImage` né
   `readPixels` da fuori del frame: senza `preserveDrawingBuffer` tornano
   sempre neri, e sembra che l'effetto non ci sia. Si guarda a schermo.
+- `BlobMask.livello()` viene chiamata a **ogni evento di scroll**: dentro non
+  ci va niente che tocchi l'orologio o lo stato: rimettere `ultimo` a
+  `performance.now()` li' dentro azzerava il dt e fermava la simulazione
+  proprio mentre si scorreva.
+- Nel ciclo dei pulsanti la **rinascita va dove l'attesa scende a zero**, non
+  in un ramo piu' in basso: al giro in cui l'attesa finisce in quel ramo non
+  si entra piu', la bolla resta fuori schermo e si rimette in attesa da capo.
+  Spariva una volta e non tornava piu'.
 - La forma delle maschere è generata dal copione (`forma()` in `sito.js`) e
   animata con la Web Animations API, non con un `@keyframes`: servono tre
   ritagli con lo **stesso numero di segmenti**, altrimenti il passaggio

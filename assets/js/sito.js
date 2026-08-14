@@ -760,7 +760,22 @@ function Bolle(box, cop){
     var relax = 1 - Math.exp(-dt/0.55);
     for (i=0;i<n;i++){
       var st = stato[i];
-      if (st.attesa > 0){ st.attesa -= dt; continue; }
+      if (st.attesa > 0){
+        st.attesa -= dt;
+        /* La rinascita va QUI, dove il tempo scende a zero. Metterla piu'
+           sotto voleva dire non eseguirla mai: al giro in cui l'attesa
+           finisce non si entra piu' in quel ramo, la bolla resta con la sua
+           ultima posizione fuori schermo e si rimette in attesa da capo —
+           spariva una volta e non tornava piu'. */
+        if (st.attesa <= 0){
+          st.attesa = 0;
+          st.y = b.y;
+          st.x = b.x + (Math.random()*2-1)*d.w*.17;
+          st.vx = 0; st.vy = 0;
+          st.fase = Math.random()*Math.PI*2;
+        }
+        continue;
+      }
       st.vy += (-st.vel - st.vy) * relax;
       st.vx += (Math.sin(clock*st.freq*6.2832 + st.fase)*st.amp - st.vx) * relax;
     }
@@ -790,10 +805,6 @@ function Bolle(box, cop){
       if (st2.attesa > 0){
         el.style.opacity = '0';
         el.style.pointerEvents = 'none';
-        if (st2.attesa <= 0){
-          st2.y = b.y; st2.x = b.x + (Math.random()*2-1)*d.w*.17;
-          st2.vx = 0; st2.vy = 0; st2.fase = Math.random()*Math.PI*2;
-        }
         continue;
       }
       if (!CALMO){ st2.x += st2.vx*dt; st2.y += st2.vy*dt; }
