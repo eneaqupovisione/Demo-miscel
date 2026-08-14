@@ -16,9 +16,12 @@
 /* --- 00 variabili -------------------------------------------------------- */
 :root{
   /* materia */
-  --osso:#F2EFE8;
-  --osso-2:#E8E4DA;
-  --osso-3:#D9D4C8;
+  /* La carta non e' bianca: e' un giallo sporco, come il fondo delle foto
+     del girato. Il bianco vero resta ai dettagli — il nome in copertina, la
+     scritta dentro alle bolle — dove serve che stacchi. */
+  --osso:#F3ECD2;
+  --osso-2:#E9E0BF;
+  --osso-3:#D8CDA8;
   --grigio:#C3C5CB;
   --grigio-2:#8B8F99;
   --grigio-3:#585C67;
@@ -37,7 +40,7 @@
   --linea:rgba(11,14,28,.16);
   --linea-f:rgba(11,14,28,.32);
   --acc:var(--blu);
-  --vel:rgba(242,239,232,.72);
+  --vel:rgba(243,236,210,.72);
 
   --disp:'Syne',Impact,'Haettenschweiler',sans-serif;
   --sans:'Archivo','Helvetica Neue',-apple-system,BlinkMacSystemFont,sans-serif;
@@ -52,8 +55,8 @@ body.notte{
   --fondo:var(--nero);
   --testo:var(--osso);
   --tenue:var(--grigio);
-  --linea:rgba(242,239,232,.18);
-  --linea-f:rgba(242,239,232,.4);
+  --linea:rgba(243,236,210,.18);
+  --linea-f:rgba(243,236,210,.4);
   --acc:var(--blu-l);
   --vel:rgba(11,14,28,.66);
 }
@@ -198,7 +201,7 @@ body.notte #grana{mix-blend-mode:screen;opacity:.32}
     rgba(11,14,28,.05) 0 1px,transparent 1px 3px);
 }
 body.notte #righe{background:repeating-linear-gradient(180deg,
-  rgba(242,239,232,.06) 0 1px,transparent 1px 3px)}
+  rgba(243,236,210,.06) 0 1px,transparent 1px 3px)}
 
 /* barra di avanzamento */
 #prog{
@@ -303,7 +306,7 @@ body.giu #apri{transform:translate3d(0,-115%,0)}
 }
 #cop .claim{color:var(--osso)}
 #cop .mono{color:var(--grigio)}
-#cop .riga{border-top-color:rgba(242,239,232,.24)}
+#cop .riga{border-top-color:rgba(243,236,210,.24)}
 #cop .giu .ago::after{background:var(--nero-2)}
 #cop .in{position:relative;width:100%;padding:0 var(--gut) clamp(14px,4vw,34px)}
 #cop .nome{
@@ -412,7 +415,7 @@ body.giu #apri{transform:translate3d(0,-115%,0)}
 .uscita .fr{font-family:var(--mono);font-size:.9rem;transition:transform .45s var(--e)}
 .uscita.viva{color:var(--osso);padding-inline:.8rem}
 .uscita.viva::before{transform:none}
-.uscita.viva .meta{color:rgba(242,239,232,.72)}
+.uscita.viva .meta{color:rgba(243,236,210,.72)}
 .uscita.viva .fr{transform:translateX(6px)}
 .uscita .col{display:flex;flex-direction:column;gap:.3rem;min-width:0;overflow:hidden}
 @media(min-width:760px){
@@ -485,10 +488,10 @@ body.giu #apri{transform:translate3d(0,-115%,0)}
 /* il velo tiene le righe leggibili senza spegnere l'immagine */
 #chi .sfondo .velo{
   position:absolute;inset:0;
-  background:linear-gradient(90deg,var(--fondo) 0%,rgba(242,239,232,.62) 42%,rgba(242,239,232,0) 88%);
+  background:linear-gradient(90deg,var(--fondo) 0%,rgba(243,236,210,.62) 42%,rgba(243,236,210,0) 88%);
 }
 @media(max-width:759px){
-  #chi .sfondo .velo{background:linear-gradient(180deg,var(--fondo) 0%,rgba(242,239,232,.5) 30%,rgba(242,239,232,.72) 100%)}
+  #chi .sfondo .velo{background:linear-gradient(180deg,var(--fondo) 0%,rgba(243,236,210,.5) 30%,rgba(243,236,210,.72) 100%)}
 }
 #chi .in{position:relative;z-index:1}
 
@@ -529,7 +532,7 @@ body.giu #apri{transform:translate3d(0,-115%,0)}
 }
 
 #contatti .in{position:relative;z-index:2}
-#contatti .occhiello{border-color:rgba(242,239,232,.2)}
+#contatti .occhiello{border-color:rgba(243,236,210,.2)}
 #contatti .tit{color:var(--osso)}
 #contatti .azione{margin:clamp(22px,5vw,38px) 0 clamp(18px,4vw,28px)}
 #contatti .azione .btn{border-color:var(--blu);background:var(--blu);color:var(--osso);
@@ -543,13 +546,13 @@ body.giu #apri{transform:translate3d(0,-115%,0)}
   transition:color .3s,transform .5s var(--e);
 }
 #contatti .mail:hover,#contatti .mail:active{color:var(--osso)}
-#contatti .altri{list-style:none;margin-top:2.2rem;border-top:1px solid rgba(242,239,232,.16)}
+#contatti .altri{list-style:none;margin-top:2.2rem;border-top:1px solid rgba(243,236,210,.16)}
 #contatti .altri li{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;
-  padding:.8rem 0;border-bottom:1px solid rgba(242,239,232,.16)}
+  padding:.8rem 0;border-bottom:1px solid rgba(243,236,210,.16)}
 #contatti .altri a{font-size:.92rem;color:var(--osso);text-align:right;word-break:break-word}
 #contatti .altri a:hover{color:var(--blu-l)}
 #contatti .social{display:flex;flex-wrap:wrap;gap:.55rem;margin-top:2.4rem}
-#contatti .social a{border:1px solid rgba(242,239,232,.28);padding:.7rem 1rem;
+#contatti .social a{border:1px solid rgba(243,236,210,.28);padding:.7rem 1rem;
   font-family:var(--mono);font-size:.66rem;letter-spacing:.2em;text-transform:uppercase;
   transition:background .3s,color .3s,border-color .3s}
 #contatti .social a:hover,#contatti .social a:active{
@@ -565,7 +568,7 @@ body.giu #apri{transform:translate3d(0,-115%,0)}
 
 /* --- 14 piede ------------------------------------------------------------ */
 #piede{background:var(--nero);color:var(--grigio);padding:2rem 0 3rem;
-  border-top:1px solid rgba(242,239,232,.14)}
+  border-top:1px solid rgba(243,236,210,.14)}
 #piede .in{display:flex;flex-wrap:wrap;gap:1rem 2rem;justify-content:space-between}
 #piede a:hover{color:var(--osso)}
 

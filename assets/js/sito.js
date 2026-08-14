@@ -739,8 +739,11 @@ var Sequenza = (function(){
    Sono link veri: si possono premere mentre galleggiano.
    -------------------------------------------------------------------------- */
 function Bolle(box, cop){
-  var TINTE = ['#1B3BFF','#F2EFE8','#1B3BFF','#3A1BFF'];
-  var SCURE = { '#F2EFE8': true };          /* su queste il testo va nero */
+  /* Il bianco vero e' rimasto qui: la carta della pagina adesso e' un giallo
+     sporco, e una bolla bianca sul girato scuro e' il punto piu' chiaro dello
+     schermo. E' uno dei pochi dettagli che restano bianchi. */
+  var TINTE = ['#1B3BFF','#FFFFFF','#1B3BFF','#3A1BFF'];
+  var SCURE = { '#FFFFFF': true };          /* su queste il testo va nero */
   /* quanti punti fanno il giro del bordo. Sono raccordati con delle cubiche,
      quindi anche pochi danno una curva: su un telefono lento se ne fanno di
      meno e non si vede la differenza. */
@@ -1241,8 +1244,12 @@ function Bolle(box, cop){
     var vh = window.innerHeight;
     /* il confine e' il fondo della copertina, in frazioni di schermo */
     var bordo = cop.getBoundingClientRect().bottom / vh;
-    /* si scioglie mentre il confine sale oltre il terzo alto dello schermo */
-    var diss = clamp((0.34 - bordo) / 0.62, 0, 1);
+    /* Quanto dura la massa, in scroll. Comincia a sciogliersi quando il
+       confine passa i due terzi dello schermo e ha finito quando arriva al
+       quinto: da un capo all'altro sono otto decimi di schermata, contro
+       la schermata e un terzo di prima. E' l'unico posto da toccare per
+       farla durare di piu' o di meno. */
+    var diss = clamp((0.68 - bordo) / 0.46, 0, 1);
     mask.massa(bordo, diss);
   }
   window.addEventListener('scroll', function(){ alFrame(guarda); }, {passive:true});

@@ -22,9 +22,13 @@ servito da un server statico.
    è il risultato.
 2. **I contenuti stanno in `DATI`**, non sparsi nell'HTML. Se serve un campo
    nuovo si aggiunge lì e si stampa da JS.
-3. **La palette è quattro colori** — bianco sporco, grigio chiaro, blu acceso,
-   nero — dichiarati in `:root`. Il blu è la voce del sito: compare dove si
-   tocca o dove si deve guardare, mai come decorazione.
+3. **La palette è quattro colori** — carta gialla sporca, grigio chiaro, blu
+   acceso, nero — dichiarati in `:root`. Il blu è la voce del sito: compare
+   dove si tocca o dove si deve guardare, mai come decorazione. La carta
+   (`--osso`) **non è bianca**: il bianco vero è rimasto solo a qualche
+   dettaglio, come la bolla chiara dei pulsanti, che sul girato scuro è il
+   punto più chiaro dello schermo. Se aggiungi un `rgba()` con quel colore
+   dentro, scrivilo con gli stessi numeri di `--osso`.
 4. **Le misure grandi non sono `clamp`.** Nome, titoli, respiri e voci di menu
    sono calcolati a runtime (`[data-adatta]`, `adattaUno`), perché la larghezza
    di una parola dipende dalle lettere che ha dentro. Se aggiungi un titolo
@@ -119,6 +123,10 @@ servito da un server statico.
 - Per guardare cosa disegna un canvas WebGL **non serve** `drawImage` né
   `readPixels` da fuori del frame: senza `preserveDrawingBuffer` tornano
   sempre neri, e sembra che l'effetto non ci sia. Si guarda a schermo.
+- **Quanto dura la massa in scroll** si decide in un posto solo: la finestra
+  di `diss` in `sito.js` (`(0.68 - bordo) / 0.46`). Da un capo all'altro sono
+  otto decimi di schermata. È l'unico numero da toccare per farla durare di
+  più o di meno.
 - La **massa fluida** (`BlobMask.massa()`) è il raccordo fra copertina e
   "Ascolta": non c'è più un taglio netto. È fatta di due parti — un corpo
   pieno sotto il confine e una cresta di gocce piccole sopra — ma il profilo
