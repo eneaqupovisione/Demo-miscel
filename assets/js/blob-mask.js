@@ -41,18 +41,24 @@ var CONFIG = {
   sway:       0.065,
   warpSpeed:  0.26,
 
-  /* larghezza del bordo sfumato, in multipli della derivata del campo.
-     Sotto 1 il contorno si stringe: e' quello che toglie il filo scuro che
-     nasce dove i due livelli sono applicati a meta'. Il livello della tinta
-     ha il bordo piu' largo di quello dell'inversione, cosi' il colore e' gia'
-     pieno quando l'inversione comincia. */
-  edgeInvert: 0.55,
-  edgeTint:   1.70,
+  /* IL FILO SCURO SUL BORDO — perche' nasceva e come si toglie.
+     Sul bordo la maschera vale m fra 0 e 1. Su carta chiara il canale blu
+     fa: 0.945 -> 0.72 (a m=0.5) -> 1.0. Sale, ma prima scende: quella
+     conca e' il filo scuro. Rosso e verde invece calano dritti.
+     Non e' un problema di larghezza del bordo, e' un problema di ordine:
+     se la tinta e' gia' al massimo quando l'inversione comincia, il canale
+     blu resta a 1 per tutta la transizione e la conca sparisce.
+     Percio' il livello della tinta usa una soglia piu' bassa — goccia un
+     10% piu' larga — mentre l'inversione tiene la sua. */
+  mergeInvert: 1.00,
+  mergeTint:   0.95,
+  edgeInvert:  0.80,
+  edgeTint:    1.00,
 
-  /* la comparsa: quanto insegue per frame il livello dell'inchiostro.
-     In entrata piano — le gocce si formano, non compaiono — in uscita svelto,
-     perche' li' si sta gia' guardando altro. */
-  fadeIn:     0.012,
+  /* La dissolvenza dell'inchiostro serve solo a non far scattare il primo
+     fotogramma: le gocce non devono "materializzarsi" a meta' schermo, devono
+     entrare da sotto. A occuparsene e' semina(), non questa. */
+  fadeIn:     0.10,
   fadeOut:    0.075,
 
   /* ATTENZIONE al verso. Nello shader `gl_FragCoord.y` cresce verso l'ALTO,
@@ -84,6 +90,7 @@ function frag(count, deriv){ return (deriv
 'uniform float uWarpScale;',
 'uniform vec3  uInk;',
 'uniform float uEdge;',
+'uniform float uMergeK;',
 'float hash21(vec2 p){',
 '  p = fract(p * vec2(123.34, 456.21));',
 '  p += dot(p, p + 45.32);',
@@ -118,11 +125,18 @@ function frag(count, deriv){ return (deriv
 '    d.y /= b.w;',
 '    field += (b.z * b.z) / max(dot(d, d), 1e-6);',
 '  }',
+'  float soglia = uMerge * uMergeK;',
+/* I PALLINI AL CENTRO — perche' c\'erano.
+   Il campo va come 1/d²: vicino al centro di una goccia cambia di migliaia
+   per pixel, quindi fwidth() esplode. Con una larghezza piu' grande del
+   campo stesso, smoothstep(s-w, s+w, campo) torna circa 0.5 anche dove il
+   campo e' enorme: un disco a meta' tinta esattamente sul centro. Bastava
+   mettere un tetto alla larghezza. */
 '  #ifdef HAS_DERIV',
-'    float w = max(fwidth(field) * uEdge, 1e-5);',
-'    float mask = smoothstep(uMerge - w, uMerge + w, field);',
+'    float w = clamp(fwidth(field) * uEdge, 1e-5, soglia * 0.55);',
+'    float mask = smoothstep(soglia - w, soglia + w, field);',
 '  #else',
-'    float mask = smoothstep(uMerge * (1.0 - 0.06*uEdge), uMerge * (1.0 + 0.06*uEdge), field);',
+'    float mask = smoothstep(soglia * 0.97, soglia * 1.03, field);',
 '  #endif',
 '  gl_FragColor = vec4(uInk * mask, 1.0);',   /* fuori = nero = neutro */
 '}'].join('\n');
@@ -134,7 +148,7 @@ function rgb(h){
 }
 
 /* --- un livello = un canvas + un contesto ------------------------------- */
-function livello(canvas, inkHex, bordo){
+function livello(canvas, inkHex, bordo, soglia){
   var gl = null;
   try {
     gl = canvas.getContext('webgl', { antialias:false, alpha:false })
@@ -176,7 +190,7 @@ function livello(canvas, inkHex, bordo){
       gl.enableVertexAttribArray(loc);
       gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
       U = {};
-      ['uBlobs','uRes','uAspect','uTime','uMerge','uWarp','uWarpScale','uInk','uEdge']
+      ['uBlobs','uRes','uAspect','uTime','uMerge','uWarp','uWarpScale','uInk','uEdge','uMergeK']
         .forEach(function(k){ U[k] = gl.getUniformLocation(prog, k); });
     },
     tinta: function(hex){ ink = rgb(hex); },
@@ -194,6 +208,7 @@ function livello(canvas, inkHex, bordo){
       gl.uniform1f(U.uWarp, CONFIG.warp);
       gl.uniform1f(U.uWarpScale, CONFIG.warpScale);
       gl.uniform1f(U.uEdge, bordo());
+      gl.uniform1f(U.uMergeK, soglia());
       gl.uniform3f(U.uInk, ink[0]*velo, ink[1]*velo, ink[2]*velo);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     }
@@ -203,8 +218,10 @@ function livello(canvas, inkHex, bordo){
 /* --- il motore ----------------------------------------------------------- */
 function monta(opz){
   var cInv = opz.invert, cTin = opz.tint, palco = opz.palco;
-  var lInv = livello(cInv, '#ffffff', function(){ return CONFIG.edgeInvert; });
-  var lTin = cTin ? livello(cTin, CONFIG.tint, function(){ return CONFIG.edgeTint; }) : null;
+  var lInv = livello(cInv, '#ffffff',
+        function(){ return CONFIG.edgeInvert; }, function(){ return CONFIG.mergeInvert; });
+  var lTin = cTin ? livello(cTin, CONFIG.tint,
+        function(){ return CONFIG.edgeTint; }, function(){ return CONFIG.mergeTint; }) : null;
   if (!lInv) return null;          /* niente WebGL: i canvas restano vuoti */
 
   var CALMO = window.matchMedia('(prefers-reduced-motion: reduce)').matches;

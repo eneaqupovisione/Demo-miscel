@@ -63,12 +63,25 @@ servito da un server statico.
   `--bocca-x` / `--bocca-y`. Il primo posizionamento avviene **subito**, non
   al primo frame: senza, restano nell'angolo in alto a sinistra finché rAF
   non parte.
+- Nello shader della blob mask due artefatti sono **risolti e vanno lasciati
+  risolti**: (a) la larghezza dell'antialias ha un **tetto**
+  (`clamp(fwidth(field)*uEdge, …, soglia*0.55)`) — senza, vicino al centro di
+  una goccia il campo cambia di migliaia per pixel, `fwidth()` esplode e la
+  maschera ricade a 0.5 proprio lì: un disco a mezza tinta sul centro;
+  (b) il livello della tinta usa una **soglia più bassa** di quello
+  dell'inversione (`mergeTint` < `mergeInvert`), così è già al massimo quando
+  l'inversione comincia. Se le due soglie tornano uguali, sul bordo il canale
+  blu fa una conca e ricompare il filo scuro.
 - Nello shader della blob mask `gl_FragCoord.y` cresce verso l'**alto**:
   `direction: 1` fa salire le gocce, non scendere. Il commento della
   specifica dice il contrario — comanda il codice.
 - Per guardare cosa disegna un canvas WebGL **non serve** `drawImage` né
   `readPixels` da fuori del frame: senza `preserveDrawingBuffer` tornano
   sempre neri, e sembra che l'effetto non ci sia. Si guarda a schermo.
+- L'accensione delle gocce è un **interruttore a scatto**: passata metà
+  copertina si accende e non si spegne più. Non è un inseguimento della
+  visibilità — tornando su, le gocce invadono anche la copertina, ed è
+  voluto: vederle sparire sarebbe peggio che vederle lì.
 - `BlobMask.livello()` viene chiamata a **ogni evento di scroll**: dentro non
   ci va niente che tocchi l'orologio o lo stato: rimettere `ultimo` a
   `performance.now()` li' dentro azzerava il dt e fermava la simulazione

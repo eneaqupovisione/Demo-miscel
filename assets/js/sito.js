@@ -931,9 +931,13 @@ function Bolle(box, cop){
 /* --------------------------------------------------------------------------
    la maschera a gocce
    Il motore sta in blob-mask.js. Qui c'e' solo quando accenderlo: finche' si
-   e' sulla copertina le gocce non arrivano — li' salgono gia' i pulsanti, e
-   due sciami insieme sarebbero rumore. Appena la copertina scende sotto il
-   30% di schermo visibile, cominciano.
+   e' nella prima meta' della copertina le gocce non ci sono — li' salgono
+   gia' i pulsanti, e due sciami insieme sarebbero rumore.
+
+   E' un interruttore a scatto, non un inseguimento: passata meta' copertina
+   si accende e non si spegne piu'. Tornando su, le gocce possono invadere
+   anche quella parte — a quel punto le si e' gia' viste, e vederle sparire
+   sarebbe peggio che vederle li'.
    -------------------------------------------------------------------------- */
 (function(){
   var palco = $('main.stage'), inv = $('#c-invert'), tin = $('#c-tint'), cop = $('#cop');
@@ -941,10 +945,13 @@ function Bolle(box, cop){
   var mask = BlobMask.monta({ palco: palco, invert: inv, tint: tin });
   if (!mask) return;            /* niente WebGL: i canvas restano vuoti */
 
+  var scattato = false;
   function guarda(){
-    var r = cop.getBoundingClientRect(), vh = window.innerHeight;
-    var visto = Math.max(0, Math.min(vh, r.bottom) - Math.max(0, r.top)) / vh;
-    mask.livello(visto < .30 ? 1 : 0);
+    if (scattato) return;
+    if (window.scrollY > cop.offsetHeight * .5){
+      scattato = true;
+      mask.livello(1);
+    }
   }
   window.addEventListener('scroll', function(){ alFrame(guarda); }, {passive:true});
   window.addEventListener('resize', function(){ alFrame(guarda); });
