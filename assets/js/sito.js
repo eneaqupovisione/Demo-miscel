@@ -667,19 +667,22 @@ function Bolle(box, cop){
   function nasce(i, dim, subito){
     var b = bocca(dim);
     var lato = Math.max(84, Math.min(dim.w * .30, 132));
+    var s = lato * (0.86 + (i%3)*0.10);
     return {
-      s: lato * (0.86 + (i%3)*0.10),
-      x0: b.x + (Math.random()*2-1) * dim.w * .08,
-      /* piano: dalla bocca al bordo alto ci mette venti secondi buoni. Una
-         bolla che schizza via non la si fa in tempo a premere. E le velocita'
-         sono scalate per indice, se no dopo un giro escono all'unisono. */
-      vel: 12 + i*4.5 + Math.random()*5,
-      amp: dim.w * (0.05 + Math.random()*0.07),
-      freq: 0.10 + Math.random()*0.10,
-      fase: Math.random()*Math.PI*2,
+      s: s, r: s*0.52,
+      /* nascono sparse in orizzontale, se no salgono in colonna */
+      x: b.x + (Math.random()*2-1) * dim.w * .17,
       /* alla prima passata sono gia' sparse lungo il tragitto, cosi' si
          vedono tutte da subito invece di uscire una alla volta */
       y: subito ? b.y - i * b.y * .30 : b.y,
+      vx: 0, vy: 0,
+      /* dai dieci ai quindici secondi per attraversare: abbastanza lente da
+         poterle premere, non tanto da sembrare ferme. Scalate per indice,
+         se no dopo un giro escono all'unisono. */
+      vel: 24 + i*6 + Math.random()*7,
+      amp: 14 + Math.random()*16,
+      freq: 0.09 + Math.random()*0.09,
+      fase: Math.random()*Math.PI*2,
       attesa: 0
     };
   }
@@ -727,6 +730,7 @@ function Bolle(box, cop){
       var b = bocca(d), vecchio = stato[i];
       var f = nasce(i, d, false);
       f.y = Math.min(vecchio.y, b.y);      /* non le si rimanda giu' di colpo */
+      f.x = Math.min(Math.max(vecchio.x, f.r), d.w - f.r);
       f.attesa = vecchio.attesa;
       stato[i] = f;
     }
@@ -736,35 +740,77 @@ function Bolle(box, cop){
   /* Il posizionamento non puo' aspettare il primo frame: senza questo le
      bolle restano ferme nell'angolo in alto a sinistra finche' rAF non parte,
      e su una scheda in secondo piano puo' voler dire parecchio. */
+  /* Il posizionamento non puo' aspettare il primo frame: senza questo le
+     bolle restano ferme nell'angolo in alto a sinistra finche' rAF non parte,
+     e su una scheda in secondo piano puo' voler dire parecchio.
+
+     La fisica e' la stessa delle gocce, in piccolo: spinta verso l'alto,
+     deriva laterale, e una repulsione a coppie che le tiene separate. La
+     forza attraversa lo zero con continuita' — un gradino qui produrrebbe la
+     stessa vibrazione ad alta frequenza che rovinerebbe le gocce. */
+  var clock = 0;
   function rendi(dt){
     var d = misuraBox();
     if (!d.h || !d.w) return;
     var b = bocca(d);
+    var i, j;
+    clock += dt;
 
-    for (var i=0;i<n;i++){
-      var st = stato[i], a = bolle[i];
-      if (st.attesa > 0){
-        st.attesa -= dt;
-        a.style.opacity = '0';
-        a.style.pointerEvents = 'none';
-        if (st.attesa <= 0){ st.y = b.y; st.fase = Math.random()*Math.PI*2; }
+    /* 1 · spinta di base: sale, e ondeggia piano */
+    var relax = 1 - Math.exp(-dt/0.55);
+    for (i=0;i<n;i++){
+      var st = stato[i];
+      if (st.attesa > 0){ st.attesa -= dt; continue; }
+      st.vy += (-st.vel - st.vy) * relax;
+      st.vx += (Math.sin(clock*st.freq*6.2832 + st.fase)*st.amp - st.vx) * relax;
+    }
+
+    /* 2 · repulsione: non si sormontano mai */
+    for (i=0;i<n;i++){
+      var a = stato[i]; if (a.attesa > 0) continue;
+      for (j=i+1;j<n;j++){
+        var c = stato[j]; if (c.attesa > 0) continue;
+        var dx = c.x-a.x, dy = c.y-a.y;
+        var somma = (a.r + c.r) * 1.06;
+        var dist = Math.sqrt(dx*dx + dy*dy);
+        if (dist >= somma || dist < 1e-4) continue;
+        var nx = dx/dist, ny = dy/dist;
+        var t = 1 - dist/somma;
+        var f = 900 * t * t;                    /* zero al contatto: continua */
+        var vrel = (c.vx-a.vx)*nx + (c.vy-a.vy)*ny;
+        var sm = -14 * vrel * t;
+        a.vx -= nx*(f+sm)*dt; a.vy -= ny*(f+sm)*dt;
+        c.vx += nx*(f+sm)*dt; c.vy += ny*(f+sm)*dt;
+      }
+    }
+
+    /* 3 · integrazione, pareti morbide, scrittura */
+    for (i=0;i<n;i++){
+      var st2 = stato[i], el = bolle[i];
+      if (st2.attesa > 0){
+        el.style.opacity = '0';
+        el.style.pointerEvents = 'none';
+        if (st2.attesa <= 0){
+          st2.y = b.y; st2.x = b.x + (Math.random()*2-1)*d.w*.17;
+          st2.vx = 0; st2.vy = 0; st2.fase = Math.random()*Math.PI*2;
+        }
         continue;
       }
-      if (!CALMO) st.y -= st.vel * dt;
-      var x = st.x0 + Math.sin(st.y * st.freq * 0.02 + st.fase) * st.amp;
+      if (!CALMO){ st2.x += st2.vx*dt; st2.y += st2.vy*dt; }
+      var m = st2.r*0.55;
+      if (st2.x < m)         { st2.x = m;         st2.vx =  Math.abs(st2.vx)*0.4; }
+      if (st2.x > d.w - m)   { st2.x = d.w - m;   st2.vx = -Math.abs(st2.vx)*0.4; }
 
       /* uscita dal bordo alto: sparisce e viene risputata dopo un paio di
          secondi, sfalsata rispetto alle altre */
-      if (st.y < -st.s * 0.6){
-        st.attesa = 1.1 + Math.random()*1.3;
-        continue;
-      }
+      if (st2.y < -st2.s*0.6){ st2.attesa = 1.0 + Math.random()*1.4; continue; }
+
       /* svanisce ai due capi, cosi' non compare e non sparisce di colpo */
-      var op = Math.min(1, (b.y - st.y) / 26 + .35)
-             * Math.min(1, (st.y + st.s*0.6) / (st.s*0.9));
-      a.style.opacity = clamp(op, 0, 1).toFixed(3);
-      a.style.pointerEvents = op > .55 ? 'auto' : 'none';
-      a.style.transform = 'translate3d('+x.toFixed(1)+'px,'+st.y.toFixed(1)+'px,0)';
+      var op = Math.min(1, (b.y - st2.y)/26 + .4)
+             * Math.min(1, (st2.y + st2.s*0.6)/(st2.s*0.9));
+      el.style.opacity = clamp(op, 0, 1).toFixed(3);
+      el.style.pointerEvents = op > .55 ? 'auto' : 'none';
+      el.style.transform = 'translate3d('+st2.x.toFixed(1)+'px,'+st2.y.toFixed(1)+'px,0)';
     }
   }
 

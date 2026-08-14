@@ -133,13 +133,24 @@ Nessuna libreria. Scroll, `IntersectionObserver` e due canvas.
   [`blob-mask-spec.md`](blob-mask-spec.md).
   **Non arrivano finché si è sulla copertina**: lì salgono già i pulsanti, e
   due sciami insieme sarebbero rumore. Cominciano quando la copertina scende
-  sotto il 30% di schermo visibile.
+  sotto il 30% di schermo visibile, e non compaiono di colpo — l'inchiostro
+  sale piano e le gocce si formano in tre-quattro secondi.
+  Due tarature che vale la pena conoscere: nello shader `gl_FragCoord.y`
+  cresce verso l'**alto**, quindi `direction: 1` le fa **salire** (il commento
+  della specifica dice il contrario, comanda il codice); e il bordo sfumato è
+  più stretto sul livello che inverte che su quello che tinge — se hanno la
+  stessa larghezza, dove i due sono applicati a metà nasce un filo scuro
+  lungo il contorno.
 - **Pulsanti-bolla** — stanno **dentro la copertina**, e sono la seconda cosa
   che si vede dopo il nome. Escono all'altezza della bocca del volto e salgono
-  piano — dai venti ai trenta secondi per attraversare lo schermo, perché una
-  bolla che schizza via non la si fa in tempo a premere. Quando escono dal
-  bordo alto vengono **risputate** dopo un paio di secondi. Le velocità sono
-  scalate per indice, se no dopo un giro uscirebbero all'unisono.
+  in dieci-quindici secondi: abbastanza lente da poterle premere, non tanto da
+  sembrare ferme. Quando escono dal bordo alto vengono **risputate** dopo un
+  paio di secondi. Le velocità sono scalate per indice, se no dopo un giro
+  uscirebbero all'unisono.
+  Seguono la stessa fisica delle gocce, in piccolo: spinta, deriva laterale e
+  una **repulsione a coppie** che le tiene separate — non si sormontano mai. E
+  come là, la forza attraversa lo zero con continuità: un gradino produrrebbe
+  la stessa vibrazione ad alta frequenza.
   Il punto di emissione sta in un posto solo: `--bocca-x` e `--bocca-y` su
   `#cop`, frazioni del riquadro. Sono link veri e si possono premere mentre
   galleggiano.

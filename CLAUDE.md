@@ -63,6 +63,12 @@ servito da un server statico.
   `--bocca-x` / `--bocca-y`. Il primo posizionamento avviene **subito**, non
   al primo frame: senza, restano nell'angolo in alto a sinistra finché rAF
   non parte.
+- Nello shader della blob mask `gl_FragCoord.y` cresce verso l'**alto**:
+  `direction: 1` fa salire le gocce, non scendere. Il commento della
+  specifica dice il contrario — comanda il codice.
+- Per guardare cosa disegna un canvas WebGL **non serve** `drawImage` né
+  `readPixels` da fuori del frame: senza `preserveDrawingBuffer` tornano
+  sempre neri, e sembra che l'effetto non ci sia. Si guarda a schermo.
 - La forma delle maschere è generata dal copione (`forma()` in `sito.js`) e
   animata con la Web Animations API, non con un `@keyframes`: servono tre
   ritagli con lo **stesso numero di segmenti**, altrimenti il passaggio

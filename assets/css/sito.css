@@ -282,7 +282,7 @@ body.oltre #testata .marchio{opacity:1;transform:none;pointer-events:auto}
 #cop .med video,#cop .med img{width:100%;height:100%;object-fit:cover;
   /* il fotogramma scende: si vede piu' testa in alto e resta meno vuoto in
      basso, dove ora galleggiano i pulsanti */
-  object-position:50% 40%;
+  object-position:50% 32%;
   filter:contrast(1.1) saturate(0)}
 /* La copertina adesso e' una scena scura, non piu' il caleidoscopio chiaro:
    il velo va nell'altro verso, e tutto quello che ci sta sopra si rilegge in

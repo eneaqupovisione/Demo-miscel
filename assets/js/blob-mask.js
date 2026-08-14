@@ -23,8 +23,8 @@ var BlobMask = (function(){
 /* --- parametri tarati (specifica §4) ------------------------------------- */
 var CONFIG = {
   /* FORMA — la singola goccia */
-  count:      22,
-  sizeMax:    0.066,
+  count:      30,
+  sizeMax:    0.040,
   spread:     0.42,
   merge:      1.00,
   warp:       0.055,
@@ -41,8 +41,25 @@ var CONFIG = {
   sway:       0.065,
   warpSpeed:  0.26,
 
-  /* -1 = dal basso verso l'alto. Qui le bolle salgono, come nel girato. */
-  direction: -1,
+  /* larghezza del bordo sfumato, in multipli della derivata del campo.
+     Sotto 1 il contorno si stringe: e' quello che toglie il filo scuro che
+     nasce dove i due livelli sono applicati a meta'. Il livello della tinta
+     ha il bordo piu' largo di quello dell'inversione, cosi' il colore e' gia'
+     pieno quando l'inversione comincia. */
+  edgeInvert: 0.55,
+  edgeTint:   1.70,
+
+  /* la comparsa: quanto insegue per frame il livello dell'inchiostro.
+     In entrata piano — le gocce si formano, non compaiono — in uscita svelto,
+     perche' li' si sta gia' guardando altro. */
+  fadeIn:     0.012,
+  fadeOut:    0.075,
+
+  /* ATTENZIONE al verso. Nello shader `gl_FragCoord.y` cresce verso l'ALTO,
+     quindi la Y della fisica e' rovesciata rispetto a quella del documento:
+     direction = 1 fa entrare le gocce da sotto e salire. Il commento della
+     specifica dice il contrario, ma comanda il codice. */
+  direction:  1,
   tint:      '#1B3BFF',
   mode:      'tinta'          /* 'tinta' = due livelli · 'negativo' = solo il primo */
 };
@@ -66,6 +83,7 @@ function frag(count, deriv){ return (deriv
 'uniform float uWarp;',
 'uniform float uWarpScale;',
 'uniform vec3  uInk;',
+'uniform float uEdge;',
 'float hash21(vec2 p){',
 '  p = fract(p * vec2(123.34, 456.21));',
 '  p += dot(p, p + 45.32);',
@@ -101,10 +119,10 @@ function frag(count, deriv){ return (deriv
 '    field += (b.z * b.z) / max(dot(d, d), 1e-6);',
 '  }',
 '  #ifdef HAS_DERIV',
-'    float w = max(fwidth(field), 1e-5);',
+'    float w = max(fwidth(field) * uEdge, 1e-5);',
 '    float mask = smoothstep(uMerge - w, uMerge + w, field);',
 '  #else',
-'    float mask = smoothstep(uMerge * 0.94, uMerge * 1.06, field);',
+'    float mask = smoothstep(uMerge * (1.0 - 0.06*uEdge), uMerge * (1.0 + 0.06*uEdge), field);',
 '  #endif',
 '  gl_FragColor = vec4(uInk * mask, 1.0);',   /* fuori = nero = neutro */
 '}'].join('\n');
@@ -116,7 +134,7 @@ function rgb(h){
 }
 
 /* --- un livello = un canvas + un contesto ------------------------------- */
-function livello(canvas, inkHex){
+function livello(canvas, inkHex, bordo){
   var gl = null;
   try {
     gl = canvas.getContext('webgl', { antialias:false, alpha:false })
@@ -158,7 +176,7 @@ function livello(canvas, inkHex){
       gl.enableVertexAttribArray(loc);
       gl.vertexAttribPointer(loc, 2, gl.FLOAT, false, 0, 0);
       U = {};
-      ['uBlobs','uRes','uAspect','uTime','uMerge','uWarp','uWarpScale','uInk']
+      ['uBlobs','uRes','uAspect','uTime','uMerge','uWarp','uWarpScale','uInk','uEdge']
         .forEach(function(k){ U[k] = gl.getUniformLocation(prog, k); });
     },
     tinta: function(hex){ ink = rgb(hex); },
@@ -175,6 +193,7 @@ function livello(canvas, inkHex){
       gl.uniform1f(U.uMerge, CONFIG.merge);
       gl.uniform1f(U.uWarp, CONFIG.warp);
       gl.uniform1f(U.uWarpScale, CONFIG.warpScale);
+      gl.uniform1f(U.uEdge, bordo());
       gl.uniform3f(U.uInk, ink[0]*velo, ink[1]*velo, ink[2]*velo);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
     }
@@ -184,13 +203,13 @@ function livello(canvas, inkHex){
 /* --- il motore ----------------------------------------------------------- */
 function monta(opz){
   var cInv = opz.invert, cTin = opz.tint, palco = opz.palco;
-  var lInv = livello(cInv, '#ffffff');
-  var lTin = cTin ? livello(cTin, CONFIG.tint) : null;
+  var lInv = livello(cInv, '#ffffff', function(){ return CONFIG.edgeInvert; });
+  var lTin = cTin ? livello(cTin, CONFIG.tint, function(){ return CONFIG.edgeTint; }) : null;
   if (!lInv) return null;          /* niente WebGL: i canvas restano vuoti */
 
   var CALMO = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var stretto = window.innerWidth < 700;
-  if (stretto) CONFIG.count = 14;
+  if (stretto){ CONFIG.count = 22; CONFIG.sizeMax = 0.046; }
 
   var TAU = Math.PI*2;
   var caso = function(a,b){ return a + Math.random()*(b-a); };
@@ -223,15 +242,21 @@ function monta(opz){
     if (lTin) lTin.conta(n);
   }
 
-  /* Tutte fuori dal bordo d'ingresso, sparpagliate: quando il velo si alza
-     le gocce ARRIVANO, non compaiono gia' in mezzo allo schermo. */
+  /* Sparpagliate dal bordo d'ingresso fino a poco oltre meta' schermo, e
+     tutte con eta' diverse. Cosi' quando il velo si alza il campo si forma
+     poco per volta invece di comparire fatto, e non si aspetta un minuto che
+     le piu' piccole arrivino: con la legge di Stokes viaggiano a un quinto
+     delle grandi. */
   function semina(){
+    var d = CONFIG.direction;
     for (var i=0;i<gocce.length;i++){
       var g = gocce[i];
       g.X = caso(0,A);
-      g.Y = CONFIG.direction > 0 ? caso(-2.2,-1.05) : caso(1.05,2.2);
-      g.vX = 0; g.vY = limite(g.r)*CONFIG.direction;
-      g.age = 0;
+      var t = Math.pow(Math.random(), 1.7);        /* denso vicino al bordo */
+      g.Y = d > 0 ? caso(-0.9, 0.55) * (1-t) + (-0.9)*t
+                  : caso(0.45, 1.9)  * (1-t) + ( 1.9)*t;
+      g.vX = 0; g.vY = limite(g.r)*d;
+      g.age = caso(0, g.life*0.5);
     }
     legato.fill(0); eta.fill(0);
     seminate = true;
@@ -365,7 +390,7 @@ function monta(opz){
     requestAnimationFrame(giro);
     var dt = Math.min((ora-ultimo)/1000, 1/30); ultimo = ora;
 
-    velo += (obiettivo - velo) * (obiettivo > velo ? .055 : .085);
+    velo += (obiettivo - velo) * (obiettivo > velo ? CONFIG.fadeIn : CONFIG.fadeOut);
     if (Math.abs(obiettivo - velo) < .002) velo = obiettivo;
 
     /* fermo e invisibile: non si disegna nemmeno */
