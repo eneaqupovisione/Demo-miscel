@@ -19,11 +19,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Archivo:wght@300;400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-<link rel="preload" as="image" href="assets/media/copertina.jpg?v=77">
+<link rel="preload" as="image" href="assets/media/copertina.jpg?v=79">
 <!-- il ?v= serve: GitHub Pages tiene i file in cache dieci minuti, e chi
      ha gia' aperto il sito continuerebbe a vedere la versione vecchia.
      Si alza il numero a ogni pubblicazione. -->
-<link rel="stylesheet" href="assets/css/sito.css?v=77">
+<link rel="stylesheet" href="assets/css/sito.css?v=79">
 </head>
 <body>
 
@@ -46,7 +46,7 @@
 <!-- la lastra a raggi X delle uscite -->
 <div id="lastra" aria-hidden="true">
   <i class="scan"></i>
-  <img src="assets/media/colonna.jpg?v=77" alt="">
+  <img src="assets/media/colonna.jpg?v=79" alt="">
   <div class="c"><span class="k">lastra · 001</span><div class="h"></div></div>
 </div>
 
@@ -91,9 +91,9 @@
 <!-- ========================== 01 · COPERTINA ========================== -->
 <section id="cop">
   <div class="med">
-    <video id="vCop" poster="assets/media/copertina.jpg?v=77" muted loop playsinline autoplay preload="auto"
+    <video id="vCop" poster="assets/media/copertina.jpg?v=79" muted loop playsinline autoplay preload="auto"
            disablepictureinpicture aria-hidden="true">
-      <source src="assets/media/copertina.mp4?v=77" type="video/mp4">
+      <source src="assets/media/copertina.mp4?v=79" type="video/mp4">
     </video>
   </div>
 
@@ -130,8 +130,8 @@
        moltiplicato, lascerebbe il rettangolo del video sulla pagina. -->
   <div class="scena" aria-hidden="true">
     <video id="vChi" muted loop playsinline autoplay preload="none"
-           poster="assets/media/scena.jpg?v=77" disablepictureinpicture>
-      <source src="assets/media/scena.mp4?v=77" type="video/mp4">
+           poster="assets/media/scena.jpg?v=79" disablepictureinpicture>
+      <source src="assets/media/scena.mp4?v=79" type="video/mp4">
     </video>
   </div>
 
@@ -208,19 +208,18 @@
   </div>
 </section>
 
-<!-- ========================== 05 · LA FIRMA ==========================
-     L'ultima schermata. Salendo, una sfilza di gocce si ferma in alto e
-     riempie lo schermo di blu: quello che c'e' scritto sotto, nero su carta,
-     dentro al blu si legge bianco — non e' un colore diverso del testo, e'
-     lo stesso testo visto attraverso la maschera. -->
+<!-- ========================== 05 · LA FINE ==========================
+     L'ultima schermata, e la pagina finisce qui: le gocce salgono, si fermano
+     in alto e riempiono TUTTO. Quello che c'e' scritto e' nero su carta e non
+     cambia colore da solo — dentro al blu si legge bianco perche' la maschera
+     lo inverte. Se un giorno lo scrivi bianco, dentro al blu sparisce.
+     Il piede sta qui dentro e non fuori: se restasse dopo, la pagina finirebbe
+     con una striscia di carta sotto al blu. -->
 <section id="firma">
   <div class="wrap in">
-    <p class="detto">
-      <span>Costruito</span>
-      <span>trattenendo</span>
-      <span>il fiato.</span>
-    </p>
-    <p class="mono chi" id="firmato">—</p>
+    <p class="nome-f" data-adatta data-max="220">Michelle</p>
+    <p class="invito">Ascolta ora</p>
+    <p class="mono chi">© <span id="anno"></span> Michelle &nbsp;·&nbsp; Immagini dal videoclip</p>
   </div>
 </section>
 
@@ -233,15 +232,7 @@
   <canvas id="c-tint"   aria-hidden="true"></canvas>
 </main>
 
-<footer id="piede">
-  <div class="wrap in">
-    <span class="mono">© <span id="anno"></span> Michelle</span>
-    <span class="mono">Immagini dal videoclip</span>
-    <a class="mono" href="#cop">Su ↑</a>
-  </div>
-</footer>
-
-<script src="assets/js/blob-mask.js?v=77"></script>
-<script src="assets/js/sito.js?v=77"></script>
+<script src="assets/js/blob-mask.js?v=79"></script>
+<script src="assets/js/sito.js?v=79"></script>
 </body>
 </html>

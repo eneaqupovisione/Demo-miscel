@@ -687,7 +687,9 @@ var Sequenza = (function(){
     var r = banda.getBoundingClientRect(), vh = window.innerHeight;
     /* 0 quando la banda entra dal basso, 1 quando ha attraversato mezzo
        schermo: la corsa finisce mentre la si sta guardando, non dopo */
-    pT = clamp((vh - r.top) / (vh * 0.62), 0, 1);
+    /* piu' e' grande il divisore, piu' scroll ci vuole perche' la banda
+       finisca la corsa: 1.5 schermate contro le 0.6 di prima */
+    pT = clamp((vh - r.top) / (vh * 1.5), 0, 1);
     dentro = r.top < vh && r.bottom > 0;
   }
   (function giro(ora){
@@ -704,7 +706,7 @@ var Sequenza = (function(){
     } else {
       /* avanti e indietro, piano: un seno lentissimo, che non torna mai
          esattamente sullo stesso punto perche' parte da dove si e' fermata */
-      ondeggio += 0.0035;
+      ondeggio += 0.0011;
       x = -corsa * (0.5 + 0.5*Math.sin(ondeggio - Math.PI/2));
     }
     scorre.style.transform = 'translate3d(' + x.toFixed(1) + 'px,0,0)';
@@ -727,9 +729,12 @@ var Sequenza = (function(){
   var v = 0, dentro = false;
   function daScroll(){
     var r = sez.getBoundingClientRect(), vh = window.innerHeight;
-    /* 0 quando la sezione arriva, 1 quando ha finito di attraversare */
-    v = clamp(-r.top / Math.max(r.height - vh, 1), 0, 1);
-    dentro = r.top < vh && r.bottom > 0;
+    /* Il conto parte quando la sezione e' gia' incollata in alto, non quando
+       si affaccia: cosi' il blu non si vede finche' "Scrivi" non e' passata
+       del tutto. La prima fetta (il 10% della corsa) e' vuota apposta —
+       le gocce sono ancora sotto al bordo e stanno salendo. */
+    v = clamp((-r.top / Math.max(r.height - vh, 1) - 0.10) / 0.90, 0, 1);
+    dentro = r.top < vh*0.98 && r.bottom > 0;
   }
   function applica(){
     if (!dentro || !Mask || !Mask.riempi) return;
@@ -1295,17 +1300,11 @@ function Bolle(box, cop){
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(rileggiCop);
   document.addEventListener('entrati', rileggiCop);
 
-  /* La massa comanda finche' non e' sciolta. Dopo, la maschera resta a
-     disposizione di chi la chiama: oggi la sola sparata di "Chi e'". */
-  function guarda(){
-    var vh = window.innerHeight;
-    var bordo = (copFondo - window.scrollY) / vh;
-    var diss = clamp((0.68 - bordo) / 0.46, 0, 1);
-    if (diss < 0.999) mask.massa(bordo, diss);
-  }
-  window.addEventListener('scroll', function(){ alFrame(guarda); }, {passive:true});
-  window.addEventListener('resize', function(){ alFrame(guarda); });
-  guarda();
+  /* IL BLU E' SOLO LA FINE. Qui non c'e' piu' nessuna massa fra copertina e
+     testo: la maschera si monta e resta a disposizione di chi la chiama, e
+     oggi la chiama un pezzo solo — la schermata finale. Il montaggio serve
+     comunque, perche' e' lui a creare i due contesti e a tenere i canvas
+     pronti. */
 })();
 
 /* --------------------------------------------------------------------------

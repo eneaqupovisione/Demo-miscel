@@ -9,7 +9,7 @@
    Ordine del file:
      00 variabili · 01 base · 02 tipografia · 03 strati fissi · 04 caricamento
      05 testata · 06 copertina · 10 ascolta
-     12 chi e' · 13 contatti · 14 piede
+     12 chi e' · 13 contatti · 13b la fine
      15 movimento ridotto
    =========================================================================== */
 
@@ -523,26 +523,28 @@ body.giu #apri{transform:translate3d(0,-115%,0)}
 }
 #copiato.on{opacity:1;transform:translate3d(-50%,0,0)}
 
-/* --- 13b la firma -------------------------------------------------------
-   L'ultima schermata: le gocce salgono, si fermano in alto e riempiono lo
-   schermo. Il testo qui e' nero su carta e NON cambia colore da solo: dentro
-   al blu si legge bianco perche' la maschera lo inverte. Se un giorno lo
-   scrivi bianco, dentro al blu sparisce. */
-#firma{position:relative;min-height:190vh;padding-block:clamp(60px,14vw,140px)}
-#firma .in{position:sticky;top:0;height:100svh;display:flex;flex-direction:column;
-  justify-content:center;padding-block:clamp(40px,10vw,90px)}
-#firma .detto{
-  font-family:var(--disp);font-weight:800;text-transform:uppercase;
-  font-size:clamp(2rem,11vw,5rem);line-height:.94;letter-spacing:-.045em;
+/* --- 13b la fine --------------------------------------------------------
+   L'ultima schermata. Il testo qui e' nero su carta e NON cambia colore da
+   solo: dentro al blu si legge bianco perche' la maschera lo inverte. Se un
+   giorno lo scrivi bianco, dentro al blu sparisce.
+   La sezione e' alta perche' il riempimento ha bisogno di scroll per salire;
+   la schermata dentro sta inchiodata e la pagina finisce li'. */
+#firma{position:relative;min-height:230vh;background:var(--fondo)}
+#firma .in{
+  position:sticky;top:0;height:100svh;min-height:100dvh;
+  display:flex;flex-direction:column;justify-content:center;
+  padding-block:clamp(40px,10vw,90px);
 }
-#firma .detto span{display:block}
-#firma .chi{margin-top:clamp(20px,5vw,40px)}
-
-/* --- 14 piede ------------------------------------------------------------ */
-#piede{background:var(--nero);color:var(--grigio);padding:2rem 0 3rem;
-  border-top:1px solid rgba(243,236,210,.14)}
-#piede .in{display:flex;flex-wrap:wrap;gap:1rem 2rem;justify-content:space-between}
-#piede a:hover{color:var(--osso)}
+#firma .nome-f{
+  font-family:var(--disp);font-weight:800;text-transform:uppercase;
+  line-height:.82;letter-spacing:-.05em;margin:0;
+}
+#firma .invito{
+  font-family:var(--disp);font-weight:600;text-transform:uppercase;
+  font-size:clamp(1rem,4.6vw,1.7rem);letter-spacing:-.01em;
+  margin:.5em 0 0;
+}
+#firma .chi{margin-top:clamp(26px,7vw,54px)}
 
 /* --- 15 movimento ridotto ------------------------------------------------ */
 @media (prefers-reduced-motion:reduce){
@@ -558,5 +560,5 @@ body.giu #apri{transform:translate3d(0,-115%,0)}
   #chi .dire i{clip-path:none !important}
   #chi .scena{opacity:1 !important}
   #firma{min-height:0}
-  #firma .in{position:static;height:auto}
+  #firma .in{position:static;height:auto;min-height:0}
 }

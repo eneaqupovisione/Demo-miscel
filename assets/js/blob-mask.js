@@ -507,10 +507,15 @@ function monta(opz){
      dell'indice): a ogni fotogramma la stessa disposizione, se no vibra. */
   function disponiRiempi(v){
     var n = gocce.length;
-    var col = Math.max(2, Math.round(A / 0.17));
+    /* LA GRIGLIA SBORDA. Deve coprire piu' dello schermo, se no in fondo
+       resta una striscia di carta: le file arrivano fino a -0.18, cioe' un
+       pezzo sotto al bordo basso, e il raggio e' abbondante perche' le celle
+       si fondano invece di lasciare i buchi agli incroci. */
+    var col = Math.max(2, Math.round(A / 0.19));
     var rig = Math.ceil(n / col);
-    var cellaX = A / col, cellaY = 1.06 / rig;
-    var raggio = Math.max(cellaX, cellaY) * 0.74;
+    var alto = 1.62;   /* schermate: sborda sotto di mezza */
+    var cellaX = A / col, cellaY = alto / rig;
+    var raggio = Math.max(cellaX, cellaY) * 1.02;
     for (var i=0;i<n;i++){
       var g = gocce[i];
       var c = i % col, r = (i / col) | 0;
@@ -518,11 +523,14 @@ function monta(opz){
       var jy = Math.sin(i*78.2330 + 4.1) * .5 + .5;
       var jz = Math.sin(i*45.1640 + 9.3) * .5 + .5;
       /* dove si fermera' — in coordinate dello shader la cima e' 1 */
-      var fermaY = 1.02 - (r + .5)*cellaY + (jy-.5)*cellaY*0.5;
+      var fermaY = 1.16 - (r + .5)*cellaY + (jy-.5)*cellaY*0.4;
       var fermaX = (c + .5)*cellaX + (jx-.5)*cellaX*0.5;
       /* il turno: prima le righe alte, e dentro alla riga sfalsate */
-      var t0 = (r / rig) * 0.62 + (c / col) * 0.14;
-      var k = clamp01((v - t0) / 0.30);
+      /* il turno: prima le file alte, e dentro alla fila sfalsate. Si chiude
+         a 0.80 perche' l'ultima deve essere ferma prima della fine della
+         corsa, se no si finisce di scorrere con lo schermo ancora a meta' */
+      var t0 = (r / rig) * 0.56 + (c / col) * 0.12;
+      var k = clamp01((v - t0) / 0.24);
       k = k*k*(3-2*k);
       g.X = fermaX;
       g.Y = (-0.25 - jz*0.5) * (1-k) + fermaY * k;
