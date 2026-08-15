@@ -500,49 +500,58 @@ function monta(opz){
     }
   }
 
-  /* IL FINALE, IN DUE MOSSE CHE SONO LA STESSA COSA.
-     MOSSA 1 — e' LA STESSA MASSA DELLA COPERTINA, non una cosa nuova: la
-     chiama `disponiMassa`, con la stessa cresta irregolare e lo stesso corpo,
-     e il confine che sale mentre si scorre. Cosi' "Scrivi" si colora come si
-     colora il nome in copertina, ed e' lo stesso gesto detto due volte.
-     MOSSA 2 — poi si scorpora: le gocce si staccano e si impilano in alto,
-     una fila alla volta, e la fila successiva arriva solo se si continua a
-     scendere. Piu' si scrolla piu' si riempie; risalendo torna indietro,
-     perche' tutto qui dipende solo da `v` e niente da un tempo.
-     Il raggio cresce arrivando: impilate in mezzo schermo, con il raggio che
-     avevano lascerebbero scoperta la meta' di sotto. */
+  /* IL FINALE: QUATTRO MASSE CHE SALGONO E SI FONDONO.
+     Non una macchia sola che compare — quattro grappoli che partono da sotto
+     lo schermo, a turno, salgono e si impilano in alto. Mentre si
+     incontrano il campo li fonde: e' li' che si vede il fluido, ed e' il
+     motivo per cui sono quattro e non uno.
+     Ogni grappolo tiene le sue gocce vicine (`stretta`) cosi' legge come una
+     massa e non come coriandoli. Il raggio cresce arrivando: impilate in
+     mezzo schermo, con il raggio di partenza lascerebbero scoperta la meta'
+     di sotto.
+     Tutto dipende da `v` e niente da un tempo: risalendo, si disfa. */
+  var GRUPPI = 4;
+
   function disponiFinale(v){
     var n = gocce.length, i;
-
-    /* MOSSA 1: il confine sale da sotto lo schermo fin quasi in cima */
-    var bordo = 1.04 - clamp01(v / 0.48) * 0.94;
-    disponiMassa(bordo, 0);
-
-    var passa = clamp01((v - 0.42) / 0.58);
-    if (passa <= 0) return;
-
-    /* MOSSA 2: le posizioni d'arrivo, impilate dalla cima */
+    var perG = Math.ceil(n / GRUPPI);
+    /* la griglia d'arrivo: fitta, in alto, e sborda sotto quanto basta */
     var col = Math.max(2, Math.round(A / 0.21));
     var rig = Math.ceil(n / col);
-    var cellaX = A / col, cellaY = 0.66 / rig;
-    var rB = Math.max(cellaX, cellaY) * 1.7;
+    var cellaX = A / col, cellaY = 0.74 / rig;
+    var rB = Math.max(cellaX, cellaY) * 1.62;
 
     for (i=0;i<n;i++){
       var g = gocce[i];
-      var c = i % col, r = (i / col) | 0;
+      var gr = (i / perG) | 0, dentro = i % perG;
       var jx = Math.sin(i*12.9898 + 1.7) * .5 + .5;
       var jy = Math.sin(i*78.2330 + 4.1) * .5 + .5;
       var jz = Math.sin(i*45.1640 + 9.3) * .5 + .5;
-      /* il turno: le file alte arrivano per prime, e il riempimento scende */
-      var t0 = (r / rig) * 0.72 + (c / col) * 0.10;
-      var k = clamp01((passa - t0) / 0.30);
+
+      /* DA DOVE PARTE: il grappolo, sotto lo schermo, ognuno al suo posto in
+         orizzontale. `stretta` e' quanto sta unito: piu' e' piccola, piu' e'
+         una massa sola. */
+      var stretta = 0.16;
+      var cx = ((gr + 0.5 + (jz-0.5)*0.35) / GRUPPI) * A;
+      var cy = -0.34 - gr*0.16;
+      var ax = cx + (jx-0.5)*stretta*A*0.9;
+      var ay = cy + (jy-0.5)*stretta;
+
+      /* DOVE ARRIVA: la sua cella nella pila */
+      var c = i % col, r = (i / col) | 0;
+      var bx = (c + .5)*cellaX + (jx-.5)*cellaX*0.5;
+      var by = 1.10 - (r + .5)*cellaY + (jy-.5)*cellaY*0.45;
+
+      /* IL TURNO: prima il primo grappolo, poi gli altri. Dentro al grappolo
+         c'e' un filo di sfalsamento, se no si muove come un blocco rigido. */
+      var t0 = (gr / GRUPPI) * 0.62 + (dentro / perG) * 0.06;
+      var k = clamp01((v - t0) / 0.34);
       k = k*k*(3-2*k);
-      if (k <= 0) continue;
-      var xB = (c + .5)*cellaX + (jx-.5)*cellaX*0.5;
-      var yB = 1.12 - (r + .5)*cellaY + (jy-.5)*cellaY*0.45;
-      g.X = g.X*(1-k) + xB*k;
-      g.Y = g.Y*(1-k) + yB*k;
-      g.r = g.r*(1-k) + rB*(0.86 + jz*0.3)*k;
+
+      /* la salita non e' dritta: il grappolo si allunga mentre sale */
+      g.X = ax*(1-k) + bx*k;
+      g.Y = ay*(1-k) + by*k;
+      g.r = (raggioDi(g.sizeT)*1.9*(1-k) + rB*k) * (0.86 + jz*0.3);
     }
   }
 

@@ -19,11 +19,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Archivo:wght@300;400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-<link rel="preload" as="image" href="assets/media/copertina.jpg?v=82">
+<link rel="preload" as="image" href="assets/media/copertina.jpg?v=85">
 <!-- il ?v= serve: GitHub Pages tiene i file in cache dieci minuti, e chi
      ha gia' aperto il sito continuerebbe a vedere la versione vecchia.
      Si alza il numero a ogni pubblicazione. -->
-<link rel="stylesheet" href="assets/css/sito.css?v=82">
+<link rel="stylesheet" href="assets/css/sito.css?v=85">
 </head>
 <body>
 
@@ -46,7 +46,7 @@
 <!-- la lastra a raggi X delle uscite -->
 <div id="lastra" aria-hidden="true">
   <i class="scan"></i>
-  <img src="assets/media/colonna.jpg?v=82" alt="">
+  <img src="assets/media/colonna.jpg?v=85" alt="">
   <div class="c"><span class="k">lastra · 001</span><div class="h"></div></div>
 </div>
 
@@ -91,9 +91,9 @@
 <!-- ========================== 01 · COPERTINA ========================== -->
 <section id="cop">
   <div class="med">
-    <video id="vCop" poster="assets/media/copertina.jpg?v=82" muted loop playsinline autoplay preload="auto"
+    <video id="vCop" poster="assets/media/copertina.jpg?v=85" muted loop playsinline autoplay preload="auto"
            disablepictureinpicture aria-hidden="true">
-      <source src="assets/media/copertina.mp4?v=82" type="video/mp4">
+      <source src="assets/media/copertina.mp4?v=85" type="video/mp4">
     </video>
   </div>
 
@@ -130,8 +130,8 @@
        moltiplicato, lascerebbe il rettangolo del video sulla pagina. -->
   <div class="scena" aria-hidden="true">
     <video id="vChi" muted loop playsinline autoplay preload="none"
-           poster="assets/media/scena.jpg?v=82" disablepictureinpicture>
-      <source src="assets/media/scena.mp4?v=82" type="video/mp4">
+           poster="assets/media/scena.jpg?v=85" disablepictureinpicture>
+      <source src="assets/media/scena.mp4?v=85" type="video/mp4">
     </video>
   </div>
 
@@ -187,12 +187,19 @@
 </section>
 
 <!-- ========================== 04 · SCRIVI ==========================
-     La massa blu e' il fondo di questa sezione, e per questo qui il testo e'
-     SCURO SU CARTA come dappertutto: dentro al blu si legge bianco perche' e'
-     la maschera a invertirlo. Scritto bianco, dentro al blu sparirebbe.
-     Una frase e tre bottoni: e' la sezione dove si scrive, e ogni cosa in
-     piu' e' un modo di andarsene. -->
+     Sta sulla scena dell'acqua vista da sotto, che gira in anello per conto
+     suo. Scritta chiara sul fondo scuro: qui non c'e' nessuna maschera di
+     mezzo, quindi il testo e' quello che si legge — semplice, e basta.
+     Il blu arriva dopo, nella sezione seguente. -->
 <section id="contatti">
+  <div class="scena" aria-hidden="true">
+    <video id="vScrivi" muted loop playsinline autoplay preload="none"
+           poster="assets/media/scrivi.jpg?v=85" disablepictureinpicture>
+      <source src="assets/media/scrivi.mp4?v=85" type="video/mp4">
+    </video>
+    <div class="velo"></div>
+  </div>
+
   <div class="wrap in">
     <h2 class="tit-s" data-adatta data-max="200">Scrivi</h2>
     <nav class="tasti">
@@ -200,7 +207,7 @@
       <a class="tasto" id="cMgmt" href="#">Management</a>
       <a class="tasto" id="cPress" href="#">Stampa</a>
     </nav>
-    <p class="mono rev" id="indirizzo">—</p>
+    <p class="mono" id="indirizzo">—</p>
   </div>
 </section>
 
@@ -228,7 +235,7 @@
   <canvas id="c-tint"   aria-hidden="true"></canvas>
 </main>
 
-<script src="assets/js/blob-mask.js?v=82"></script>
-<script src="assets/js/sito.js?v=82"></script>
+<script src="assets/js/blob-mask.js?v=85"></script>
+<script src="assets/js/sito.js?v=85"></script>
 </body>
 </html>

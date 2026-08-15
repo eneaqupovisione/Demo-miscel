@@ -80,6 +80,20 @@ ffmpeg -v error -y -ss 18.8 -t 1.6 -i "$SORG" \
 ffmpeg -v error -y -ss 19.4 -i "$SORG" -frames:v 1 \
   -vf "$GS,scale=$W:$H:flags=lanczos" -q:v 4 "$OUT/scena.jpg"
 
+# --- la scena di "Scrivi" ----------------------------------------------------
+# Scena 4 (53.4 -> 55.4): la superficie dell'acqua vista da sotto. Scura nei
+# due terzi bassi, schiuma chiara in cima. Qui la gradazione E' quella duotone
+# del resto ($G): non deve fondersi con la carta, deve fare da fondo scuro a
+# una scritta chiara.
+# Andata e ritorno: 4s che si richiudono senza scatto.
+echo "  · scrivi (scena 4, andata e ritorno)"
+ffmpeg -v error -y -ss 53.4 -t 2.0 -i "$SORG" \
+  -filter_complex "[0:v]$G,eq=brightness=-0.02,scale=$W:$H:flags=lanczos,split[a][b];[b]reverse[r];[a][r]concat=n=2:v=1[v]" \
+  -map "[v]" -an -c:v libx264 -profile:v main -pix_fmt yuv420p -crf 28 -preset slow \
+  -movflags +faststart -g 45 "$OUT/scrivi.mp4"
+ffmpeg -v error -y -ss 54.6 -i "$SORG" -frames:v 1 \
+  -vf "$G,eq=brightness=-0.02,scale=$W:$H:flags=lanczos" -q:v 4 "$OUT/scrivi.jpg"
+
 # il fermo non e' il primo fotogramma: quello e' quasi nero, e chi arriva
 # vedrebbe un rettangolo vuoto finche' il video non parte.
 # Il filo di luce in piu' (eq brightness) non e' una correzione estetica: la

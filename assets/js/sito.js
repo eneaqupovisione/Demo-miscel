@@ -1385,7 +1385,10 @@ function Bolle(box, cop){
       /* Comincia quando "Scrivi" e' gia' incollata in alto e ha lo schermo
          tutto per se': partendo prima, il fondo blu — che e' a tutto schermo —
          si prendeva anche la tracklist sopra. */
-      var da = a.top + window.scrollY - vh*0.10;
+      /* il blu comincia dopo "Scrivi", non sopra: quella sezione ha la sua
+         scena e la sua scritta chiara, e una maschera sopra le rovinerebbe
+         tutte e due */
+      var da = a.top + window.scrollY + a.height - vh*0.12;
       var fin = b.top + window.scrollY + b.height - vh;
       if (window.scrollY > da && window.scrollY < fin + vh){
         mask.finale(clamp((window.scrollY - da) / Math.max(fin - da, 1), 0, 1));
