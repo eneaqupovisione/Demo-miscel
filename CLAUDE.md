@@ -64,6 +64,14 @@ servito da un server statico.
   anche testata e menu); il fondo dei canvas **nero**, che è il neutro di
   `difference` e `screen`; e la forza fra coppie **continua** — un gradino
   fra repulsione e attrazione produce una vibrazione ad alta frequenza.
+- ⚠️ **I due `<canvas>` della maschera stanno in fondo a `main.stage`, e senza
+  di loro NIENTE È BLU.** Non la massa fra copertina e testo, non il
+  riempimento della firma: `BlobMask.monta()` non trova i canvas, torna
+  `null`, e tutta la catena tace **senza un errore in console**. Li ho
+  cancellati una volta riscrivendo il fondo della pagina, e il difetto è
+  sembrato per due giri un problema delle animazioni. Se qualcosa che
+  dovrebbe essere blu non lo è, la prima cosa da guardare è se i canvas
+  esistono ancora.
 - Tutto ciò che non deve essere toccato dalle gocce va tenuto **fuori** da
   `main.stage`. Oggi ci sono già: testata, menu, loader, lastra, grana,
   righe, barra di avanzamento, cursore.

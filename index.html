@@ -19,11 +19,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Archivo:wght@300;400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-<link rel="preload" as="image" href="assets/media/copertina.jpg?v=76">
+<link rel="preload" as="image" href="assets/media/copertina.jpg?v=77">
 <!-- il ?v= serve: GitHub Pages tiene i file in cache dieci minuti, e chi
      ha gia' aperto il sito continuerebbe a vedere la versione vecchia.
      Si alza il numero a ogni pubblicazione. -->
-<link rel="stylesheet" href="assets/css/sito.css?v=76">
+<link rel="stylesheet" href="assets/css/sito.css?v=77">
 </head>
 <body>
 
@@ -46,7 +46,7 @@
 <!-- la lastra a raggi X delle uscite -->
 <div id="lastra" aria-hidden="true">
   <i class="scan"></i>
-  <img src="assets/media/colonna.jpg?v=76" alt="">
+  <img src="assets/media/colonna.jpg?v=77" alt="">
   <div class="c"><span class="k">lastra · 001</span><div class="h"></div></div>
 </div>
 
@@ -91,9 +91,9 @@
 <!-- ========================== 01 · COPERTINA ========================== -->
 <section id="cop">
   <div class="med">
-    <video id="vCop" poster="assets/media/copertina.jpg?v=76" muted loop playsinline autoplay preload="auto"
+    <video id="vCop" poster="assets/media/copertina.jpg?v=77" muted loop playsinline autoplay preload="auto"
            disablepictureinpicture aria-hidden="true">
-      <source src="assets/media/copertina.mp4?v=76" type="video/mp4">
+      <source src="assets/media/copertina.mp4?v=77" type="video/mp4">
     </video>
   </div>
 
@@ -130,8 +130,8 @@
        moltiplicato, lascerebbe il rettangolo del video sulla pagina. -->
   <div class="scena" aria-hidden="true">
     <video id="vChi" muted loop playsinline autoplay preload="none"
-           poster="assets/media/scena.jpg?v=76" disablepictureinpicture>
-      <source src="assets/media/scena.mp4?v=76" type="video/mp4">
+           poster="assets/media/scena.jpg?v=77" disablepictureinpicture>
+      <source src="assets/media/scena.mp4?v=77" type="video/mp4">
     </video>
   </div>
 
@@ -224,6 +224,15 @@
   </div>
 </section>
 
+  <!-- I DUE LIVELLI DELLA FUSIONE: ultimi nel DOM e DENTRO al palco.
+       Senza di loro non esiste niente di blu in questa pagina — ne' la massa
+       fra copertina e "Ascolta", ne' il riempimento della firma: `monta()`
+       non trova i canvas, torna null, e tutto il resto tace senza un errore.
+       Sono stati cancellati una volta riscrivendo il fondo pagina. -->
+  <canvas id="c-invert" aria-hidden="true"></canvas>
+  <canvas id="c-tint"   aria-hidden="true"></canvas>
+</main>
+
 <footer id="piede">
   <div class="wrap in">
     <span class="mono">© <span id="anno"></span> Michelle</span>
@@ -232,7 +241,7 @@
   </div>
 </footer>
 
-<script src="assets/js/blob-mask.js?v=76"></script>
-<script src="assets/js/sito.js?v=76"></script>
+<script src="assets/js/blob-mask.js?v=77"></script>
+<script src="assets/js/sito.js?v=77"></script>
 </body>
 </html>
