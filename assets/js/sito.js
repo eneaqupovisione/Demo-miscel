@@ -616,8 +616,16 @@ var Sequenza = (function(){
      Le fette: FETTA e' quanto scroll ci mette UNA parola a scriversi — corta,
      se no la parola si spalma; PASSO e' ogni quanto ne arriva un'altra, e
      dev'essere piu' lungo della fetta, se no si accavallano e non si sente
-     piu' il ritmo. Con la sezione alta 240vh, un passo vale piu' o meno un
-     pollice di scroll. */
+     piu' il ritmo.
+
+     LA TARATURA NON E' UN GUSTO, E' UN CONTO SUL DITO. Con la sezione a
+     240vh la finestra intera era 935 px: su un trackpad e' UN colpo, e le
+     dieci parole si scrivevano tutte insieme — il meccanismo girava, ma
+     sembrava fermo. Adesso la sezione e' 320vh e la finestra 1560 px, cioe'
+     circa 160 px per parola: un colpo di dito, una parola.
+     L'altra meta' del rimedio e' l'inerzia, qui sotto: il valore che insegue
+     lo scroll e' piu' lento, quindi dopo una scorsa veloce le parole
+     continuano ad arrivare per un secondo buono. E' quello che si sente. */
   var parole = [];
   $$('[data-scrive] > span', sez).forEach(function(sp){
     /* una parola per <i>, e lo spazio resta fuori: dentro sarebbe tagliato
@@ -627,7 +635,7 @@ var Sequenza = (function(){
     }).join(' ');
     $$('i', sp).forEach(function(el){ parole.push(el); });
   });
-  var DA = 0.335, FETTA = 0.020, PASSO = 0.034;
+  var DA = 0.28, FETTA = 0.026, PASSO = 0.046;
 
   function scriviChiuse(){
     for (var i=0;i<parole.length;i++){
@@ -674,10 +682,14 @@ var Sequenza = (function(){
     pT = clamp((vh - r.top) / (vh + r.height), 0, 1);
     dentro = r.top < vh && r.bottom > 0;
   }
+  /* `p` insegue `pT` invece di essere `pT`, e lo insegue PIANO: dopo una
+     scorsa veloce le parole continuano ad arrivare per un secondo buono
+     invece di comparire tutte insieme. E' la meta' che fa sentire la
+     scrittura — l'altra e' quanto e' alta la sezione. */
   (function giro(){
     requestAnimationFrame(giro);
     if (!dentro && Math.abs(p - pT) < .001) return;
-    p += (pT - p) * (CALMO ? 1 : .1);
+    p += (pT - p) * (CALMO ? 1 : .055);
     rendi();
   })();
 

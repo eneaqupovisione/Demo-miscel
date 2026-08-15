@@ -417,7 +417,7 @@ body.giu #apri{transform:translate3d(0,-115%,0)}
    bordo dello schermo — che e' come non scriverle.
    `overflow` NON va qui: su un antenato spezza lo `sticky` del figlio. Sta
    sul pin. */
-#chi{position:relative;height:240vh}
+#chi{position:relative;height:320vh}
 #chi .pin{
   position:sticky;top:0;height:100svh;min-height:100dvh;overflow:hidden;
   display:flex;align-items:center;
