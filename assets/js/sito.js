@@ -60,10 +60,9 @@ var smorza = function(t){ return t*t*(3-2*t); };
 
 var CALMO = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-/* Quanto vogliono essere accese le gocce. Lo scrive la sezione "Chi e'"
-   quando la frase ha finito di scriversi, lo legge chi comanda la maschera:
-   sono due pezzi lontani nel file e questo e' il filo che li tiene. */
-var GOCCE = { v: 0 };
+/* La maschera montata, per chi la deve comandare da lontano: la sezione
+   "Chi e'" le chiede la sparata quando il testo e' finito. */
+var Mask = null;
 /* clip-path: path() non c'e' ovunque. Dove manca si torna al border-radius,
    che e' piu' tondo ma vivo. */
 var SUPPORTA_RITAGLIO = !!(window.CSS && CSS.supports && CSS.supports('clip-path','path("M0,0 L1,0 Z")'));
@@ -569,10 +568,20 @@ var Sequenza = (function(){
 })();
 
 /* --------------------------------------------------------------------------
-   chi e': il respiro dietro alle righe
-   Lo sfondo non compare in dissolvenza: si apre da destra come un taglio, e
-   solo quando la sezione e' arrivata davvero. E' la differenza fra "c'era gia'
-   e non l'avevi visto" e "e' appena successo".
+   chi e': il blocco che si scrive scendendo
+
+   Una meccanica sola per tutto il testo, e non e' legata al tempo ne' a una
+   percentuale della sezione: OGNI PAROLA SI SCRIVE QUANDO ARRIVA AL SUO POSTO
+   SULLO SCHERMO. Scendere e' scrivere. Chi risale la vede tornare indietro.
+
+   Perche' non un ciclo unico sulla traversata: con un blocco piu' alto dello
+   schermo le ultime parole si scriverebbero mentre sono ancora sotto al bordo
+   — cioe' non si vedrebbero scrivere. Legandole alla posizione, ognuna si
+   scrive dove la si sta guardando, qualunque sia l'altezza del blocco.
+
+   Le posizioni si misurano UNA VOLTA (al ridimensionamento) come scostamento
+   dentro al documento: leggerle a ogni fotogramma vorrebbe dire trenta letture
+   di layout per frame mentre si scorre.
    -------------------------------------------------------------------------- */
 (function(){
   var sez = $('#chi'); if (!sez) return;
@@ -580,103 +589,68 @@ var Sequenza = (function(){
   var ctx = cv.getContext('2d', { alpha:true });
   var W=0,H=0,DPR=1, pT=0, p=0, dentro=false;
 
-  /* LA MISURA E' PER RIGA, E POI SI SCALA TUTTO INSIEME.
-     Ogni riga prende il corpo piu' grande che la fa toccare i due margini:
-     righe corte vengono grandi, righe lunghe piccole, e le dimensioni
-     diverse escono dal testo invece che da una scelta a mano. Poi si somma
-     l'altezza e si scala l'intera colonna finche' sta nella schermata
-     inchiodata — quindi il blocco riempie sempre lo schermo, e le
-     proporzioni fra le righe restano quelle su qualunque telefono.
-
-     Le righe sono `nowrap` con dentro le parole in linea: lo scrollWidth
-     dello span e' proprio la lunghezza della riga. (Quando le righe della
-     frase avevano dentro una <i> a display:block per la feritoia, lo
-     scrollWidth tornava la larghezza della colonna e venivano tutte uguali.
-     La feritoia non c'e' piu': adesso si scrivono anche loro.) */
   var dire = $('.dire', sez);
-  var COLONNA = $$('[data-scrive] > span', sez);
+  var RIGHE = $$('[data-scrive] > span', sez);
+  var parole = $$('[data-scrive] i', sez);
+  var posti = [];              /* {y, x} di ogni parola, dentro al documento */
 
+  /* LA MISURA E' PER RIGA. Ogni riga prende il corpo che la fa toccare i due
+     margini: righe corte vengono grandi, righe lunghe piccole, e le
+     dimensioni diverse escono dal testo invece che da una scelta a mano.
+     Il tetto e' perche' una riga di due lettere non diventi un palazzo. */
   function misuraRighe(){
     var cont = dire.parentElement, cs = getComputedStyle(cont);
     var largo = cont.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
     if (largo <= 0) return;
-    var vh = window.innerHeight, i, mis = [], somma = 0;
-    for (i=0;i<COLONNA.length;i++){
-      COLONNA[i].style.fontSize = '100px';
-      var w = COLONNA[i].scrollWidth;
-      var s = w ? largo / w * 100 * 0.995 : 20;
-      mis.push(s); somma += s;
+    var tetto = window.innerHeight * 0.17;
+    for (var i=0;i<RIGHE.length;i++){
+      RIGHE[i].style.fontSize = '100px';
+      var w = RIGHE[i].scrollWidth;
+      RIGHE[i].style.fontSize = (w ? Math.min(largo/w*100*0.995, tetto) : 20).toFixed(2) + 'px';
     }
-    /* quello che resta dopo occhiello, nota, margini — e la riga che corre,
-       che sta nella colonna e occupa la sua altezza anche mentre e' ferma */
-    var resta = vh - 200 - (corre ? corre.getBoundingClientRect().height : 0);
-    var k = somma * 0.94 > resta ? resta / (somma * 0.94) : 1;
-    for (i=0;i<COLONNA.length;i++) COLONNA[i].style.fontSize = (mis[i]*k).toFixed(2) + 'px';
   }
-  function misuraTutto(){ misuraCorsa(); misuraRighe(); }
 
-  /* --- le chiuse che si scrivono, PAROLA PER PAROLA ------------------------
-     La frase che apre sta ferma. Le chiuse arrivano una parola alla volta
-     mentre si scende, e dentro alla parola il taglio passa DENTRO alla
-     lettera invece che carattere per carattere: e' la differenza fra scritto
-     e digitato.
-
-     Il tempo non c'entra: la maschera la comanda lo scroll. Un'animazione a
-     tempo si scriverebbe da sola mentre uno guarda altrove, e chi torna su
-     la trova gia' fatta. Cosi' invece la parola arriva quando la si sta
-     leggendo, e chi risale la vede tornare indietro.
-
-     Le fette: FETTA e' quanto scroll ci mette UNA parola a scriversi — corta,
-     se no la parola si spalma; PASSO e' ogni quanto ne arriva un'altra, e
-     dev'essere piu' lungo della fetta, se no si accavallano e non si sente
-     piu' il ritmo.
-
-     LA TARATURA NON E' UN GUSTO, E' UN CONTO SUL DITO. Con la sezione a
-     240vh la finestra intera era 935 px: su un trackpad e' UN colpo, e le
-     dieci parole si scrivevano tutte insieme — il meccanismo girava, ma
-     sembrava fermo. Adesso la sezione e' 320vh e la finestra 1560 px, cioe'
-     circa 160 px per parola: un colpo di dito, una parola.
-     L'altra meta' del rimedio e' l'inerzia, qui sotto: il valore che insegue
-     lo scroll e' piu' lento, quindi dopo una scorsa veloce le parole
-     continuano ad arrivare per un secondo buono. E' quello che si sente. */
-  var parole = $$('[data-scrive] i', sez);
-  /* DA cosi' basso vuol dire che la prima parola parte mentre la sezione sta
-     ancora salendo, prima che la schermata si inchiodi: scorrere svela da
-     subito invece di far aspettare. FETTA corta = la singola parola scatta.
-     L'ultima finisce a 0.45, e da li' in poi c'e' spazio per le gocce. */
-  /* LE DUE MOSSE, UNA DOPO L'ALTRA, SULLO STESSO SCROLL.
-     Prima le parole si scrivono (DA -> FINE), poi la riga si srotola di lato
-     (CORRE_DA -> CORRE_A). I numeri sono frazioni della traversata: con la
-     sezione a 600vh la traversata e' 7 schermate, quindi un passo di 0.0228
-     vale circa 135 px di dito per parola, e la corsa orizzontale spalma la
-     riga su 2400 px di scroll — poco piu' di un pixel di testo per pixel di
-     dito. A 1,7 era illeggibile. */
-  var DA = 0.042, FETTA = 0.008, PASSO = 0.0228;
-  var FINE = DA + (parole.length-1)*PASSO + FETTA;
-  var CORRE_DA = 0.42, CORRE_A = 0.83;
-
-  function scriviChiuse(){
+  function misuraPosti(){
+    posti = [];
+    var vw = Math.max(window.innerWidth, 1);
     for (var i=0;i<parole.length;i++){
-      var da = DA + i*PASSO;
-      var k = CALMO ? 1 : smorza(mappa(p, da, da + FETTA));
+      var r = parole[i].getBoundingClientRect();
+      posti.push({ y: r.top + r.height*0.5 + window.scrollY, x: (r.left + r.width*0.5)/vw });
+    }
+  }
+  function misuraTutto(){ misuraRighe(); misuraPosti(); }
+
+  /* DOVE si scrive una parola, in altezze di schermo dal bordo alto.
+     ALTO e' dove ha finito, BASSO dove comincia: la parola si scrive mentre
+     sale da tre quarti a meta' schermo. Il RITARDO in piu' per le parole a
+     destra e' quello che rende la riga «scritta» invece che «comparsa»: la
+     riga si riempie da sinistra come la si legge. */
+  var BASSO = 0.82, ALTO = 0.52, RITARDO = 0.16;
+
+  function scrivi(){
+    if (!posti.length) return;
+    var vh = window.innerHeight, sy = window.scrollY, k = 0;
+    for (var i=0;i<parole.length;i++){
+      var y = (posti[i].y - sy) / vh;              /* quota sullo schermo */
+      var da = BASSO + posti[i].x * RITARDO;
+      k = CALMO ? 1 : smorza(mappa(y, da, ALTO + posti[i].x * RITARDO));
       parole[i].style.clipPath = 'inset(0 ' + ((1-k)*100).toFixed(1) + '% 0 0)';
     }
+    /* `k` e' rimasta quella dell'ULTIMA parola: quando arriva a uno il testo
+       e' finito, e parte la sparata. Non una quota decisa a mano — la stessa
+       soglia che scrive l'ultima parola, quindi non possono sfasarsi. */
+    if (!CALMO) sparo(k > .999);
   }
 
-  /* LA RIGA CHE SI SROTOLA. E' l'ultima riga della colonna e parte da dove
-     comincia il testo, non da fuori schermo: cosi' si legge come «la riga
-     dopo» invece che come un'altra cosa che entra. Quello che scorre e' solo
-     quanto sborda — larghezza del testo meno lo schermo. */
-  var corre = $('[data-oriz]', sez), corsa = 0;
-  function misuraCorsa(){
-    if (!corre) return;
-    corre.style.transform = 'none';
-    corsa = Math.max(0, corre.scrollWidth - window.innerWidth + 24);
-  }
-  function srotola(){
-    if (!corre) return;
-    var k = CALMO ? 0 : smorza(mappa(p, CORRE_DA, CORRE_A));
-    corre.style.transform = 'translate3d(' + (-corsa*k).toFixed(1) + 'px,0,0)';
+  /* LA SPARATA. Finito il testo, un gruppo di gocce attraversa lo schermo dal
+     basso verso l'alto in mezzo secondo e sparisce: e' il passaggio verso
+     "Ascolta", non una scena. Si riarma quando si risale sopra al punto in
+     cui e' partita, se no scendendo e risalendo non succede piu' niente. */
+  var sparato = false;
+  function sparo(ora){
+    if (ora === sparato) return;
+    sparato = ora;
+    if (ora && Mask && Mask.sparo) Mask.sparo();
   }
 
   function misura(){
@@ -689,21 +663,13 @@ var Sequenza = (function(){
   }
   function rendi(){
     Sequenza.disegna(ctx, W, H, p, null, Sequenza.RESPIRO);
-    scriviChiuse();
-    srotola();
-    /* Finita la frase entrano le gocce, e da li' in poi vanno da sole: e' la
-       lavalamp della specifica, non un'altra cosa. Si spengono mentre la
-       sezione se ne va — oltre non sono state chieste, e una pagina intera
-       di inversioni sopra ai contatti e' un'altra decisione. */
-    GOCCE.v = mappa(p, CORRE_A - .06, CORRE_A) * (1 - mappa(p, .93, 1));
+    scrivi();
   }
-  /* Prima la corsa (che si misura a trasformazione azzerata), poi la colonna
-     (che ha bisogno dell'altezza della corsa per sapere quanto spazio le
-     resta). L'ordine dentro a `misuraTutto` conta, quindi non invertirlo. */
+
   misuraTutto();
-  scriviChiuse(); srotola();
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(misuraTutto);
-  window.addEventListener('resize', function(){ alFrame(misuraTutto); });
+  scrivi();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(function(){ misuraTutto(); scrivi(); });
+  window.addEventListener('resize', function(){ alFrame(function(){ misuraTutto(); misura(); }); });
 
   var pre = new IntersectionObserver(function(vs){
     if (!vs[0].isIntersecting) return;
@@ -713,7 +679,8 @@ var Sequenza = (function(){
   }, { rootMargin: '120% 0px' });
   pre.observe(sez);
 
-  /* la rivelazione: una volta sola, e solo quando ce n'e' abbastanza in vista */
+  /* la rivelazione dello sfondo: una volta sola, e solo quando ce n'e'
+     abbastanza in vista */
   var oss = new IntersectionObserver(function(vs){
     if (!vs[0].isIntersecting) return;
     oss.disconnect();
@@ -723,25 +690,18 @@ var Sequenza = (function(){
 
   function daScroll(){
     var r = sez.getBoundingClientRect(), vh = window.innerHeight;
-    /* 0 quando il bordo alto entra, 1 quando quello basso esce: la scena
-       respira per tutta la traversata della sezione */
     pT = clamp((vh - r.top) / (vh + r.height), 0, 1);
     dentro = r.top < vh && r.bottom > 0;
   }
-  /* `p` insegue `pT` invece di essere `pT`, e lo insegue PIANO: dopo una
-     scorsa veloce le parole continuano ad arrivare per un secondo buono
-     invece di comparire tutte insieme. E' la meta' che fa sentire la
-     scrittura — l'altra e' quanto e' alta la sezione. */
   (function giro(){
     requestAnimationFrame(giro);
     if (!dentro && Math.abs(p - pT) < .001) return;
-    p += (pT - p) * (CALMO ? 1 : .055);
+    p += (pT - p) * (CALMO ? 1 : .1);
     rendi();
   })();
 
   window.addEventListener('scroll', function(){ alFrame(daScroll); }, {passive:true});
-  window.addEventListener('resize', function(){ alFrame(function(){ misura(); daScroll(); }); });
-  document.addEventListener('entrati', function(){ misura(); daScroll(); });
+  document.addEventListener('entrati', function(){ misuraTutto(); misura(); daScroll(); });
   daScroll();
 })();
 
@@ -1281,14 +1241,8 @@ function Bolle(box, cop){
   var cop = $('#cop'), asc = $('#ascolta');
   if (!palco || !inv || !cop || !asc || !window.BlobMask) return;
   var mask = BlobMask.monta({ palco: palco, invert: inv, tint: tin });
-  if (!mask) return;            /* niente WebGL: i canvas restano vuoti */
-
-  /* DUE MODI, UN MOTORE SOLO.
-     Finche' la massa non e' sciolta comanda lei. Da li' in poi comandano le
-     gocce, che pero' si accendono solo quando la frase di "Chi e'" ha finito
-     di scriversi — il valore glielo passa quella sezione.
-     Gira a ogni fotogramma e non solo allo scroll: il livello delle gocce
-     cambia anche a pagina ferma, mentre la scrittura finisce di inseguire. */
+  if (!mask) return;      /* niente WebGL: i canvas restano vuoti */
+  Mask = mask;
   /* Il fondo della copertina in coordinate di documento: si legge al
      ridimensionamento e basta. Leggerlo a ogni fotogramma vuol dire
      costringere il browser a rifare il layout mentre si scorre, ed e' un
@@ -1300,14 +1254,17 @@ function Bolle(box, cop){
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(rileggiCop);
   document.addEventListener('entrati', rileggiCop);
 
+  /* La massa comanda finche' non e' sciolta. Dopo, la maschera resta a
+     disposizione di chi la chiama: oggi la sola sparata di "Chi e'". */
   function guarda(){
     var vh = window.innerHeight;
     var bordo = (copFondo - window.scrollY) / vh;
     var diss = clamp((0.68 - bordo) / 0.46, 0, 1);
-    if (diss < 0.999){ mask.massa(bordo, diss); return; }
-    mask.livello(GOCCE.v);
+    if (diss < 0.999) mask.massa(bordo, diss);
   }
-  (function giro(){ requestAnimationFrame(giro); guarda(); })();
+  window.addEventListener('scroll', function(){ alFrame(guarda); }, {passive:true});
+  window.addEventListener('resize', function(){ alFrame(guarda); });
+  guarda();
 })();
 
 /* --------------------------------------------------------------------------

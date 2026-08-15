@@ -19,11 +19,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Archivo:wght@300;400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-<link rel="preload" as="image" href="assets/media/copertina.jpg?v=62">
+<link rel="preload" as="image" href="assets/media/copertina.jpg?v=65">
 <!-- il ?v= serve: GitHub Pages tiene i file in cache dieci minuti, e chi
      ha gia' aperto il sito continuerebbe a vedere la versione vecchia.
      Si alza il numero a ogni pubblicazione. -->
-<link rel="stylesheet" href="assets/css/sito.css?v=62">
+<link rel="stylesheet" href="assets/css/sito.css?v=65">
 </head>
 <body>
 
@@ -46,7 +46,7 @@
 <!-- la lastra a raggi X delle uscite -->
 <div id="lastra" aria-hidden="true">
   <i class="scan"></i>
-  <img src="assets/media/colonna.jpg?v=62" alt="">
+  <img src="assets/media/colonna.jpg?v=65" alt="">
   <div class="c"><span class="k">lastra · 001</span><div class="h"></div></div>
 </div>
 
@@ -91,9 +91,9 @@
 <!-- ========================== 01 · COPERTINA ========================== -->
 <section id="cop">
   <div class="med">
-    <video id="vCop" poster="assets/media/copertina.jpg?v=62" muted loop playsinline autoplay preload="auto"
+    <video id="vCop" poster="assets/media/copertina.jpg?v=65" muted loop playsinline autoplay preload="auto"
            disablepictureinpicture aria-hidden="true">
-      <source src="assets/media/copertina.mp4?v=62" type="video/mp4">
+      <source src="assets/media/copertina.mp4?v=65" type="video/mp4">
     </video>
   </div>
 
@@ -121,58 +121,48 @@
      subito; le tre chiuse si scrivono mentre si scende, una alla volta.
      Dietro, il respiro: la scena d'acqua che entra dal lato. -->
 <section id="chi">
-  <!-- La schermata sta inchiodata mentre le parole arrivano: se scorresse,
-       le ultime si scriverebbero fuori dallo schermo. L'altezza della
-       sezione E' la durata della scrittura. -->
-  <div class="pin">
-    <div class="sfondo" aria-hidden="true">
-      <canvas id="cvChi"></canvas>
-      <div class="velo"></div>
+  <div class="sfondo" aria-hidden="true">
+    <canvas id="cvChi"></canvas>
+    <div class="velo"></div>
+  </div>
+
+  <div class="wrap in">
+    <div class="occhiello rev">
+      <span class="mono n">02</span><span class="mono">Chi è</span>
     </div>
 
-    <div class="wrap in">
-      <div class="occhiello rev">
-        <span class="mono n">02</span><span class="mono">Chi è</span>
-      </div>
+    <!-- UN BLOCCO SOLO, UNA MECCANICA SOLA. Ogni parola si scrive quando
+         arriva al suo posto sullo schermo — non a un tempo, non a una
+         percentuale della sezione: alla sua posizione. Scendere e' scrivere.
+         Una parola per <i>, e lo spazio resta fuori dalla maschera: dentro
+         sarebbe tagliato anche lui e le parole si toccherebbero.
+         La misura e' per riga: righe corte vengono grandi, righe lunghe
+         piccole. Le dimensioni diverse escono dal testo, non da una scelta
+         a mano — cambiare una parola cambia il corpo della sua riga. -->
+    <p class="dire" data-scrive>
+      <span><i>Un</i></span>
+      <span><i>cuore</i></span>
+      <span><i>puro</i></span>
+      <span><i>che</i> <i>si</i></span>
+      <span class="acc"><i>mescola</i></span>
+      <span><i>con</i> <i>la</i></span>
+      <span><i>delicatezza,</i></span>
+      <span><i>o</i> <i>con</i> <i>la</i></span>
+      <span><i>rabbia,</i></span>
+      <span><i>ai</i> <i>traumi</i></span>
+      <span><i>d'infanzia.</i></span>
+      <span><i>In</i> <i>fondo</i></span>
+      <span><i>siamo</i> <i>esseri</i></span>
+      <span><i>umani</i></span>
+      <span><i>e</i> <i>quanti</i> <i>sbagli,</i></span>
+      <span><i>sensi</i> <i>di</i> <i>colpa,</i></span>
+      <span><i>ripenso</i></span>
+      <span><i>quegli</i> <i>anni</i></span>
+      <span><i>ho</i> <i>la</i></span>
+      <span class="acc"><i>pelle</i> <i>d'oca</i></span>
+    </p>
 
-      <!-- Cinque righe cortissime, e non e' un vezzo: la misura la decide la
-           riga PIU' LUNGA, quindi righe corte = corpo grande. Con questo
-           carattere «mescola» e' la parola piu' larga della frase, e da sola
-           mette il tetto a tutte le altre. -->
-      <!-- TUTTO si scrive, parola per parola: una parola per <i>, e lo spazio
-           resta fuori dalla maschera — dentro sarebbe tagliato anche lui e le
-           parole si toccherebbero.
-           LA MISURA E' PER RIGA, non una per tutte: ogni riga prende il corpo
-           che la fa toccare i due margini, quindi righe corte vengono grandi e
-           righe lunghe piccole. Le dimensioni diverse escono dal testo, non da
-           una scelta a mano. Poi il copione scala tutto insieme finche' la
-           colonna sta nella schermata. -->
-      <p class="dire" data-scrive>
-        <span><i>Un</i></span>
-        <span><i>cuore</i></span>
-        <span><i>puro</i></span>
-        <span><i>che</i> <i>si</i></span>
-        <span class="acc"><i>mescola</i></span>
-      </p>
-
-      <p class="segue" data-scrive>
-        <span><i>con</i> <i>la</i></span>
-        <span><i>delicatezza,</i></span>
-        <span><i>o</i> <i>con</i> <i>la</i></span>
-        <span><i>rabbia,</i></span>
-        <span><i>ai</i> <i>traumi</i></span>
-        <span><i>d'infanzia.</i></span>
-      </p>
-
-      <!-- LA RIGA CHE CORRE. Non e' un'altra sezione: e' la riga dopo, e
-           parte esattamente sotto «d'infanzia.», allo stesso margine. Finita
-           la colonna si srotola di lato, comandata dallo stesso scroll.
-           Le misure diverse qui sono a mano (`.g`, `.gg`): su una riga sola
-           non c'e' una lunghezza da cui farle uscire. -->
-      <p class="corre" data-oriz><i>in fondo</i> <i class="g">siamo esseri umani</i> <i>e quanti sbagli,</i> <i class="g">sensi di colpa,</i> <i>ripenso quegli anni</i> <i class="gg">ho la pelle d'oca</i></p>
-
-      <p class="mono nota rev">Voce e chitarra &nbsp;·&nbsp; niente altro</p>
-    </div>
+    <p class="mono nota rev">Voce e chitarra &nbsp;·&nbsp; niente altro</p>
   </div>
 </section>
 
@@ -220,7 +210,7 @@
   </div>
 </footer>
 
-<script src="assets/js/blob-mask.js?v=62"></script>
-<script src="assets/js/sito.js?v=62"></script>
+<script src="assets/js/blob-mask.js?v=65"></script>
+<script src="assets/js/sito.js?v=65"></script>
 </body>
 </html>

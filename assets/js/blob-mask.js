@@ -553,6 +553,31 @@ function monta(opz){
     if (velo < .002 && modo !== 'massa') return;
     if (document.hidden || !vista) return;
 
+    /* LA SPARATA. Un gruppo di gocce attraversa lo schermo dal basso verso
+       l'alto in mezzo secondo e sparisce: e' un passaggio fra due sezioni,
+       non una scena. Qui la fisica delle coppie NON gira — volano e basta:
+       `passo()` riporterebbe la velocita' a quella di crociera in un decimo
+       di secondo, che e' esattamente il contrario di una sparata. Il campo
+       le fa fondere lo stesso quando si incrociano, perche' quello e' lo
+       shader e non la fisica. */
+    if (modo === 'sparo'){
+      var vive = 0;
+      for (var s2=0;s2<gocce.length;s2++){
+        var g2 = gocce[s2];
+        g2.X += g2.vX*dt; g2.Y += g2.vY*dt;
+        if (g2.Y < 1.35) vive++;
+      }
+      /* finite fuori: si spegne e si RIMETTE A DISPOSIZIONE. Senza cambiare
+         modo, una seconda sparata non partirebbe piu' — `sparo()` esce
+         subito se il modo e' gia' quello. */
+      if (!vive){ obiettivo = 0; if (velo < .02) modo = 'fermo'; }
+      scrivi();
+      lInv.disegna(data, W, H, A, warp, velo);
+      if (lTin && CONFIG.mode === 'tinta') lTin.disegna(data, W, H, A, warp, velo);
+      warp += dt*CONFIG.warpSpeed*3;
+      return;
+    }
+
     if (modo === 'massa'){
       /* l'orologio lento della massa: e' l'unica cosa che si muove quando la
          pagina sta ferma */
@@ -612,6 +637,28 @@ function monta(opz){
       }
     },
     semina: semina,
+    /* Le manda tutte sotto al bordo con una spinta grossa e le lascia
+       andare. Non tocca `speed`: quella e' la velocita' di crociera delle
+       gocce lente, e cambiarla vorrebbe dire cambiarla per sempre. */
+    sparo: function(){
+      if (modo === 'sparo') return;
+      modo = 'sparo';
+      CONFIG._massa = false;
+      CONFIG._sotto = -1;
+      var d = CONFIG.direction;
+      for (var i=0;i<gocce.length;i++){
+        var g = gocce[i];
+        g.r0 = raggioDi(g.sizeT); g.r = g.r0;
+        g.X = caso(0, A);
+        g.Y = d > 0 ? -0.2 - Math.random()*0.7 : 1.2 + Math.random()*0.7;
+        g.vX = caso(-0.12, 0.12);
+        g.vY = (2.4 + Math.random()*1.8) * d;   /* schermate al secondo */
+        g.age = 0;
+      }
+      legato.fill(0); eta.fill(0);
+      obiettivo = 1; velo = 1; acceso = true;
+      ultimo = performance.now();
+    },
     /* bordo: dove sta il confine, frazione dall'alto del viewport.
        diss:  0 massa compatta · 1 sciolta e sparita. */
     massa: function(bordo, dissoluzione){

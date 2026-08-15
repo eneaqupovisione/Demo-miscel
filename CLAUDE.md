@@ -135,44 +135,33 @@ servito da un server statico.
 - Per guardare cosa disegna un canvas WebGL **non serve** `drawImage` né
   `readPixels` da fuori del frame: senza `preserveDrawingBuffer` tornano
   sempre neri, e sembra che l'effetto non ci sia. Si guarda a schermo.
-- La sezione **«Chi è» è un manifesto che si completa**: ogni riga ha il suo
-  corpo, calcolato dal copione su quanto è lunga (corte grandi, lunghe
-  piccole), e poi tutta la colonna si scala finché sta nella schermata
-  inchiodata. Le dimensioni diverse **escono dal testo**, non da una scelta a
-  mano: cambiare una parola cambia il corpo della sua riga. La nota vecchia
-  diceva che righe di corpi diversi sono «un manifesto, non una frase» — qui
-  un manifesto è esattamente quello che serve.
-  Trappola già pagata: le righe della frase hanno dentro una `<i>` a
-  `display:block` per la feritoia, quindi lo `scrollWidth` dello `<span>`
-  torna la larghezza della colonna e **tutte le righe vengono uguali**. Si
-  misura la `<i>`. Nelle chiuse invece le `<i>` sono in linea e lo span in
-  `nowrap` sborda: lì si misura lo span.
-- **La riga che corre non è un'altra sezione**: è l'ultima riga della stessa
-  colonna, e parte esattamente sotto «d'infanzia.» allo stesso margine.
-  Vive dentro allo stesso pin e sullo stesso scroll: prima le sedici parole
-  si scrivono (`DA`→`FINE`), poi la riga si srotola (`CORRE_DA`→`CORRE_A`).
-  **L'altezza della sezione decide la velocità di tutte e due**: con 600vh la
-  corsa vale 0,85 px di testo per px di dito. A 1,7 era illeggibile.
-  Due cose da non rompere: la riga **non ha** il tetto di larghezza delle
-  altre (deve sbordare, la taglia il pin), e ha un `font-size` **suo** — senza,
-  eredita i 16px del corpo del testo e la corsa si accorcia a un terzo.
-  Le misure diverse lì sono scritte a mano (`.g`, `.gg`): su una riga sola non
-  c'è una lunghezza da cui farle uscire come nella colonna.
-- **Niente letture di layout dentro ai cicli.** `getBoundingClientRect` e
-  `getComputedStyle` costringono il browser a rifare layout e stili: le bolle
-  ne facevano due per fotogramma (`misuraBox` e `bocca`) e la maschera una, e
-  mentre si scorre — due shader a schermo intero, la sequenza d'acqua, sedici
-  ritagli di testo — bastavano a far perdere fotogrammi. Adesso si leggono al
-  ridimensionamento e si tengono in cache. Se aggiungi una scena, fai lo
-  stesso.
-- **Finita la frase entrano le gocce**, e da lì vanno da sole: è la lavalamp
-  della specifica (`livello()`), non un'altra cosa. Il passaggio fra i due
-  modi della maschera lo decide un solo posto in `sito.js` — massa finché non
-  è sciolta, poi gocce — e il livello glielo passa la sezione attraverso
-  `GOCCE.v`. In `blob-mask.js`, `livello()` **rimette il modo a 'gocce' e
-  risemina**: senza, dopo una `massa()` il modo restava quello per sempre e
-  le gocce non risalivano più.
-- **Quanto dura la massa in scroll** si decide in un posto solo: la finestra
+- La sezione **«Chi è» è un blocco solo che si scrive scendendo**, e la
+  meccanica non è legata al tempo né a una percentuale della sezione: **ogni
+  parola si scrive quando arriva al suo posto sullo schermo** (fra il 82% e il
+  52% dell'altezza, con un ritardo in più per le parole a destra — è quello
+  che fa leggere la riga come *scritta* e non come *comparsa*). Scendere è
+  scrivere; risalire la riporta indietro.
+  Perché non un ciclo unico sulla traversata: con un blocco più alto dello
+  schermo le ultime parole si scriverebbero mentre sono ancora sotto al bordo.
+  Le posizioni si misurano **una volta** al ridimensionamento: leggerle a ogni
+  fotogramma sarebbero trenta letture di layout per frame.
+  **Non c'è più il pin.** C'è stato, e con lui lo sfondo restava fermo mentre
+  il testo compariva sopra: si guardava una scena invece di leggere una
+  pagina.
+- La misura è **per riga**: ogni riga prende il corpo che la fa toccare i due
+  margini, quindi righe corte vengono grandi e righe lunghe piccole. Le
+  dimensioni diverse **escono dal testo**, non da una scelta a mano — cambiare
+  una parola cambia il corpo della sua riga. Il tetto (`vh*0.17`) serve perché
+  una riga di due lettere non diventi un palazzo.
+- **La sparata** (`Mask.sparo()`) è il passaggio verso «Ascolta»: un gruppo di
+  gocce attraversa lo schermo dal basso in mezzo secondo e sparisce. Parte
+  quando l'ultima parola arriva a uno — la **stessa soglia** che la scrive,
+  così non possono sfasarsi. Lì la fisica delle coppie **non gira**: `passo()`
+  riporterebbe la velocità a quella di crociera in un decimo di secondo, che è
+  il contrario di una sparata. Il campo le fonde lo stesso quando si
+  incrociano, perché quello è lo shader e non la fisica. Finite fuori, il modo
+  torna `fermo`: senza, una seconda sparata non partirebbe più.
+- **Quanto dura la massa in scroll**- **Quanto dura la massa in scroll** si decide in un posto solo: la finestra
   di `diss` in `sito.js` (`(0.68 - bordo) / 0.46`). Da un capo all'altro sono
   otto decimi di schermata. È l'unico numero da toccare per farla durare di
   più o di meno.

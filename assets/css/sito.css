@@ -411,19 +411,11 @@ body.giu #apri{transform:translate3d(0,-115%,0)}
    singolo, che entra dal lato quando la sezione arriva. Non e' una
    dissolvenza: e' un taglio che si apre, cosi' il passaggio da "non c'e'" a
    "c'e'" si vede davvero. */
-/* LA SEZIONE E' ALTA, E QUELL'ALTEZZA E' LA DURATA DELLA SCRITTURA.
-   Dentro, una schermata sola inchiodata: le parole arrivano mentre la frase
-   sta ferma. Se la frase scorresse, le ultime si scriverebbero sotto al
-   bordo dello schermo — che e' come non scriverle.
-   `overflow` NON va qui: su un antenato spezza lo `sticky` del figlio. Sta
-   sul pin. */
-/* L'altezza e' la durata di TUTTA la scena: prima le sedici parole che si
-   scrivono, poi la riga che si srotola di lato. Alzarla rallenta entrambe. */
-#chi{position:relative;height:600vh}
-#chi .pin{
-  position:sticky;top:0;height:100svh;min-height:100dvh;overflow:hidden;
-  display:flex;align-items:center;
-}
+/* LA SEZIONE NON E' PIU' INCHIODATA. Il blocco scorre come tutto il resto e
+   le parole si scrivono quando arrivano al loro posto sullo schermo: scendere
+   E' scrivere. Con il pin lo sfondo restava fermo e il testo compariva sopra,
+   che e' un'altra cosa — si guardava una scena, non si leggeva una pagina. */
+#chi{position:relative;overflow:hidden;padding-block:clamp(40px,9vw,90px) clamp(90px,20vw,180px)}
 #chi .sfondo{
   position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;
   clip-path:inset(0 0 0 100%);
@@ -441,59 +433,24 @@ body.giu #apri{transform:translate3d(0,-115%,0)}
 }
 /* NIENTE z-index QUI. Un `z-index:1` mette queste righe sopra ai canvas della
    maschera — che stanno dopo nel DOM ma senza z-index — e la massa smette di
-   invertirle: restano nere su blu invece che bianche. Non si vedeva finche'
-   la massa non arrivava fin qui; adesso questa e' la prima sezione dopo la
-   copertina e ci finisce dentro tutte le volte.
-   Sopra allo sfondo ci va lo stesso: viene dopo di lui nel DOM. */
+   invertirle: restano nere su blu invece che bianche.
+   Sopra allo sfondo ci vanno lo stesso: vengono dopo di lui nel DOM. */
 #chi .in{position:relative;width:100%}
 
 /* LA COLONNA. Ogni riga ha il SUO corpo, calcolato dal copione su quanto e'
-   lunga: corte grandi, lunghe piccole. Poi tutte insieme si scalano finche'
-   la colonna sta nella schermata inchiodata — quindi il blocco riempie
-   l'altezza dello schermo qualunque schermo sia.
-   La larghezza si ferma a 92vh: su un monitor largo una colonna che tocca i
-   due margini verrebbe alta il triplo dello schermo, e a scalarla per farcela
-   stare tornerebbero tutte le righe uguali. */
-#chi .dire,#chi .segue{max-width:min(100%,92vh)}
+   lunga: corte grandi, lunghe piccole. Il tetto serve perche' una riga di due
+   lettere non diventi un palazzo. */
 #chi .dire{
   font-family:var(--disp);font-weight:800;text-transform:uppercase;
   line-height:.94;letter-spacing:-.05em;margin:.14em 0 0;
+  max-width:min(100%,92vh);
 }
 #chi .dire span{display:block;white-space:nowrap}
 #chi .acc{color:var(--acc)}
-
-/* TUTTE LE PAROLE, UNA ALLA VOLTA
-   Ogni parola ha la sua fetta di scroll e si scopre da sinistra: il taglio
-   passa DENTRO la lettera, quindi si legge «scritto» e non «digitato».
-   Perche' `clip-path` e non `width`: animando la larghezza il testo va a capo
-   in punti diversi mentre scorre, e la riga sotto sussulta. Con la maschera
-   lo spazio occupato e' da subito quello finale. */
-#chi .segue{
-  font-family:var(--disp);font-weight:600;text-transform:uppercase;
-  line-height:.94;letter-spacing:-.03em;margin:.2em 0 0;
-}
-/* nowrap: la riga deve stare su una riga, se no la misura per riga non vuol
-   dire niente e l'altezza della colonna diventa imprevedibile */
-#chi .segue span{display:block;white-space:nowrap}
-#chi .dire i,#chi .segue i{display:inline-block;font-style:normal;
+/* una parola per <i>: il taglio passa DENTRO la lettera, quindi si legge
+   «scritto» e non «digitato» */
+#chi .dire i{display:inline-block;font-style:normal;
   clip-path:inset(0 100% 0 0);will-change:clip-path}
-/* LA RIGA CHE CORRE. E' l'ultima riga della colonna, non un'altra cosa:
-   stesso carattere, stesso margine di partenza, attaccata sotto a
-   «d'infanzia.». Non ha il tetto di larghezza delle altre — deve sbordare,
-   e' tutto il punto — e la taglia il pin, che ha overflow:hidden.
-   Le misure diverse qui sono scritte a mano: su una riga sola non c'e' una
-   lunghezza da cui farle uscire come nella colonna. */
-#chi .corre{
-  font-family:var(--disp);font-weight:600;text-transform:uppercase;
-  /* il corpo di base: le misure a mano (.g, .gg) sono multipli di questo */
-  font-size:clamp(1.35rem,7vw,3rem);
-  line-height:1;letter-spacing:-.035em;white-space:nowrap;
-  margin:.24em 0 0;width:max-content;max-width:none;
-  will-change:transform;
-}
-#chi .corre i{font-style:normal;display:inline-block;vertical-align:baseline}
-#chi .corre .g{font-size:1.5em}
-#chi .corre .gg{font-size:2.1em;font-weight:800;color:var(--acc)}
 #chi .nota{margin-top:clamp(22px,5vw,42px);color:var(--tenue)}
 
 /* --- 13 contatti --------------------------------------------------------- */
@@ -543,13 +500,6 @@ body.giu #apri{transform:translate3d(0,-115%,0)}
   /* "Chi e'" si apre subito e le righe stanno ferme: il taglio che scorre e'
      proprio il tipo di movimento che qui va tolto */
   #chi .sfondo{clip-path:none}
-  /* niente schermata inchiodata: senza la scrittura, quei due schermi e mezzo
-     sarebbero solo scroll a vuoto */
-  #chi{height:auto}
-  #chi .pin{position:static;height:auto;min-height:0;padding-block:clamp(60px,12vw,120px)}
-  /* le chiuse non si scrivono: sono gia' scritte. La frase resta intera, che
-     e' l'unica cosa che conta */
-  #chi .dire i,#chi .segue i{clip-path:none !important}
-  /* la corsa orizzontale non c'e': la riga torna un paragrafo che va a capo */
-  #chi .corre{white-space:normal;width:auto;transform:none !important}
+  /* le parole non si scrivono: sono gia' scritte */
+  #chi .dire i{clip-path:none !important}
 }
