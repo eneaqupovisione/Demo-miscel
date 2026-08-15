@@ -500,46 +500,49 @@ function monta(opz){
     }
   }
 
-  /* IL FINALE, IN UN GESTO SOLO.
-     A v=0 le gocce sono una griglia che copre tutto: e' il fondo blu della
-     sezione "Scrivi". Man mano che v cresce si staccano — prima quelle in
-     basso — salgono e si impilano in alto, dove il raggio cresce: quello che
-     si vede e' il blu che si scorpora, si ritira verso l'alto e poi si
-     richiude coprendo di nuovo tutto.
-     Il raggio che cresce non e' un vezzo: impilate in mezzo schermo, con il
-     raggio di partenza lascerebbero scoperta la meta' di sotto.
-     Le irregolarita' sono deterministiche (seno dell'indice): a ogni
-     fotogramma la stessa disposizione, se no vibra invece di stare ferma. */
+  /* IL FINALE, IN DUE MOSSE CHE SONO LA STESSA COSA.
+     MOSSA 1 — e' LA STESSA MASSA DELLA COPERTINA, non una cosa nuova: la
+     chiama `disponiMassa`, con la stessa cresta irregolare e lo stesso corpo,
+     e il confine che sale mentre si scorre. Cosi' "Scrivi" si colora come si
+     colora il nome in copertina, ed e' lo stesso gesto detto due volte.
+     MOSSA 2 — poi si scorpora: le gocce si staccano e si impilano in alto,
+     una fila alla volta, e la fila successiva arriva solo se si continua a
+     scendere. Piu' si scrolla piu' si riempie; risalendo torna indietro,
+     perche' tutto qui dipende solo da `v` e niente da un tempo.
+     Il raggio cresce arrivando: impilate in mezzo schermo, con il raggio che
+     avevano lascerebbero scoperta la meta' di sotto. */
   function disponiFinale(v){
-    var n = gocce.length;
-    /* LA GRIGLIA SBORDA. Deve coprire piu' dello schermo, se no in fondo
-       resta una striscia di carta: le file arrivano fino a -0.18, cioe' un
-       pezzo sotto al bordo basso, e il raggio e' abbondante perche' le celle
-       si fondano invece di lasciare i buchi agli incroci. */
-    var col = Math.max(2, Math.round(A / 0.19));
+    var n = gocce.length, i;
+
+    /* MOSSA 1: il confine sale da sotto lo schermo fin quasi in cima */
+    var bordo = 1.04 - clamp01(v / 0.48) * 0.94;
+    disponiMassa(bordo, 0);
+
+    var passa = clamp01((v - 0.42) / 0.58);
+    if (passa <= 0) return;
+
+    /* MOSSA 2: le posizioni d'arrivo, impilate dalla cima */
+    var col = Math.max(2, Math.round(A / 0.21));
     var rig = Math.ceil(n / col);
-    var alto = 1.62;   /* schermate: sborda sotto di mezza */
-    var cellaX = A / col, cellaY = alto / rig;
-    var raggio = Math.max(cellaX, cellaY) * 1.02;
-    for (var i=0;i<n;i++){
+    var cellaX = A / col, cellaY = 0.66 / rig;
+    var rB = Math.max(cellaX, cellaY) * 1.7;
+
+    for (i=0;i<n;i++){
       var g = gocce[i];
       var c = i % col, r = (i / col) | 0;
       var jx = Math.sin(i*12.9898 + 1.7) * .5 + .5;
       var jy = Math.sin(i*78.2330 + 4.1) * .5 + .5;
       var jz = Math.sin(i*45.1640 + 9.3) * .5 + .5;
-      /* dove si fermera' — in coordinate dello shader la cima e' 1 */
-      var fermaY = 1.16 - (r + .5)*cellaY + (jy-.5)*cellaY*0.4;
-      var fermaX = (c + .5)*cellaX + (jx-.5)*cellaX*0.5;
-      /* il turno: prima le righe alte, e dentro alla riga sfalsate */
-      /* il turno: prima le file alte, e dentro alla fila sfalsate. Si chiude
-         a 0.80 perche' l'ultima deve essere ferma prima della fine della
-         corsa, se no si finisce di scorrere con lo schermo ancora a meta' */
-      var t0 = (r / rig) * 0.56 + (c / col) * 0.12;
-      var k = clamp01((v - t0) / 0.24);
+      /* il turno: le file alte arrivano per prime, e il riempimento scende */
+      var t0 = (r / rig) * 0.72 + (c / col) * 0.10;
+      var k = clamp01((passa - t0) / 0.30);
       k = k*k*(3-2*k);
-      g.X = fermaX;
-      g.Y = (-0.25 - jz*0.5) * (1-k) + fermaY * k;
-      g.r = raggio * (0.82 + jz*0.36);
+      if (k <= 0) continue;
+      var xB = (c + .5)*cellaX + (jx-.5)*cellaX*0.5;
+      var yB = 1.12 - (r + .5)*cellaY + (jy-.5)*cellaY*0.45;
+      g.X = g.X*(1-k) + xB*k;
+      g.Y = g.Y*(1-k) + yB*k;
+      g.r = g.r*(1-k) + rB*(0.86 + jz*0.3)*k;
     }
   }
 
