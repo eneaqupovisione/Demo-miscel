@@ -56,6 +56,22 @@ ffmpeg -v error -y -ss 20.6 -t 1.8 -i "$SORG" \
   -filter_complex "[0:v]$G,eq=brightness=0.055,scale=$W:$H:flags=lanczos,split[a][b];[b]reverse[r];[a][r]concat=n=2:v=1[v]" \
   -map "[v]" -an -c:v libx264 -profile:v main -pix_fmt yuv420p -crf 28 -preset slow \
   -movflags +faststart -g 45 "$OUT/copertina.mp4"
+# --- la scena che accompagna le parole ---------------------------------------
+# Scena 1 (18.8 -> 20.4): la figura nera, e a sinistra il vuoto dove vanno le
+# parole. Sul sito ci va in `multiply` sopra la carta, e per questo la
+# gradazione NON e' quella duotone del resto: le luci si spingono a bianco
+# pieno. Un grigio residuo, moltiplicato, sporcherebbe la carta di un
+# rettangolo — e si vedrebbe subito il bordo del video.
+# Andata e ritorno come la copertina: 3.2s che si richiudono senza scatto.
+GS="hue=s=0,curves=r='0/0 0.34/0.10 0.70/0.94 1/1':g='0/0 0.34/0.10 0.70/0.94 1/1':b='0/0.02 0.34/0.12 0.70/0.95 1/1',eq=contrast=1.18"
+echo "  · scena (scena 1, andata e ritorno)"
+ffmpeg -v error -y -ss 18.8 -t 1.6 -i "$SORG" \
+  -filter_complex "[0:v]$GS,scale=$W:$H:flags=lanczos,split[a][b];[b]reverse[r];[a][r]concat=n=2:v=1[v]" \
+  -map "[v]" -an -c:v libx264 -profile:v main -pix_fmt yuv420p -crf 28 -preset slow \
+  -movflags +faststart -g 45 "$OUT/scena.mp4"
+ffmpeg -v error -y -ss 19.4 -i "$SORG" -frames:v 1 \
+  -vf "$GS,scale=$W:$H:flags=lanczos" -q:v 4 "$OUT/scena.jpg"
+
 # il fermo non e' il primo fotogramma: quello e' quasi nero, e chi arriva
 # vedrebbe un rettangolo vuoto finche' il video non parte.
 # Il filo di luce in piu' (eq brightness) non e' una correzione estetica: la

@@ -411,47 +411,52 @@ body.giu #apri{transform:translate3d(0,-115%,0)}
    singolo, che entra dal lato quando la sezione arriva. Non e' una
    dissolvenza: e' un taglio che si apre, cosi' il passaggio da "non c'e'" a
    "c'e'" si vede davvero. */
-/* LA SEZIONE NON E' PIU' INCHIODATA. Il blocco scorre come tutto il resto e
-   le parole si scrivono quando arrivano al loro posto sullo schermo: scendere
-   E' scrivere. Con il pin lo sfondo restava fermo e il testo compariva sopra,
-   che e' un'altra cosa — si guardava una scena, non si leggeva una pagina. */
-#chi{position:relative;overflow:hidden;padding-block:clamp(40px,9vw,90px) clamp(90px,20vw,180px)}
-#chi .sfondo{
-  position:absolute;inset:0;z-index:0;pointer-events:none;overflow:hidden;
-  clip-path:inset(0 0 0 100%);
-  transition:clip-path 1.4s cubic-bezier(.62,.02,.2,1);
-}
-#chi.svelato .sfondo{clip-path:inset(0 0 0 0)}
-#chi .sfondo canvas{width:100%;height:100%;opacity:.34}
-/* il velo tiene le righe leggibili senza spegnere l'immagine */
-#chi .sfondo .velo{
-  position:absolute;inset:0;
-  background:linear-gradient(90deg,var(--fondo) 0%,rgba(243,236,210,.62) 42%,rgba(243,236,210,0) 88%);
-}
-@media(max-width:759px){
-  #chi .sfondo .velo{background:linear-gradient(180deg,var(--fondo) 0%,rgba(243,236,210,.5) 30%,rgba(243,236,210,.72) 100%)}
-}
-/* NIENTE z-index QUI. Un `z-index:1` mette queste righe sopra ai canvas della
-   maschera — che stanno dopo nel DOM ma senza z-index — e la massa smette di
-   invertirle: restano nere su blu invece che bianche.
-   Sopra allo sfondo ci vanno lo stesso: vengono dopo di lui nel DOM. */
-#chi .in{position:relative;width:100%}
+/* LA SEZIONE SCORRE COME TUTTO IL RESTO. Le parole si scrivono quando
+   arrivano al loro posto sullo schermo: scendere E' scrivere. */
+#chi{position:relative;overflow:hidden;padding-block:clamp(50px,11vw,110px) clamp(80px,18vw,160px)}
 
-/* LA COLONNA. Ogni riga ha il SUO corpo, calcolato dal copione su quanto e'
-   lunga: corte grandi, lunghe piccole. Il tetto serve perche' una riga di due
-   lettere non diventi un palazzo. */
+/* LA SCENA. `sticky` con il margine negativo che la toglie dal flusso: sta
+   ferma mentre le parole le scorrono davanti, senza occupare altezza.
+   `multiply` fa sparire il fondo bianco del girato dentro la carta e lascia
+   solo la figura. Niente z-index ne' qui ne' sul testo: sono tutti e due
+   posizionati e senza z-index, quindi decide l'ordine del DOM — e la
+   maschera a gocce continua a invertire tutto quanto. */
+/* LA FUSIONE VA QUI, SUL CONTENITORE, E NON SUL VIDEO.
+   `position:sticky` crea di suo un contesto di impilamento: un `multiply`
+   sul video dentro a questo contenitore si fonde con il contenitore — cioe'
+   con niente — e il fondo bianco del girato resta bianco, con il rettangolo
+   del video ben visibile sulla carta. Messo qui, invece, e' tutto il gruppo
+   a fondersi con la pagina, che e' quello che serve.
+   Stessa ragione per cui l'opacita' sta sul video: qui creerebbe un secondo
+   contesto e riporterebbe il problema da capo. */
+#chi .scena{
+  position:sticky;top:0;height:100svh;margin-bottom:-100svh;
+  display:flex;align-items:center;justify-content:flex-end;
+  pointer-events:none;mix-blend-mode:multiply;
+}
+#chi .scena video{
+  height:58svh;width:auto;max-width:none;
+  margin-right:calc(var(--gut) * -0.6);
+  opacity:0;transition:opacity 1s var(--e);
+}
+@media(min-width:760px){ #chi .scena video{height:76svh} }
+#chi .in{position:relative}
+
+/* LE PAROLE. La colonna sta a sinistra, dove la scena e' vuota: sopra la
+   figura il testo nero sparirebbe. Le misure le decide il copione, una per
+   parola, da una sequenza irregolare — anche fra parole vicine. */
 #chi .dire{
   font-family:var(--disp);font-weight:800;text-transform:uppercase;
-  line-height:.94;letter-spacing:-.05em;margin:.14em 0 0;
-  max-width:min(100%,92vh);
+  font-size:clamp(1.3rem,6.4vw,2.6rem);
+  line-height:.92;letter-spacing:-.045em;margin:.5em 0 0;
+  max-width:60%;
 }
-#chi .dire span{display:block;white-space:nowrap}
-#chi .acc{color:var(--acc)}
+@media(min-width:760px){ #chi .dire{max-width:52%} }
 /* una parola per <i>: il taglio passa DENTRO la lettera, quindi si legge
    «scritto» e non «digitato» */
-#chi .dire i{display:inline-block;font-style:normal;
+#chi .dire i{display:inline-block;font-style:normal;line-height:.92;
   clip-path:inset(0 100% 0 0);will-change:clip-path}
-#chi .nota{margin-top:clamp(22px,5vw,42px);color:var(--tenue)}
+#chi .acc{color:var(--acc)}
 
 /* --- 13 contatti --------------------------------------------------------- */
 #contatti{background:var(--nero);color:var(--osso);position:relative;overflow:hidden;
@@ -484,6 +489,21 @@ body.giu #apri{transform:translate3d(0,-115%,0)}
 }
 #copiato.on{opacity:1;transform:translate3d(-50%,0,0)}
 
+/* --- 13b la firma -------------------------------------------------------
+   L'ultima schermata: le gocce salgono, si fermano in alto e riempiono lo
+   schermo. Il testo qui e' nero su carta e NON cambia colore da solo: dentro
+   al blu si legge bianco perche' la maschera lo inverte. Se un giorno lo
+   scrivi bianco, dentro al blu sparisce. */
+#firma{position:relative;min-height:190vh;padding-block:clamp(60px,14vw,140px)}
+#firma .in{position:sticky;top:0;height:100svh;display:flex;flex-direction:column;
+  justify-content:center;padding-block:clamp(40px,10vw,90px)}
+#firma .detto{
+  font-family:var(--disp);font-weight:800;text-transform:uppercase;
+  font-size:clamp(2rem,11vw,5rem);line-height:.94;letter-spacing:-.045em;
+}
+#firma .detto span{display:block}
+#firma .chi{margin-top:clamp(20px,5vw,40px)}
+
 /* --- 14 piede ------------------------------------------------------------ */
 #piede{background:var(--nero);color:var(--grigio);padding:2rem 0 3rem;
   border-top:1px solid rgba(243,236,210,.14)}
@@ -500,6 +520,9 @@ body.giu #apri{transform:translate3d(0,-115%,0)}
   /* "Chi e'" si apre subito e le righe stanno ferme: il taglio che scorre e'
      proprio il tipo di movimento che qui va tolto */
   #chi .sfondo{clip-path:none}
-  /* le parole non si scrivono: sono gia' scritte */
+  /* le parole non si scrivono: sono gia' scritte, e la scena c'e' subito */
   #chi .dire i{clip-path:none !important}
+  #chi .scena{opacity:1 !important}
+  #firma{min-height:0}
+  #firma .in{position:static;height:auto}
 }

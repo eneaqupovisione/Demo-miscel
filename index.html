@@ -19,11 +19,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Archivo:wght@300;400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-<link rel="preload" as="image" href="assets/media/copertina.jpg?v=65">
+<link rel="preload" as="image" href="assets/media/copertina.jpg?v=72">
 <!-- il ?v= serve: GitHub Pages tiene i file in cache dieci minuti, e chi
      ha gia' aperto il sito continuerebbe a vedere la versione vecchia.
      Si alza il numero a ogni pubblicazione. -->
-<link rel="stylesheet" href="assets/css/sito.css?v=65">
+<link rel="stylesheet" href="assets/css/sito.css?v=72">
 </head>
 <body>
 
@@ -46,7 +46,7 @@
 <!-- la lastra a raggi X delle uscite -->
 <div id="lastra" aria-hidden="true">
   <i class="scan"></i>
-  <img src="assets/media/colonna.jpg?v=65" alt="">
+  <img src="assets/media/colonna.jpg?v=72" alt="">
   <div class="c"><span class="k">lastra · 001</span><div class="h"></div></div>
 </div>
 
@@ -91,9 +91,9 @@
 <!-- ========================== 01 · COPERTINA ========================== -->
 <section id="cop">
   <div class="med">
-    <video id="vCop" poster="assets/media/copertina.jpg?v=65" muted loop playsinline autoplay preload="auto"
+    <video id="vCop" poster="assets/media/copertina.jpg?v=72" muted loop playsinline autoplay preload="auto"
            disablepictureinpicture aria-hidden="true">
-      <source src="assets/media/copertina.mp4?v=65" type="video/mp4">
+      <source src="assets/media/copertina.mp4?v=72" type="video/mp4">
     </video>
   </div>
 
@@ -121,9 +121,18 @@
      subito; le tre chiuse si scrivono mentre si scende, una alla volta.
      Dietro, il respiro: la scena d'acqua che entra dal lato. -->
 <section id="chi">
-  <div class="sfondo" aria-hidden="true">
-    <canvas id="cvChi"></canvas>
-    <div class="velo"></div>
+  <!-- LA SCENA. Sta ferma mentre le parole le scorrono davanti, va in anello
+       per conto suo — lo scroll non la comanda — e non c'e' da subito: compare
+       quando qualche parola e' gia' stata scritta.
+       Va in `multiply`: il fondo del girato e' bianco pieno e sparisce nella
+       carta, resta la figura. Per questo la sua gradazione e' diversa da
+       quella del resto (vedi strumenti/media.sh): un grigio residuo,
+       moltiplicato, lascerebbe il rettangolo del video sulla pagina. -->
+  <div class="scena" aria-hidden="true">
+    <video id="vChi" muted loop playsinline autoplay preload="none"
+           poster="assets/media/scena.jpg?v=72" disablepictureinpicture>
+      <source src="assets/media/scena.mp4?v=72" type="video/mp4">
+    </video>
   </div>
 
   <div class="wrap in">
@@ -131,38 +140,12 @@
       <span class="mono n">02</span><span class="mono">Chi è</span>
     </div>
 
-    <!-- UN BLOCCO SOLO, UNA MECCANICA SOLA. Ogni parola si scrive quando
-         arriva al suo posto sullo schermo — non a un tempo, non a una
-         percentuale della sezione: alla sua posizione. Scendere e' scrivere.
-         Una parola per <i>, e lo spazio resta fuori dalla maschera: dentro
-         sarebbe tagliato anche lui e le parole si toccherebbero.
-         La misura e' per riga: righe corte vengono grandi, righe lunghe
-         piccole. Le dimensioni diverse escono dal testo, non da una scelta
-         a mano — cambiare una parola cambia il corpo della sua riga. -->
-    <p class="dire" data-scrive>
-      <span><i>Un</i></span>
-      <span><i>cuore</i></span>
-      <span><i>puro</i></span>
-      <span><i>che</i> <i>si</i></span>
-      <span class="acc"><i>mescola</i></span>
-      <span><i>con</i> <i>la</i></span>
-      <span><i>delicatezza,</i></span>
-      <span><i>o</i> <i>con</i> <i>la</i></span>
-      <span><i>rabbia,</i></span>
-      <span><i>ai</i> <i>traumi</i></span>
-      <span><i>d'infanzia.</i></span>
-      <span><i>In</i> <i>fondo</i></span>
-      <span><i>siamo</i> <i>esseri</i></span>
-      <span><i>umani</i></span>
-      <span><i>e</i> <i>quanti</i> <i>sbagli,</i></span>
-      <span><i>sensi</i> <i>di</i> <i>colpa,</i></span>
-      <span><i>ripenso</i></span>
-      <span><i>quegli</i> <i>anni</i></span>
-      <span><i>ho</i> <i>la</i></span>
-      <span class="acc"><i>pelle</i> <i>d'oca</i></span>
-    </p>
-
-    <p class="mono nota rev">Voce e chitarra &nbsp;·&nbsp; niente altro</p>
+    <!-- Il testo e' uno solo e sta qui per intero: le parole le divide il
+         copione, e ognuna prende la sua misura da una sequenza irregolare.
+         Le misure NON stanno nel markup apposta — sono una proprieta' della
+         composizione, non del contenuto: se cambi il testo, si ridistribuiscono
+         da sole. -->
+    <p class="dire" data-scrive>Un cuore puro che si mescola con la delicatezza, o con la rabbia, ai traumi d'infanzia. In fondo siamo esseri umani e quanti sbagli, sensi di colpa, ripenso quegli anni ho la pelle d'oca, col dolore del passato si diventa grandi.</p>
   </div>
 </section>
 
@@ -178,7 +161,11 @@
   </div>
 </section>
 
-<!-- ========================== 04 · SCRIVI ========================== -->
+<!-- ========================== 04 · SCRIVI ==========================
+     Il piu' semplice possibile: un indirizzo grande da toccare, e due righe
+     per chi cerca altro. Niente pulsante, niente ritratto, niente fila di
+     social: e' la sezione dove si deve scrivere, e ogni altra cosa e' un
+     modo di andarsene. -->
 <section id="contatti">
   <div class="wrap in">
     <div class="occhiello rev">
@@ -186,9 +173,9 @@
     </div>
     <h2 class="tit" data-adatta data-max="180"><span class="gx" data-t="Scrivi">Scrivi</span></h2>
 
-    <p class="azione rev"><a class="btn" id="ctaBooking" href="#">Scrivi per una data <span aria-hidden="true">&rarr;</span></a></p>
     <a class="mail rev" id="mailBooking" href="#" data-copia>—</a>
     <p class="mono rev">Tocca per copiare</p>
+
     <ul class="altri rev">
       <li><span class="mono">Management</span><a id="cMgmt" href="#">—</a></li>
       <li><span class="mono">Stampa</span><a id="cPress" href="#">—</a></li>
@@ -196,11 +183,21 @@
   </div>
 </section>
 
-
-  <!-- i due livelli di fusione: ultimi nel DOM, dentro al palco -->
-  <canvas id="c-invert" aria-hidden="true"></canvas>
-  <canvas id="c-tint"   aria-hidden="true"></canvas>
-</main>
+<!-- ========================== 05 · LA FIRMA ==========================
+     L'ultima schermata. Salendo, una sfilza di gocce si ferma in alto e
+     riempie lo schermo di blu: quello che c'e' scritto sotto, nero su carta,
+     dentro al blu si legge bianco — non e' un colore diverso del testo, e'
+     lo stesso testo visto attraverso la maschera. -->
+<section id="firma">
+  <div class="wrap in">
+    <p class="detto">
+      <span>Costruito</span>
+      <span>trattenendo</span>
+      <span>il fiato.</span>
+    </p>
+    <p class="mono chi" id="firmato">—</p>
+  </div>
+</section>
 
 <footer id="piede">
   <div class="wrap in">
@@ -210,7 +207,7 @@
   </div>
 </footer>
 
-<script src="assets/js/blob-mask.js?v=65"></script>
-<script src="assets/js/sito.js?v=65"></script>
+<script src="assets/js/blob-mask.js?v=72"></script>
+<script src="assets/js/sito.js?v=72"></script>
 </body>
 </html>

@@ -500,6 +500,36 @@ function monta(opz){
     }
   }
 
+  /* La griglia si impila dalla cima: la goccia i sta alla riga i/col. Il suo
+     turno viene da quanto e' in alto — le prime a fermarsi sono quelle che
+     staranno piu' su, se no la macchia crescerebbe dal basso invece che
+     riempirsi dall'alto. Le irregolarita' sono deterministiche (seno
+     dell'indice): a ogni fotogramma la stessa disposizione, se no vibra. */
+  function disponiRiempi(v){
+    var n = gocce.length;
+    var col = Math.max(2, Math.round(A / 0.17));
+    var rig = Math.ceil(n / col);
+    var cellaX = A / col, cellaY = 1.06 / rig;
+    var raggio = Math.max(cellaX, cellaY) * 0.74;
+    for (var i=0;i<n;i++){
+      var g = gocce[i];
+      var c = i % col, r = (i / col) | 0;
+      var jx = Math.sin(i*12.9898 + 1.7) * .5 + .5;
+      var jy = Math.sin(i*78.2330 + 4.1) * .5 + .5;
+      var jz = Math.sin(i*45.1640 + 9.3) * .5 + .5;
+      /* dove si fermera' — in coordinate dello shader la cima e' 1 */
+      var fermaY = 1.02 - (r + .5)*cellaY + (jy-.5)*cellaY*0.5;
+      var fermaX = (c + .5)*cellaX + (jx-.5)*cellaX*0.5;
+      /* il turno: prima le righe alte, e dentro alla riga sfalsate */
+      var t0 = (r / rig) * 0.62 + (c / col) * 0.14;
+      var k = clamp01((v - t0) / 0.30);
+      k = k*k*(3-2*k);
+      g.X = fermaX;
+      g.Y = (-0.25 - jz*0.5) * (1-k) + fermaY * k;
+      g.r = raggio * (0.82 + jz*0.36);
+    }
+  }
+
   function scrivi(){
     for (var i=0;i<gocce.length;i++){
       var g = gocce[i];
@@ -578,6 +608,19 @@ function monta(opz){
       return;
     }
 
+    /* LA FIRMA: le gocce salgono, si fermano in alto e riempiono. `riempi`
+       va da 0 a 1: ognuna parte da sotto lo schermo e va al suo posto in una
+       griglia che si impila dalla CIMA verso il basso, e ognuna parte al suo
+       turno — cosi' e' una sfilza che sale, non un blocco che compare. */
+    if (modo === 'riempi'){
+      disponiRiempi(CONFIG._riempi || 0);
+      scrivi();
+      lInv.disegna(data, W, H, A, warp, velo);
+      if (lTin && CONFIG.mode === 'tinta') lTin.disegna(data, W, H, A, warp, velo);
+      warp += dt*CONFIG.warpSpeed;
+      return;
+    }
+
     if (modo === 'massa'){
       /* l'orologio lento della massa: e' l'unica cosa che si muove quando la
          pagina sta ferma */
@@ -637,6 +680,18 @@ function monta(opz){
       }
     },
     semina: semina,
+    /* v da 0 a 1: quanto e' riempito lo schermo dall'alto */
+    riempi: function(v){
+      if (modo !== 'riempi'){
+        modo = 'riempi';
+        CONFIG._massa = true;      /* usa il warp forte della massa: e' una massa */
+        CONFIG._gonfio = 1;
+        CONFIG._sotto = -1;
+        acceso = true;
+      }
+      CONFIG._riempi = clamp01(v);
+      obiettivo = 1; velo = 1;
+    },
     /* Le manda tutte sotto al bordo con una spinta grossa e le lascia
        andare. Non tocca `speed`: quella e' la velocita' di crociera delle
        gocce lente, e cambiarla vorrebbe dire cambiarla per sempre. */
@@ -645,14 +700,20 @@ function monta(opz){
       modo = 'sparo';
       CONFIG._massa = false;
       CONFIG._sotto = -1;
-      var d = CONFIG.direction;
-      for (var i=0;i<gocce.length;i++){
+      /* SPARPAGLIATE, NON A GRAPPOLO. La X non e' a caso: e' una per
+         colonna, se no trenta tiri casuali si accavallano e passa una macchia
+         sola. La Y le divide in tre ondate, cosi arrivano scaglionate
+         invece che tutte insieme. E il raggio si riduce: piu' piccole si
+         toccano meno, e il campo non le fonde in una cosa unica. */
+      var d = CONFIG.direction, n = gocce.length;
+      for (var i=0;i<n;i++){
         var g = gocce[i];
-        g.r0 = raggioDi(g.sizeT); g.r = g.r0;
-        g.X = caso(0, A);
-        g.Y = d > 0 ? -0.2 - Math.random()*0.7 : 1.2 + Math.random()*0.7;
-        g.vX = caso(-0.12, 0.12);
-        g.vY = (2.4 + Math.random()*1.8) * d;   /* schermate al secondo */
+        g.r0 = raggioDi(g.sizeT); g.r = g.r0 * (0.5 + Math.random()*0.3);
+        g.X = ((i + 0.15 + Math.random()*0.7) / n) * A;
+        var onda = (i % 3) * 0.30 + Math.random()*0.16;
+        g.Y = d > 0 ? -0.12 - onda : 1.12 + onda;
+        g.vX = caso(-0.07, 0.07);
+        g.vY = (1.15 + Math.random()*0.55) * d;   /* schermate al secondo */
         g.age = 0;
       }
       legato.fill(0); eta.fill(0);

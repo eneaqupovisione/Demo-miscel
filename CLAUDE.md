@@ -135,33 +135,28 @@ servito da un server statico.
 - Per guardare cosa disegna un canvas WebGL **non serve** `drawImage` né
   `readPixels` da fuori del frame: senza `preserveDrawingBuffer` tornano
   sempre neri, e sembra che l'effetto non ci sia. Si guarda a schermo.
-- La sezione **«Chi è» è un blocco solo che si scrive scendendo**, e la
-  meccanica non è legata al tempo né a una percentuale della sezione: **ogni
-  parola si scrive quando arriva al suo posto sullo schermo** (fra il 82% e il
-  52% dell'altezza, con un ritardo in più per le parole a destra — è quello
-  che fa leggere la riga come *scritta* e non come *comparsa*). Scendere è
-  scrivere; risalire la riporta indietro.
-  Perché non un ciclo unico sulla traversata: con un blocco più alto dello
-  schermo le ultime parole si scriverebbero mentre sono ancora sotto al bordo.
-  Le posizioni si misurano **una volta** al ridimensionamento: leggerle a ogni
-  fotogramma sarebbero trenta letture di layout per frame.
-  **Non c'è più il pin.** C'è stato, e con lui lo sfondo restava fermo mentre
-  il testo compariva sopra: si guardava una scena invece di leggere una
-  pagina.
-- La misura è **per riga**: ogni riga prende il corpo che la fa toccare i due
-  margini, quindi righe corte vengono grandi e righe lunghe piccole. Le
-  dimensioni diverse **escono dal testo**, non da una scelta a mano — cambiare
-  una parola cambia il corpo della sua riga. Il tetto (`vh*0.17`) serve perché
-  una riga di due lettere non diventi un palazzo.
-- **La sparata** (`Mask.sparo()`) è il passaggio verso «Ascolta»: un gruppo di
-  gocce attraversa lo schermo dal basso in mezzo secondo e sparisce. Parte
-  quando l'ultima parola arriva a uno — la **stessa soglia** che la scrive,
-  così non possono sfasarsi. Lì la fisica delle coppie **non gira**: `passo()`
-  riporterebbe la velocità a quella di crociera in un decimo di secondo, che è
-  il contrario di una sparata. Il campo le fonde lo stesso quando si
-  incrociano, perché quello è lo shader e non la fisica. Finite fuori, il modo
-  torna `fermo`: senza, una seconda sparata non partirebbe più.
-- **Quanto dura la massa in scroll**- **Quanto dura la massa in scroll** si decide in un posto solo: la finestra
+- La sezione **«Chi è»**: un blocco di testo solo, che **si scrive scendendo**
+  sopra alla scena. Tre cose da non rovesciare:
+  **(a)** ogni parola si scrive quando arriva al suo posto **sullo schermo**,
+  non a un tempo né a una percentuale della sezione — con un ciclo unico un
+  blocco più alto dello schermo si scriverebbe per metà sotto al bordo;
+  **(b)** le righe **non stanno nel markup**: si ricavano dalle posizioni vere
+  dopo l'impaginazione, perché il testo va a capo dove vuole. Le parole della
+  stessa riga si dividono la fascia in fette che non si sovrappongono — una
+  alla volta davvero;
+  **(c)** le misure irregolari stanno nel **copione**, non nel markup: sono
+  una proprietà della composizione, non del contenuto. Cambia il testo e si
+  ridistribuiscono da sole. Una parola più larga della colonna è l'unico caso
+  in cui la misura cede e si rimpicciolisce.
+- **La scena** (`scena.mp4`) sta a destra, dove il girato è vuoto, va in anello
+  per conto suo e **non c'è da subito**: entra quando un quinto delle parole è
+  passato. La sua gradazione è diversa da quella del resto (`media.sh`): il
+  fondo dev'essere **bianco pieno**, perché va in `multiply` sulla carta.
+  **La fusione va sul contenitore, non sul video**: `position:sticky` crea di
+  suo un contesto di impilamento, e lì dentro il `multiply` del video si fonde
+  con il contenitore — cioè con niente — lasciando il rettangolo bianco sulla
+  pagina. È costato due giri capirlo.
+- **Quanto dura la massa in scroll**- **Quanto dura la massa in scroll**- **Quanto dura la massa in scroll** si decide in un posto solo: la finestra
   di `diss` in `sito.js` (`(0.68 - bordo) / 0.46`). Da un capo all'altro sono
   otto decimi di schermata. È l'unico numero da toccare per farla durare di
   più o di meno.
