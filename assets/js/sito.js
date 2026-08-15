@@ -607,14 +607,13 @@ var Sequenza = (function(){
       var s = w ? largo / w * 100 * 0.995 : 20;
       mis.push(s); somma += s;
     }
-    /* quello che resta dopo occhiello, nota e margini fra i due blocchi */
-    var resta = vh - 200;
+    /* quello che resta dopo occhiello, nota, margini — e la riga che corre,
+       che sta nella colonna e occupa la sua altezza anche mentre e' ferma */
+    var resta = vh - 200 - (corre ? corre.getBoundingClientRect().height : 0);
     var k = somma * 0.94 > resta ? resta / (somma * 0.94) : 1;
     for (i=0;i<COLONNA.length;i++) COLONNA[i].style.fontSize = (mis[i]*k).toFixed(2) + 'px';
   }
-  misuraRighe();
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(misuraRighe);
-  window.addEventListener('resize', function(){ alFrame(misuraRighe); });
+  function misuraTutto(){ misuraCorsa(); misuraRighe(); }
 
   /* --- le chiuse che si scrivono, PAROLA PER PAROLA ------------------------
      La frase che apre sta ferma. Le chiuse arrivano una parola alla volta
@@ -645,8 +644,16 @@ var Sequenza = (function(){
      ancora salendo, prima che la schermata si inchiodi: scorrere svela da
      subito invece di far aspettare. FETTA corta = la singola parola scatta.
      L'ultima finisce a 0.45, e da li' in poi c'e' spazio per le gocce. */
-  var DA = 0.06, FETTA = 0.012, PASSO = 0.038;
+  /* LE DUE MOSSE, UNA DOPO L'ALTRA, SULLO STESSO SCROLL.
+     Prima le parole si scrivono (DA -> FINE), poi la riga si srotola di lato
+     (CORRE_DA -> CORRE_A). I numeri sono frazioni della traversata: con la
+     sezione a 600vh la traversata e' 7 schermate, quindi un passo di 0.0228
+     vale circa 135 px di dito per parola, e la corsa orizzontale spalma la
+     riga su 2400 px di scroll — poco piu' di un pixel di testo per pixel di
+     dito. A 1,7 era illeggibile. */
+  var DA = 0.042, FETTA = 0.008, PASSO = 0.0228;
   var FINE = DA + (parole.length-1)*PASSO + FETTA;
+  var CORRE_DA = 0.42, CORRE_A = 0.83;
 
   function scriviChiuse(){
     for (var i=0;i<parole.length;i++){
@@ -654,6 +661,22 @@ var Sequenza = (function(){
       var k = CALMO ? 1 : smorza(mappa(p, da, da + FETTA));
       parole[i].style.clipPath = 'inset(0 ' + ((1-k)*100).toFixed(1) + '% 0 0)';
     }
+  }
+
+  /* LA RIGA CHE SI SROTOLA. E' l'ultima riga della colonna e parte da dove
+     comincia il testo, non da fuori schermo: cosi' si legge come «la riga
+     dopo» invece che come un'altra cosa che entra. Quello che scorre e' solo
+     quanto sborda — larghezza del testo meno lo schermo. */
+  var corre = $('[data-oriz]', sez), corsa = 0;
+  function misuraCorsa(){
+    if (!corre) return;
+    corre.style.transform = 'none';
+    corsa = Math.max(0, corre.scrollWidth - window.innerWidth + 24);
+  }
+  function srotola(){
+    if (!corre) return;
+    var k = CALMO ? 0 : smorza(mappa(p, CORRE_DA, CORRE_A));
+    corre.style.transform = 'translate3d(' + (-corsa*k).toFixed(1) + 'px,0,0)';
   }
 
   function misura(){
@@ -667,13 +690,20 @@ var Sequenza = (function(){
   function rendi(){
     Sequenza.disegna(ctx, W, H, p, null, Sequenza.RESPIRO);
     scriviChiuse();
+    srotola();
     /* Finita la frase entrano le gocce, e da li' in poi vanno da sole: e' la
        lavalamp della specifica, non un'altra cosa. Si spengono mentre la
        sezione se ne va — oltre non sono state chieste, e una pagina intera
        di inversioni sopra ai contatti e' un'altra decisione. */
-    GOCCE.v = mappa(p, FINE, FINE + .05) * (1 - mappa(p, .88, 1));
+    GOCCE.v = mappa(p, CORRE_A - .06, CORRE_A) * (1 - mappa(p, .93, 1));
   }
-  scriviChiuse();
+  /* Prima la corsa (che si misura a trasformazione azzerata), poi la colonna
+     (che ha bisogno dell'altezza della corsa per sapere quanto spazio le
+     resta). L'ordine dentro a `misuraTutto` conta, quindi non invertirlo. */
+  misuraTutto();
+  scriviChiuse(); srotola();
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(misuraTutto);
+  window.addEventListener('resize', function(){ alFrame(misuraTutto); });
 
   var pre = new IntersectionObserver(function(vs){
     if (!vs[0].isIntersecting) return;
@@ -713,48 +743,6 @@ var Sequenza = (function(){
   window.addEventListener('resize', function(){ alFrame(function(){ misura(); daScroll(); }); });
   document.addEventListener('entrati', function(){ misura(); daScroll(); });
   daScroll();
-})();
-
-/* --------------------------------------------------------------------------
-   le sue parole, di seguito: la frase che corre di lato
-   Il secondo movimento di "Chi e'". La schermata sta ferma e la frase si
-   muove in orizzontale, comandata dallo scroll verticale.
-
-   Il progresso qui NON e' quello della traversata come nelle altre scene:
-   e' -top / (altezza - schermata), che vale esattamente 0 quando il pin si
-   inchioda e 1 quando lascia. Con la traversata la frase comincerebbe a
-   correre mentre la sezione sta ancora salendo, cioe' mentre la si vede
-   scorrere: due movimenti insieme, e non si capisce piu' chi comanda.
-   -------------------------------------------------------------------------- */
-(function(){
-  var sez = $('#dire'); if (!sez) return;
-  var riga = $('[data-oriz]', sez);
-  var pT = 0, p = 0, dentro = false, corsa = 0;
-
-  function misura(){
-    /* quanto deve scorrere: tutta la lunghezza del testo meno lo schermo */
-    corsa = Math.max(0, riga.scrollWidth - window.innerWidth);
-  }
-  function daScroll(){
-    var r = sez.getBoundingClientRect(), vh = window.innerHeight;
-    pT = clamp(-r.top / Math.max(r.height - vh, 1), 0, 1);
-    dentro = r.top < vh && r.bottom > 0;
-  }
-  function rendi(){
-    riga.style.transform = 'translate3d(' + (-corsa*p).toFixed(1) + 'px,0,0)';
-  }
-  (function giro(){
-    requestAnimationFrame(giro);
-    if (!dentro && Math.abs(p - pT) < .0004) return;
-    p += (pT - p) * (CALMO ? 1 : .09);
-    rendi();
-  })();
-
-  window.addEventListener('scroll', function(){ alFrame(daScroll); }, {passive:true});
-  window.addEventListener('resize', function(){ alFrame(function(){ misura(); daScroll(); }); });
-  if (document.fonts && document.fonts.ready) document.fonts.ready.then(misura);
-  document.addEventListener('entrati', function(){ misura(); daScroll(); });
-  misura(); daScroll(); rendi();
 })();
 
 /* --------------------------------------------------------------------------
@@ -850,30 +838,25 @@ function Bolle(box, cop){
          mai allo stesso modo nello stesso istante */
       seme: i*3.77 + Math.random()*7,
       cresc: 0,
-      /* la nascita: 0 = appena spuntata sulla bocca, 1 = staccata.
-         Alla prima passata solo la prima si gonfia davanti agli occhi, le
-         altre sono gia' per strada — se no si aspetta il primo giro per
-         vedere la cosa piu' bella che fanno. */
-      nasc:    subito ? (i === 0 ? 0 : 1) : 0,
-      attacco: subito ? (i === 0 ? 1 : 0) : 1,
-      allunga: 0,
-      /* fra un secondo e mezzo e due e mezzo per gonfiarsi */
-      vNasc: 1/(1.5 + Math.random()),
+      /* Nascono tutte sulla bocca, una dietro l'altra: e' l'eruzione. Prima
+         erano gia' sparse per strada, che serviva quando il giro era
+         continuo — adesso il giro e' uno solo e va visto dall'inizio. */
+      nasc: 0, attacco: .5, allunga: 0,
+      /* meno di un secondo per gonfiarsi: eruttano, non lievitano */
+      vNasc: 1/(0.7 + Math.random()*0.45),
       /* nascono sparse in orizzontale, se no salgono in colonna */
       x: b.x + (Math.random()*2-1) * dim.w * .17,
-      /* alla prima passata sono gia' sparse lungo il tragitto, cosi' si
-         vedono tutte da subito invece di uscire una alla volta */
-      y: subito ? b.y - i * b.y * .30 : b.y,
+      y: b.y,
       vx: 0, vy: 0,
-      /* Sei-otto secondi per attraversare, non piu' dodici: da ferme
-         sembravano lente, e mentre la pagina scorre sembravano proprio
-         piantate. Restano abbastanza lente da poterle premere. Scalate per
-         indice, se no dopo un giro escono all'unisono. */
-      vel: 42 + i*10 + Math.random()*12,
+      /* Un'eruzione, non una fontana: tre secondi scarsi per attraversare.
+         Restano premibili perche' il riquadro e' grande e il dito arriva. */
+      vel: 105 + i*22 + Math.random()*25,
       amp: 14 + Math.random()*16,
       freq: 0.09 + Math.random()*0.09,
       fase: Math.random()*Math.PI*2,
-      attesa: 0
+      /* sfalsate di mezzo secondo l'una dall'altra: escono in fila */
+      attesa: subito ? i*0.5 : 0,
+      finita: false
     };
   }
 
@@ -969,6 +952,7 @@ function Bolle(box, cop){
     var relax = 1 - Math.exp(-dt/0.55);
     for (i=0;i<n;i++){
       var st = stato[i];
+      if (st.finita) continue;
       if (st.attesa > 0){
         st.attesa -= dt;
         /* La rinascita va QUI, dove il tempo scende a zero. Metterla piu'
@@ -978,15 +962,10 @@ function Bolle(box, cop){
            spariva una volta e non tornava piu'. */
         if (st.attesa <= 0){
           st.attesa = 0;
-          st.nasc = 0; st.attacco = .5; st.allunga = 0;
           /* gia' nella posizione che avra' da appena spuntata: mettendola
              sulla bocca e lasciando che sia il giro dopo ad ancorarla si
              perdevano sei pixel in un fotogramma solo */
           st.y = b.y - st.r*gonfiore(0);
-          st.x = b.x + (Math.random()*2-1)*d.w*.17;
-          st.vx = 0; st.vy = 0;
-          st.vNasc = 1/(1.5 + Math.random());
-          st.fase = Math.random()*Math.PI*2;
         }
         continue;
       }
@@ -1025,9 +1004,9 @@ function Bolle(box, cop){
        Chi si sta gonfiando non viene spostato — e' attaccata alla bocca —
        ma spinge e attira lo stesso. */
     for (i=0;i<n;i++){
-      var a = stato[i]; if (a.attesa > 0) continue;
+      var a = stato[i]; if (a.attesa > 0 || a.finita) continue;
       for (j=i+1;j<n;j++){
-        var c = stato[j]; if (c.attesa > 0) continue;
+        var c = stato[j]; if (c.attesa > 0 || c.finita) continue;
         var k = i*n + j;
         var dx = c.x-a.x, dy = c.y-a.y;
         /* i raggi sono quelli che si vedono adesso, non quelli finali: una
@@ -1080,9 +1059,9 @@ function Bolle(box, cop){
     var tira = [], ang = [];
     for (i=0;i<n;i++){ tira.push(0); ang.push(0); }
     for (i=0;i<n;i++){
-      var a2 = stato[i]; if (a2.attesa > 0) continue;
+      var a2 = stato[i]; if (a2.attesa > 0 || a2.finita) continue;
       for (j=i+1;j<n;j++){
-        var c2 = stato[j]; if (c2.attesa > 0) continue;
+        var c2 = stato[j]; if (c2.attesa > 0 || c2.finita) continue;
         var ddx = c2.x-a2.x, ddy = c2.y-a2.y;
         var dd = Math.sqrt(ddx*ddx + ddy*ddy);
         var portata = (a2.r*gonfiore(a2.nasc) + c2.r*gonfiore(c2.nasc)) * 2.1;
@@ -1097,7 +1076,7 @@ function Bolle(box, cop){
     /* 4 · integrazione, pareti morbide, scrittura */
     for (i=0;i<n;i++){
       var st2 = stato[i], el = bolle[i];
-      if (st2.attesa > 0){
+      if (st2.attesa > 0 || st2.finita){
         el.style.opacity = '0';
         el.style.pointerEvents = 'none';
         continue;
@@ -1115,9 +1094,10 @@ function Bolle(box, cop){
       if (st2.x < m)         { st2.x = m;         st2.vx =  Math.abs(st2.vx)*0.4; }
       if (st2.x > d.w - m)   { st2.x = d.w - m;   st2.vx = -Math.abs(st2.vx)*0.4; }
 
-      /* uscita dal bordo alto: sparisce e viene risputata dopo un paio di
-         secondi, sfalsata rispetto alle altre */
-      if (st2.y < -st2.s*0.6){ st2.attesa = 1.0 + Math.random()*1.4; continue; }
+      /* Uscita dal bordo alto: FINITA. Non rinasce — l'eruzione e' una sola.
+         Riparte solo se si lascia la copertina e ci si torna, se no i tre
+         link alle piattaforme sparirebbero per sempre dopo dieci secondi. */
+      if (st2.y < -st2.s*0.6){ st2.finita = true; continue; }
 
       /* quanto e' avanti nel tragitto: 0 alla bocca, 1 quando esce in cima.
          Sale sempre, quindi la bolla si gonfia e basta. Riparte da zero solo
@@ -1158,6 +1138,29 @@ function Bolle(box, cop){
   }
 
   rendi(0);
+
+  /* SI RIARMA TORNANDO IN COPERTINA. L'eruzione e' una sola, ma i tre link
+     alle piattaforme non possono sparire per sempre dopo dieci secondi: se
+     si esce dalla copertina e ci si torna, ricominciano. */
+  if (window.IntersectionObserver){
+    var fuori = false;
+    new IntersectionObserver(function(v){
+      if (!v[0].isIntersecting){ fuori = true; return; }
+      if (!fuori) return;
+      fuori = false;
+      var d = misuraBox(), b = bocca();
+      for (var i=0;i<n;i++){
+        var st = stato[i];
+        if (!st.finita) continue;
+        st.finita = false; st.attesa = i*0.5;
+        st.nasc = 0; st.attacco = .5; st.allunga = 0;
+        st.y = b.y - st.r*gonfiore(0);
+        st.x = b.x + (Math.random()*2-1)*d.w*.17;
+        st.vx = 0; st.vy = 0;
+        st.fase = Math.random()*Math.PI*2;
+      }
+    }, { threshold:0 }).observe(cop);
+  }
 
   var ultimo = performance.now();
   (function giro(ora){

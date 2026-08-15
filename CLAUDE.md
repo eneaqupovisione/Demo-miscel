@@ -111,6 +111,11 @@ servito da un server statico.
   La somma `NUCLEO + CRESCE + ONDA + LOBO` sta sotto `TETTO`, e sopra 0.44 c'è
   un tetto morbido esponenziale — se il raggio arriva al riquadro il ritaglio
   taglia dritto, e un lato piatto su una bolla si vede subito.
+- Le bolle **eruttano una volta sola**: nascono in fila sulla bocca sfalsate
+  di mezzo secondo, si gonfiano in meno di un secondo e attraversano in tre.
+  Uscite dal bordo alto **non rinascono** — ma si riarmano se si lascia la
+  copertina e ci si torna, se no i tre link alle piattaforme sparirebbero per
+  sempre dopo dieci secondi.
 - I **pulsanti-bolla** vivono dentro `#cop` e salgono dal punto definito da
   `--bocca-x` / `--bocca-y`. Il primo posizionamento avviene **subito**, non
   al primo frame: senza, restano nell'angolo in alto a sinistra finché rAF
@@ -142,16 +147,17 @@ servito da un server statico.
   torna la larghezza della colonna e **tutte le righe vengono uguali**. Si
   misura la `<i>`. Nelle chiuse invece le `<i>` sono in linea e lo span in
   `nowrap` sborda: lì si misura lo span.
-- **Il secondo movimento** (`#dire`) è la stessa voce che continua di lato:
-  schermata ferma, la frase corre in orizzontale comandata dallo scroll
-  verticale. Niente numero e niente occhiello, apposta: un secondo titolo
-  direbbe che sono due idee. Il progresso lì **non** è quello della
-  traversata come nelle altre scene, è `-top / (altezza - schermata)`, che
-  vale 0 quando il pin si inchioda e 1 quando lascia — con la traversata la
-  frase correrebbe mentre la sezione sta ancora salendo, due movimenti
-  insieme. **L'altezza della sezione decide la velocità**: a 300vh venivano
-  3,5 px di testo per px di dito (illeggibile), a 420vh sono 1,7. Se allunghi
-  la frase, alza l'altezza.
+- **La riga che corre non è un'altra sezione**: è l'ultima riga della stessa
+  colonna, e parte esattamente sotto «d'infanzia.» allo stesso margine.
+  Vive dentro allo stesso pin e sullo stesso scroll: prima le sedici parole
+  si scrivono (`DA`→`FINE`), poi la riga si srotola (`CORRE_DA`→`CORRE_A`).
+  **L'altezza della sezione decide la velocità di tutte e due**: con 600vh la
+  corsa vale 0,85 px di testo per px di dito. A 1,7 era illeggibile.
+  Due cose da non rompere: la riga **non ha** il tetto di larghezza delle
+  altre (deve sbordare, la taglia il pin), e ha un `font-size` **suo** — senza,
+  eredita i 16px del corpo del testo e la corsa si accorcia a un terzo.
+  Le misure diverse lì sono scritte a mano (`.g`, `.gg`): su una riga sola non
+  c'è una lunghezza da cui farle uscire come nella colonna.
 - **Niente letture di layout dentro ai cicli.** `getBoundingClientRect` e
   `getComputedStyle` costringono il browser a rifare layout e stili: le bolle
   ne facevano due per fotogramma (`misuraBox` e `bocca`) e la maschera una, e

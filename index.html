@@ -19,11 +19,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Archivo:wght@300;400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-<link rel="preload" as="image" href="assets/media/copertina.jpg?v=60">
+<link rel="preload" as="image" href="assets/media/copertina.jpg?v=62">
 <!-- il ?v= serve: GitHub Pages tiene i file in cache dieci minuti, e chi
      ha gia' aperto il sito continuerebbe a vedere la versione vecchia.
      Si alza il numero a ogni pubblicazione. -->
-<link rel="stylesheet" href="assets/css/sito.css?v=60">
+<link rel="stylesheet" href="assets/css/sito.css?v=62">
 </head>
 <body>
 
@@ -46,7 +46,7 @@
 <!-- la lastra a raggi X delle uscite -->
 <div id="lastra" aria-hidden="true">
   <i class="scan"></i>
-  <img src="assets/media/colonna.jpg?v=60" alt="">
+  <img src="assets/media/colonna.jpg?v=62" alt="">
   <div class="c"><span class="k">lastra · 001</span><div class="h"></div></div>
 </div>
 
@@ -91,9 +91,9 @@
 <!-- ========================== 01 · COPERTINA ========================== -->
 <section id="cop">
   <div class="med">
-    <video id="vCop" poster="assets/media/copertina.jpg?v=60" muted loop playsinline autoplay preload="auto"
+    <video id="vCop" poster="assets/media/copertina.jpg?v=62" muted loop playsinline autoplay preload="auto"
            disablepictureinpicture aria-hidden="true">
-      <source src="assets/media/copertina.mp4?v=60" type="video/mp4">
+      <source src="assets/media/copertina.mp4?v=62" type="video/mp4">
     </video>
   </div>
 
@@ -164,20 +164,15 @@
         <span><i>d'infanzia.</i></span>
       </p>
 
+      <!-- LA RIGA CHE CORRE. Non e' un'altra sezione: e' la riga dopo, e
+           parte esattamente sotto «d'infanzia.», allo stesso margine. Finita
+           la colonna si srotola di lato, comandata dallo stesso scroll.
+           Le misure diverse qui sono a mano (`.g`, `.gg`): su una riga sola
+           non c'e' una lunghezza da cui farle uscire. -->
+      <p class="corre" data-oriz><i>in fondo</i> <i class="g">siamo esseri umani</i> <i>e quanti sbagli,</i> <i class="g">sensi di colpa,</i> <i>ripenso quegli anni</i> <i class="gg">ho la pelle d'oca</i></p>
+
       <p class="mono nota rev">Voce e chitarra &nbsp;·&nbsp; niente altro</p>
     </div>
-  </div>
-</section>
-
-<!-- ============ 02b · LE SUE PAROLE, DI SEGUITO ============
-     Non e' una sezione nuova: e' il secondo movimento di "Chi e'". La frase
-     finisce di scriversi in verticale e riparte di lato — lo scroll verticale
-     comanda una corsa orizzontale, e la schermata sta ferma. Niente numero e
-     niente occhiello apposta: un secondo titolo qui vorrebbe dire che sono
-     due idee, e invece e' una che continua. -->
-<section id="dire" aria-label="Le sue parole, di seguito">
-  <div class="pin">
-    <p class="riga" data-oriz>In fondo siamo esseri umani e quanti sbagli, sensi di colpa, ripenso quegli anni ho la pelle d'oca, col dolore del passato si diventa grandi</p>
   </div>
 </section>
 
@@ -225,7 +220,7 @@
   </div>
 </footer>
 
-<script src="assets/js/blob-mask.js?v=60"></script>
-<script src="assets/js/sito.js?v=60"></script>
+<script src="assets/js/blob-mask.js?v=62"></script>
+<script src="assets/js/sito.js?v=62"></script>
 </body>
 </html>

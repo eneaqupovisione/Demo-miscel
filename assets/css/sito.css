@@ -329,30 +329,6 @@ body.giu #apri{transform:translate3d(0,-115%,0)}
 @keyframes ago{0%{transform:translateY(-100%)}60%,100%{transform:translateY(100%)}}
 #cop .hud{position:absolute;left:var(--gut);top:24vh;writing-mode:vertical-rl}
 
-/* --- 12b le sue parole, di seguito ---------------------------------------
-   Il secondo movimento di "Chi e'": la schermata sta ferma e la frase corre
-   di lato. Lo scroll verticale non scorre la pagina, muove il testo — e'
-   l'unico posto del sito dove il dito fa una cosa diversa da quella che
-   sembra, quindi la frase dev'essere corta abbastanza da finire prima che
-   uno si chieda cosa stia succedendo.
-   `overflow` sta sul pin e non sulla sezione: su un antenato spezza lo
-   sticky del figlio. */
-/* L'altezza decide QUANTO VELOCE corre la frase: la corsa orizzontale e' la
-   lunghezza del testo meno lo schermo, spalmata sullo scroll che resta dopo
-   il pin. A 300vh venivano 3,5 px di testo per ogni px di dito — illeggibile.
-   A 420vh sono 1,7: si legge scorrendo. Se allunghi la frase, alza questa. */
-#dire{position:relative;height:420vh}
-#dire .pin{
-  position:sticky;top:0;height:100svh;min-height:100dvh;overflow:hidden;
-  display:flex;align-items:center;
-}
-#dire .riga{
-  font-family:var(--disp);font-weight:800;text-transform:uppercase;
-  font-size:clamp(1.8rem,10vw,5rem);line-height:1;letter-spacing:-.045em;
-  white-space:nowrap;will-change:transform;padding-inline:var(--gut);
-  margin:0;
-}
-
 /* --- 10 ascolta ---------------------------------------------------------- */
 .uscite{margin-top:clamp(20px,5vw,42px);border-top:1px solid var(--linea)}
 .uscita{
@@ -441,7 +417,9 @@ body.giu #apri{transform:translate3d(0,-115%,0)}
    bordo dello schermo — che e' come non scriverle.
    `overflow` NON va qui: su un antenato spezza lo `sticky` del figlio. Sta
    sul pin. */
-#chi{position:relative;height:320vh}
+/* L'altezza e' la durata di TUTTA la scena: prima le sedici parole che si
+   scrivono, poi la riga che si srotola di lato. Alzarla rallenta entrambe. */
+#chi{position:relative;height:600vh}
 #chi .pin{
   position:sticky;top:0;height:100svh;min-height:100dvh;overflow:hidden;
   display:flex;align-items:center;
@@ -499,6 +477,23 @@ body.giu #apri{transform:translate3d(0,-115%,0)}
 #chi .segue span{display:block;white-space:nowrap}
 #chi .dire i,#chi .segue i{display:inline-block;font-style:normal;
   clip-path:inset(0 100% 0 0);will-change:clip-path}
+/* LA RIGA CHE CORRE. E' l'ultima riga della colonna, non un'altra cosa:
+   stesso carattere, stesso margine di partenza, attaccata sotto a
+   «d'infanzia.». Non ha il tetto di larghezza delle altre — deve sbordare,
+   e' tutto il punto — e la taglia il pin, che ha overflow:hidden.
+   Le misure diverse qui sono scritte a mano: su una riga sola non c'e' una
+   lunghezza da cui farle uscire come nella colonna. */
+#chi .corre{
+  font-family:var(--disp);font-weight:600;text-transform:uppercase;
+  /* il corpo di base: le misure a mano (.g, .gg) sono multipli di questo */
+  font-size:clamp(1.35rem,7vw,3rem);
+  line-height:1;letter-spacing:-.035em;white-space:nowrap;
+  margin:.24em 0 0;width:max-content;max-width:none;
+  will-change:transform;
+}
+#chi .corre i{font-style:normal;display:inline-block;vertical-align:baseline}
+#chi .corre .g{font-size:1.5em}
+#chi .corre .gg{font-size:2.1em;font-weight:800;color:var(--acc)}
 #chi .nota{margin-top:clamp(22px,5vw,42px);color:var(--tenue)}
 
 /* --- 13 contatti --------------------------------------------------------- */
@@ -555,8 +550,6 @@ body.giu #apri{transform:translate3d(0,-115%,0)}
   /* le chiuse non si scrivono: sono gia' scritte. La frase resta intera, che
      e' l'unica cosa che conta */
   #chi .dire i,#chi .segue i{clip-path:none !important}
-  /* la corsa orizzontale non c'e': la frase torna un paragrafo che va a capo */
-  #dire{height:auto}
-  #dire .pin{position:static;height:auto;min-height:0;padding-block:clamp(60px,12vw,120px)}
-  #dire .riga{white-space:normal;transform:none !important}
+  /* la corsa orizzontale non c'e': la riga torna un paragrafo che va a capo */
+  #chi .corre{white-space:normal;width:auto;transform:none !important}
 }
