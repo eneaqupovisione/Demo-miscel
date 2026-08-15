@@ -596,26 +596,10 @@ var Sequenza = (function(){
   var scena = $('.scena', sez);
   var video = $('#vChi', sez);
 
-  /* La sequenza delle misure. Deterministica: la stessa parola ha sempre la
-     sua: se cambiasse a ogni ridisegno, la composizione ballerebbe sotto gli
-     occhi a ogni ridimensionamento. Il passo 7 su 20 voci fa in modo che due
-     parole vicine non si somiglino quasi mai. */
-  var MISURE = [0.68,1.62,0.80,2.45,0.62,1.20,3.10,0.72,1.90,0.58,
-                1.40,2.70,0.76,1.00,1.75,0.64,2.95,0.88,1.30,0.70];
-
-  var parole = [];
-  (function spezza(){
-    var testo = dire.textContent.trim();
-    dire.textContent = '';
-    testo.split(/\s+/).forEach(function(w, i){
-      var el = document.createElement('i');
-      el.textContent = w;
-      el.style.fontSize = MISURE[(i*7) % MISURE.length].toFixed(2) + 'em';
-      dire.appendChild(el);
-      dire.appendChild(document.createTextNode(' '));
-      parole.push(el);
-    });
-  })();
+  /* Le parole sono gia' nel markup, una per <i>, con la loro misura e il loro
+     colore: sono una lettura del testo e stanno col testo. Qui si raccolgono
+     e basta. */
+  var parole = $$('i', dire);
 
   var posti = [];
   /* BASSO e' la quota dello schermo dove una riga comincia a scriversi, RIGA
@@ -627,13 +611,18 @@ var Sequenza = (function(){
   function misura(){
     var largo = dire.clientWidth;
     if (!largo) return;
-    /* una parola piu' larga della colonna sborda e basta: la si rimpicciolisce
-       quanto serve, ed e' l'unico caso in cui la misura irregolare cede */
+    /* La misura la da' la classe nel markup — e' una lettura del testo. Qui
+       si interviene su un caso solo: una parola piu' larga della colonna
+       sborderebbe, e allora si rimpicciolisce quanto basta. E' l'unico posto
+       dove il codice ha l'ultima parola sulla composizione, e succede solo
+       agli schermi piu' stretti. */
     for (var i=0;i<parole.length;i++){
-      parole[i].style.fontSize = MISURE[(i*7) % MISURE.length].toFixed(2) + 'em';
+      parole[i].style.fontSize = '';
       var w = parole[i].scrollWidth;
-      if (w > largo) parole[i].style.fontSize =
-        (MISURE[(i*7) % MISURE.length] * largo / w * 0.98).toFixed(3) + 'em';
+      if (w > largo){
+        var base = parseFloat(getComputedStyle(parole[i]).fontSize);
+        parole[i].style.fontSize = (base * largo / w * 0.98).toFixed(2) + 'px';
+      }
     }
     /* le righe vere, dopo l'impaginazione: si raggruppa per quota */
     posti = [];
@@ -675,6 +664,57 @@ var Sequenza = (function(){
   window.addEventListener('resize', function(){ alFrame(function(){ misura(); scrivi(); }); });
   window.addEventListener('scroll', function(){ alFrame(scrivi); }, {passive:true});
   document.addEventListener('entrati', function(){ misura(); scrivi(); });
+})();
+
+/* --------------------------------------------------------------------------
+   la banda di "Ascolta"
+   Scorre di lato mentre la sezione arriva. Quando ha finito la corsa il blu
+   si spegne e passa alle uscite — la riga al centro si accende come prima —
+   e la banda continua ad andare avanti e indietro, ma nel colore della carta.
+   -------------------------------------------------------------------------- */
+(function(){
+  var banda = $('#banda'); if (!banda) return;
+  var scorre = $('.scorre', banda);
+  var corsa = 0, pT = 0, p = 0, dentro = false, finita = false, ondeggio = 0;
+
+  function misura(){
+    /* la corsa e' una copia sola: le altre servono a coprire il vuoto mentre
+       la prima esce di lato */
+    var uno = scorre.firstElementChild;
+    corsa = uno ? uno.getBoundingClientRect().width + parseFloat(getComputedStyle(scorre).gap || 0) : 0;
+  }
+  function daScroll(){
+    var r = banda.getBoundingClientRect(), vh = window.innerHeight;
+    /* 0 quando la banda entra dal basso, 1 quando ha attraversato mezzo
+       schermo: la corsa finisce mentre la si sta guardando, non dopo */
+    pT = clamp((vh - r.top) / (vh * 0.62), 0, 1);
+    dentro = r.top < vh && r.bottom > 0;
+  }
+  (function giro(ora){
+    requestAnimationFrame(giro);
+    if (!dentro) return;
+    p += (pT - p) * (CALMO ? 1 : .08);
+    if (!finita && p > .985){
+      finita = true;
+      banda.classList.add('spenta');
+    }
+    var x;
+    if (!finita){
+      x = -corsa * p;
+    } else {
+      /* avanti e indietro, piano: un seno lentissimo, che non torna mai
+         esattamente sullo stesso punto perche' parte da dove si e' fermata */
+      ondeggio += 0.0035;
+      x = -corsa * (0.5 + 0.5*Math.sin(ondeggio - Math.PI/2));
+    }
+    scorre.style.transform = 'translate3d(' + x.toFixed(1) + 'px,0,0)';
+  })();
+
+  window.addEventListener('scroll', function(){ alFrame(daScroll); }, {passive:true});
+  window.addEventListener('resize', function(){ alFrame(function(){ misura(); daScroll(); }); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(misura);
+  document.addEventListener('entrati', function(){ misura(); daScroll(); });
+  misura(); daScroll();
 })();
 
 /* --------------------------------------------------------------------------

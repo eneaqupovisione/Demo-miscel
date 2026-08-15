@@ -329,6 +329,27 @@ body.giu #apri{transform:translate3d(0,-115%,0)}
 @keyframes ago{0%{transform:translateY(-100%)}60%,100%{transform:translateY(100%)}}
 #cop .hud{position:absolute;left:var(--gut);top:24vh;writing-mode:vertical-rl}
 
+/* --- 10b la banda ---------------------------------------------------------
+   Scorre di lato mentre la sezione arriva. Finita la corsa il blu scende
+   sotto alle uscite e la banda resta nel colore della carta: ha gia' detto
+   quello che doveva dire, e continuare a gridarlo in blu sarebbe rumore.
+   `overflow:hidden` sulla banda, non sulla sezione: la corsa deve sparire
+   ai lati, il resto no. */
+.banda{
+  position:relative;overflow:hidden;
+  padding-block:clamp(10px,2.4vw,20px);margin-block:clamp(14px,3vw,26px);
+  background:var(--acc);color:var(--osso);
+  transition:background-color .8s var(--e),color .8s var(--e);
+}
+.banda.spenta{background:transparent;color:var(--testo)}
+.banda .scorre{
+  display:flex;gap:.5em;width:max-content;will-change:transform;
+  font-family:var(--disp);font-weight:800;text-transform:uppercase;
+  font-size:clamp(2.2rem,12vw,6rem);line-height:1;letter-spacing:-.04em;
+}
+.banda .scorre span{white-space:nowrap}
+.banda .scorre span::after{content:' ·';opacity:.45}
+
 /* --- 10 ascolta ---------------------------------------------------------- */
 .uscite{margin-top:clamp(20px,5vw,42px);border-top:1px solid var(--linea)}
 .uscita{
@@ -421,37 +442,49 @@ body.giu #apri{transform:translate3d(0,-115%,0)}
    solo la figura. Niente z-index ne' qui ne' sul testo: sono tutti e due
    posizionati e senza z-index, quindi decide l'ordine del DOM — e la
    maschera a gocce continua a invertire tutto quanto. */
-/* LA FUSIONE VA QUI, SUL CONTENITORE, E NON SUL VIDEO.
-   `position:sticky` crea di suo un contesto di impilamento: un `multiply`
-   sul video dentro a questo contenitore si fonde con il contenitore — cioe'
-   con niente — e il fondo bianco del girato resta bianco, con il rettangolo
-   del video ben visibile sulla carta. Messo qui, invece, e' tutto il gruppo
-   a fondersi con la pagina, che e' quello che serve.
-   Stessa ragione per cui l'opacita' sta sul video: qui creerebbe un secondo
-   contesto e riporterebbe il problema da capo. */
+/* LA SCENA sta a destra e non si fonde con la carta: e' un'immagine
+   appoggiata sopra, non una stampa. Quello che le toglie il bordo di
+   rettangolo e' la maschera: il lato sinistro e i due orizzontali sfumano,
+   cosi' il bianco del girato finisce nella carta senza una riga netta — ed e'
+   anche il lato da cui arrivano le parole. */
 #chi .scena{
   position:sticky;top:0;height:100svh;margin-bottom:-100svh;
   display:flex;align-items:center;justify-content:flex-end;
-  pointer-events:none;mix-blend-mode:multiply;
+  pointer-events:none;
 }
 #chi .scena video{
-  height:58svh;width:auto;max-width:none;
-  margin-right:calc(var(--gut) * -0.6);
+  height:52svh;width:auto;max-width:none;
+  margin-right:calc(var(--gut) * -0.5);
   opacity:0;transition:opacity 1s var(--e);
+  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 34%),
+                     linear-gradient(0deg,transparent 0,#000 12%,#000 88%,transparent 100%);
+  mask-image:linear-gradient(90deg,transparent 0,#000 34%),
+             linear-gradient(0deg,transparent 0,#000 12%,#000 88%,transparent 100%);
+  -webkit-mask-composite:source-in;mask-composite:intersect;
 }
-@media(min-width:760px){ #chi .scena video{height:76svh} }
+@media(min-width:760px){ #chi .scena video{height:74svh} }
 #chi .in{position:relative}
 
 /* LE PAROLE. La colonna sta a sinistra, dove la scena e' vuota: sopra la
    figura il testo nero sparirebbe. Le misure le decide il copione, una per
    parola, da una sequenza irregolare — anche fra parole vicine. */
+/* La colonna e' larga perche' le parole che contano sono anche le piu'
+   lunghe: con una colonna stretta «delicatezza» e «d'infanzia» sarebbero
+   costrette a rimpicciolirsi, cioe' a contare meno. Il lato destro lo
+   protegge la sfumatura della scena, non il vuoto. */
 #chi .dire{
   font-family:var(--disp);font-weight:800;text-transform:uppercase;
-  font-size:clamp(1.3rem,6.4vw,2.6rem);
+  font-size:clamp(1.15rem,5.4vw,2.2rem);
   line-height:.92;letter-spacing:-.045em;margin:.5em 0 0;
-  max-width:60%;
+  max-width:82%;
 }
-@media(min-width:760px){ #chi .dire{max-width:52%} }
+@media(min-width:760px){ #chi .dire{max-width:62%} }
+/* le misure: una lettura del testo, non una sequenza */
+#chi .dire .p{font-size:.62em}
+#chi .dire .m{font-size:1.15em}
+#chi .dire .g{font-size:1.85em}
+#chi .dire .xg{font-size:2.75em}
+#chi .dire .blu{color:var(--acc)}
 /* una parola per <i>: il taglio passa DENTRO la lettera, quindi si legge
    «scritto» e non «digitato» */
 #chi .dire i{display:inline-block;font-style:normal;line-height:.92;

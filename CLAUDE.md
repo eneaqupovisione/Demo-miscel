@@ -144,18 +144,27 @@ servito da un server statico.
   dopo l'impaginazione, perché il testo va a capo dove vuole. Le parole della
   stessa riga si dividono la fascia in fette che non si sovrappongono — una
   alla volta davvero;
-  **(c)** le misure irregolari stanno nel **copione**, non nel markup: sono
-  una proprietà della composizione, non del contenuto. Cambia il testo e si
-  ridistribuiscono da sole. Una parola più larga della colonna è l'unico caso
-  in cui la misura cede e si rimpicciolisce.
+  **(c)** le misure stanno nel **markup** (`.p .m .g .xg`, più `.blu`) e sono
+  una **lettura del testo**, non una sequenza: grande ciò che porta il peso —
+  cuore, rabbia, colpa, dolore, umani, grandi — piccolo ciò che tiene insieme.
+  Il blu su cinque parole, non una in più. Se cambia il testo le decide di
+  nuovo una persona. L'unico intervento del codice è su una parola più larga
+  della colonna, che si rimpicciolisce quanto basta.
 - **La scena** (`scena.mp4`) sta a destra, dove il girato è vuoto, va in anello
   per conto suo e **non c'è da subito**: entra quando un quinto delle parole è
   passato. La sua gradazione è diversa da quella del resto (`media.sh`): il
   fondo dev'essere **bianco pieno**, perché va in `multiply` sulla carta.
-  **La fusione va sul contenitore, non sul video**: `position:sticky` crea di
-  suo un contesto di impilamento, e lì dentro il `multiply` del video si fonde
-  con il contenitore — cioè con niente — lasciando il rettangolo bianco sulla
-  pagina. È costato due giri capirlo.
+  **Non si fonde con la carta**: è un'immagine appoggiata sopra. A toglierle
+  il bordo di rettangolo è la **maschera** — il lato sinistro e i due
+  orizzontali sfumano — non un `mix-blend-mode`. (Ci ho provato con
+  `multiply`: `position:sticky` crea di suo un contesto di impilamento, e lì
+  dentro la fusione del video avviene col contenitore, cioè con niente. È
+  costato due giri, e la nota resta qui perché la trappola vale per qualunque
+  fusione dentro a uno sticky.)
+- La **banda di «Ascolta»** scorre di lato mentre la sezione arriva: fondo
+  blu, scritta bianca. Finita la corsa si spegne (`.spenta`) e continua ad
+  andare avanti e indietro nel colore della carta — il blu, a quel punto, sta
+  sotto alla riga delle uscite. Detto una volta basta.
 - **Quanto dura la massa in scroll**- **Quanto dura la massa in scroll**- **Quanto dura la massa in scroll** si decide in un posto solo: la finestra
   di `diss` in `sito.js` (`(0.68 - bordo) / 0.46`). Da un capo all'altro sono
   otto decimi di schermata. È l'unico numero da toccare per farla durare di

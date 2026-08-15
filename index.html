@@ -19,11 +19,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Archivo:wght@300;400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-<link rel="preload" as="image" href="assets/media/copertina.jpg?v=72">
+<link rel="preload" as="image" href="assets/media/copertina.jpg?v=74">
 <!-- il ?v= serve: GitHub Pages tiene i file in cache dieci minuti, e chi
      ha gia' aperto il sito continuerebbe a vedere la versione vecchia.
      Si alza il numero a ogni pubblicazione. -->
-<link rel="stylesheet" href="assets/css/sito.css?v=72">
+<link rel="stylesheet" href="assets/css/sito.css?v=74">
 </head>
 <body>
 
@@ -46,7 +46,7 @@
 <!-- la lastra a raggi X delle uscite -->
 <div id="lastra" aria-hidden="true">
   <i class="scan"></i>
-  <img src="assets/media/colonna.jpg?v=72" alt="">
+  <img src="assets/media/colonna.jpg?v=74" alt="">
   <div class="c"><span class="k">lastra · 001</span><div class="h"></div></div>
 </div>
 
@@ -91,9 +91,9 @@
 <!-- ========================== 01 · COPERTINA ========================== -->
 <section id="cop">
   <div class="med">
-    <video id="vCop" poster="assets/media/copertina.jpg?v=72" muted loop playsinline autoplay preload="auto"
+    <video id="vCop" poster="assets/media/copertina.jpg?v=74" muted loop playsinline autoplay preload="auto"
            disablepictureinpicture aria-hidden="true">
-      <source src="assets/media/copertina.mp4?v=72" type="video/mp4">
+      <source src="assets/media/copertina.mp4?v=74" type="video/mp4">
     </video>
   </div>
 
@@ -130,8 +130,8 @@
        moltiplicato, lascerebbe il rettangolo del video sulla pagina. -->
   <div class="scena" aria-hidden="true">
     <video id="vChi" muted loop playsinline autoplay preload="none"
-           poster="assets/media/scena.jpg?v=72" disablepictureinpicture>
-      <source src="assets/media/scena.mp4?v=72" type="video/mp4">
+           poster="assets/media/scena.jpg?v=74" disablepictureinpicture>
+      <source src="assets/media/scena.mp4?v=74" type="video/mp4">
     </video>
   </div>
 
@@ -140,12 +140,29 @@
       <span class="mono n">02</span><span class="mono">Chi è</span>
     </div>
 
-    <!-- Il testo e' uno solo e sta qui per intero: le parole le divide il
-         copione, e ognuna prende la sua misura da una sequenza irregolare.
-         Le misure NON stanno nel markup apposta — sono una proprieta' della
-         composizione, non del contenuto: se cambi il testo, si ridistribuiscono
-         da sole. -->
-    <p class="dire" data-scrive>Un cuore puro che si mescola con la delicatezza, o con la rabbia, ai traumi d'infanzia. In fondo siamo esseri umani e quanti sbagli, sensi di colpa, ripenso quegli anni ho la pelle d'oca, col dolore del passato si diventa grandi.</p>
+    <!-- LE MISURE SONO UNA LETTURA, NON UNA SEQUENZA. Grande cio' che porta
+         il peso — cuore, rabbia, colpa, dolore, umani, grandi — piccolo cio'
+         che tiene insieme: preposizioni, articoli, ausiliari. Il blu sulle
+         cinque parole che fanno il senso della frase, non una in piu'.
+         Stanno nel markup e non nel copione perche' sono una scelta sul
+         TESTO: se cambia il testo le decide di nuovo una persona, non un
+         algoritmo. -->
+    <p class="dire" data-scrive>
+      <i class="p">Un</i> <i class="xg blu">cuore</i> <i class="g">puro</i>
+      <i class="p">che</i> <i class="p">si</i> <i class="xg blu">mescola</i>
+      <i class="p">con</i> <i class="p">la</i> <i class="g">delicatezza,</i>
+      <i class="m">o</i> <i class="p">con</i> <i class="p">la</i>
+      <i class="xg blu">rabbia,</i> <i class="p">ai</i> <i class="g">traumi</i>
+      <i class="g">d'infanzia.</i> <i class="p">In</i> <i class="m">fondo</i>
+      <i class="m">siamo</i> <i class="m">esseri</i> <i class="xg">umani</i>
+      <i class="p">e</i> <i class="m">quanti</i> <i class="g">sbagli,</i>
+      <i class="m">sensi</i> <i class="p">di</i> <i class="g blu">colpa,</i>
+      <i class="m">ripenso</i> <i class="p">quegli</i> <i class="g">anni</i>
+      <i class="p">ho</i> <i class="p">la</i> <i class="m">pelle</i>
+      <i class="g">d'oca,</i> <i class="p">col</i> <i class="xg blu">dolore</i>
+      <i class="p">del</i> <i class="g">passato</i> <i class="p">si</i>
+      <i class="m">diventa</i> <i class="xg">grandi.</i>
+    </p>
   </div>
 </section>
 
@@ -155,7 +172,18 @@
     <div class="occhiello rev">
       <span class="mono n">03</span><span class="mono">Ascolta</span>
     </div>
-    <h2 class="tit" data-adatta data-max="180"><span class="gx" data-t="Ascolta">Ascolta</span></h2>
+  </div>
+
+  <!-- LA BANDA. Scorre di lato mentre la sezione arriva: fondo blu, scritta
+       bianca. Quando ha finito la sua corsa il blu scende sotto alle uscite —
+       lo stesso blu che accende la riga al centro — e la banda resta, ma nel
+       colore della carta: ha gia' detto quello che doveva dire. -->
+  <div class="banda" id="banda" aria-hidden="true">
+    <div class="scorre"><span>Ascolta ovunque</span><span>Ascolta ovunque</span><span>Ascolta ovunque</span><span>Ascolta ovunque</span></div>
+  </div>
+  <h2 class="sr">Ascolta</h2>
+
+  <div class="wrap">
 
     <div class="uscite" id="uscite"></div>
   </div>
@@ -207,7 +235,7 @@
   </div>
 </footer>
 
-<script src="assets/js/blob-mask.js?v=72"></script>
-<script src="assets/js/sito.js?v=72"></script>
+<script src="assets/js/blob-mask.js?v=74"></script>
+<script src="assets/js/sito.js?v=74"></script>
 </body>
 </html>
