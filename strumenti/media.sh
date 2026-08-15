@@ -58,16 +58,24 @@ ffmpeg -v error -y -ss 20.6 -t 1.8 -i "$SORG" \
   -movflags +faststart -g 45 "$OUT/copertina.mp4"
 # --- la scena che accompagna le parole ---------------------------------------
 # Scena 1 (18.8 -> 20.4): la figura nera, e a sinistra il vuoto dove vanno le
-# parole. Sul sito ci va in `multiply` sopra la carta, e per questo la
-# gradazione NON e' quella duotone del resto: le luci si spingono a bianco
-# pieno. Un grigio residuo, moltiplicato, sporcherebbe la carta di un
-# rettangolo — e si vedrebbe subito il bordo del video.
+# parole.
+# LA FUSIONE CON LA PAGINA SI FA QUI, NON A SCHERMO. Le luci non vanno al
+# bianco: vanno esattamente al colore della carta del sito (--osso #F3ECD2).
+# Cosi' sul sito il video non ha bisogno di nessun effetto — niente
+# `mix-blend-mode`, niente maschera — e il rettangolo non si vede perche' il
+# suo fondo E' la pagina. Se un giorno cambia `--osso`, cambia anche questa
+# riga: sono la stessa cosa scritta in due posti, ed e' il prezzo di non
+# avere effetti a schermo.
 # Andata e ritorno come la copertina: 3.2s che si richiudono senza scatto.
-GS="hue=s=0,curves=r='0/0 0.34/0.10 0.70/0.94 1/1':g='0/0 0.34/0.10 0.70/0.94 1/1':b='0/0.02 0.34/0.12 0.70/0.95 1/1',eq=contrast=1.18"
+# Il gradino piatto in cima (da 0.84 a 1 il valore non cambia piu') non e' una
+# svista: schiaccia TUTTO il fondo del girato su un colore solo, quello della
+# carta. Con una rampa fino a 1 il fondo resta variabile di qualche unita' e
+# il rettangolo del video si vede lo stesso.
+GS="hue=s=0,curves=r='0/0.043 0.28/0.14 0.62/0.61 0.84/0.941 1/0.941':g='0/0.055 0.28/0.15 0.62/0.60 0.84/0.907 1/0.907':b='0/0.110 0.28/0.20 0.62/0.55 0.84/0.806 1/0.806'"
 echo "  · scena (scena 1, andata e ritorno)"
 ffmpeg -v error -y -ss 18.8 -t 1.6 -i "$SORG" \
   -filter_complex "[0:v]$GS,scale=$W:$H:flags=lanczos,split[a][b];[b]reverse[r];[a][r]concat=n=2:v=1[v]" \
-  -map "[v]" -an -c:v libx264 -profile:v main -pix_fmt yuv420p -crf 28 -preset slow \
+  -map "[v]" -an -c:v libx264 -profile:v main -pix_fmt yuv420p -crf 24 -preset slow \
   -movflags +faststart -g 45 "$OUT/scena.mp4"
 ffmpeg -v error -y -ss 19.4 -i "$SORG" -frames:v 1 \
   -vf "$GS,scale=$W:$H:flags=lanczos" -q:v 4 "$OUT/scena.jpg"

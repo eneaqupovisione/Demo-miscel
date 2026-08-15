@@ -329,6 +329,9 @@ body.giu #apri{transform:translate3d(0,-115%,0)}
 @keyframes ago{0%{transform:translateY(-100%)}60%,100%{transform:translateY(100%)}}
 #cop .hud{position:absolute;left:var(--gut);top:24vh;writing-mode:vertical-rl}
 
+#ascolta{position:relative;padding-bottom:clamp(60px,13vw,120px)}
+#ascolta .occhiello{margin-top:clamp(18px,4vw,34px)}
+
 /* --- 10b la banda ---------------------------------------------------------
    Scorre di lato mentre la sezione arriva. Finita la corsa il blu scende
    sotto alle uscite e la banda resta nel colore della carta: ha gia' detto
@@ -337,7 +340,7 @@ body.giu #apri{transform:translate3d(0,-115%,0)}
    ai lati, il resto no. */
 .banda{
   position:relative;overflow:hidden;
-  padding-block:clamp(10px,2.4vw,20px);margin-block:clamp(14px,3vw,26px);
+  padding-block:clamp(10px,2.4vw,20px);margin-block:0 clamp(14px,3vw,26px);
   background:var(--acc);color:var(--osso);
   transition:background-color .8s var(--e),color .8s var(--e);
 }
@@ -434,7 +437,9 @@ body.giu #apri{transform:translate3d(0,-115%,0)}
    "c'e'" si vede davvero. */
 /* LA SEZIONE SCORRE COME TUTTO IL RESTO. Le parole si scrivono quando
    arrivano al loro posto sullo schermo: scendere E' scrivere. */
-#chi{position:relative;overflow:hidden;padding-block:clamp(50px,11vw,110px) clamp(80px,18vw,160px)}
+/* Sotto non c'e' vuoto: la banda di "Ascolta" attacca subito dopo l'ultima
+   parola. Il respiro ce l'ha gia' il testo, che finisce a mezza colonna. */
+#chi{position:relative;overflow:hidden;padding-block:clamp(50px,11vw,110px) clamp(16px,3.5vw,34px)}
 
 /* LA SCENA. `sticky` con il margine negativo che la toglie dal flusso: sta
    ferma mentre le parole le scorrono davanti, senza occupare altezza.
@@ -442,11 +447,12 @@ body.giu #apri{transform:translate3d(0,-115%,0)}
    solo la figura. Niente z-index ne' qui ne' sul testo: sono tutti e due
    posizionati e senza z-index, quindi decide l'ordine del DOM — e la
    maschera a gocce continua a invertire tutto quanto. */
-/* LA SCENA sta a destra e non si fonde con la carta: e' un'immagine
-   appoggiata sopra, non una stampa. Quello che le toglie il bordo di
-   rettangolo e' la maschera: il lato sinistro e i due orizzontali sfumano,
-   cosi' il bianco del girato finisce nella carta senza una riga netta — ed e'
-   anche il lato da cui arrivano le parole. */
+/* LA SCENA NON HA NESSUN EFFETTO ADDOSSO: niente fusione, niente maschera,
+   niente opacita' sul contorno. Sembra fusa nella pagina perche' il suo
+   fondo E' il colore della pagina — la fusione e' gradata dentro al file
+   (`strumenti/media.sh`), non calcolata dal browser.
+   Vale la pena saperlo prima di cambiare `--osso`: il colore della carta sta
+   scritto in due posti, qui e nella gradazione della scena. */
 #chi .scena{
   position:sticky;top:0;height:100svh;margin-bottom:-100svh;
   display:flex;align-items:center;justify-content:flex-end;
@@ -456,11 +462,6 @@ body.giu #apri{transform:translate3d(0,-115%,0)}
   height:52svh;width:auto;max-width:none;
   margin-right:calc(var(--gut) * -0.5);
   opacity:0;transition:opacity 1s var(--e);
-  -webkit-mask-image:linear-gradient(90deg,transparent 0,#000 34%),
-                     linear-gradient(0deg,transparent 0,#000 12%,#000 88%,transparent 100%);
-  mask-image:linear-gradient(90deg,transparent 0,#000 34%),
-             linear-gradient(0deg,transparent 0,#000 12%,#000 88%,transparent 100%);
-  -webkit-mask-composite:source-in;mask-composite:intersect;
 }
 @media(min-width:760px){ #chi .scena video{height:74svh} }
 #chi .in{position:relative}

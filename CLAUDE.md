@@ -154,13 +154,20 @@ servito da un server statico.
   per conto suo e **non c'è da subito**: entra quando un quinto delle parole è
   passato. La sua gradazione è diversa da quella del resto (`media.sh`): il
   fondo dev'essere **bianco pieno**, perché va in `multiply` sulla carta.
-  **Non si fonde con la carta**: è un'immagine appoggiata sopra. A toglierle
-  il bordo di rettangolo è la **maschera** — il lato sinistro e i due
-  orizzontali sfumano — non un `mix-blend-mode`. (Ci ho provato con
-  `multiply`: `position:sticky` crea di suo un contesto di impilamento, e lì
-  dentro la fusione del video avviene col contenitore, cioè con niente. È
-  costato due giri, e la nota resta qui perché la trappola vale per qualunque
-  fusione dentro a uno sticky.)
+  **Non ha nessun effetto addosso**: niente fusione, niente maschera. Sembra
+  fusa nella pagina perché il suo fondo **è** il colore della pagina — la
+  fusione è gradata dentro al file, non calcolata dal browser. Nella curva
+  c'è un gradino piatto in cima (da 0.84 in su il valore non cambia più) che
+  schiaccia tutto il fondo del girato su un colore solo: con una rampa fino a
+  1 resterebbe variabile di qualche unità e il rettangolo si vedrebbe lo
+  stesso.
+  ⚠️ **Il colore della carta sta scritto in due posti**: `--osso` nel CSS e la
+  gradazione della scena in `media.sh`. Se cambi l'uno, cambia l'altro — è il
+  prezzo di non avere effetti a schermo, ed è un prezzo scelto.
+  (Prima ci avevo provato con `multiply`: non funziona, perché
+  `position:sticky` crea di suo un contesto di impilamento e lì dentro la
+  fusione avviene col contenitore, cioè con niente. La nota resta perché la
+  trappola vale per qualunque fusione dentro a uno sticky.)
 - La **banda di «Ascolta»** scorre di lato mentre la sezione arriva: fondo
   blu, scritta bianca. Finita la corsa si spegne (`.spenta`) e continua ad
   andare avanti e indietro nel colore della carta — il blu, a quel punto, sta
