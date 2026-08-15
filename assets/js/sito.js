@@ -720,6 +720,59 @@ var Sequenza = (function(){
 })();
 
 /* --------------------------------------------------------------------------
+   la banda di "Ascolta"
+   Scorre di lato mentre la sezione arriva. Quando ha finito la corsa il blu
+   si spegne e passa alle uscite — la riga al centro si accende come prima —
+   e la banda continua ad andare avanti e indietro, ma nel colore della carta.
+   -------------------------------------------------------------------------- */
+(function(){
+  var banda = $('#banda'); if (!banda) return;
+  var scorre = $('.scorre', banda);
+  var corsa = 0, pT = 0, p = 0, dentro = false, finita = false, ondeggio = 0;
+
+  function misura(){
+    /* la corsa e' una copia sola: le altre servono a coprire il vuoto mentre
+       la prima esce di lato */
+    var uno = scorre.firstElementChild;
+    corsa = uno ? uno.getBoundingClientRect().width + parseFloat(getComputedStyle(scorre).gap || 0) : 0;
+  }
+  function daScroll(){
+    var r = banda.getBoundingClientRect(), vh = window.innerHeight;
+    /* 0 quando la banda entra dal basso, 1 quando ha attraversato mezzo
+       schermo: la corsa finisce mentre la si sta guardando, non dopo */
+    /* piu' e' grande il divisore, piu' scroll ci vuole perche' la banda
+       finisca la corsa: 1.5 schermate contro le 0.6 di prima */
+    pT = clamp((vh - r.top) / (vh * 1.5), 0, 1);
+    dentro = r.top < vh && r.bottom > 0;
+  }
+  (function giro(ora){
+    requestAnimationFrame(giro);
+    if (!dentro) return;
+    p += (pT - p) * (CALMO ? 1 : .08);
+    if (!finita && p > .985){
+      finita = true;
+      banda.classList.add('spenta');
+    }
+    var x;
+    if (!finita){
+      x = -corsa * p;
+    } else {
+      /* avanti e indietro, piano: un seno lentissimo, che non torna mai
+         esattamente sullo stesso punto perche' parte da dove si e' fermata */
+      ondeggio += 0.0011;
+      x = -corsa * (0.5 + 0.5*Math.sin(ondeggio - Math.PI/2));
+    }
+    scorre.style.transform = 'translate3d(' + x.toFixed(1) + 'px,0,0)';
+  })();
+
+  window.addEventListener('scroll', function(){ alFrame(daScroll); }, {passive:true});
+  window.addEventListener('resize', function(){ alFrame(function(){ misura(); daScroll(); }); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(misura);
+  document.addEventListener('entrati', function(){ misura(); daScroll(); });
+  misura(); daScroll();
+})();
+
+/* --------------------------------------------------------------------------
    la firma: le gocce salgono, si fermano in alto e riempiono lo schermo
    Il testo sotto e' nero su carta e non cambia colore da solo: dentro al blu
    si legge bianco perche' la maschera lo inverte.
@@ -1241,11 +1294,13 @@ function Bolle(box, cop){
    -------------------------------------------------------------------------- */
 (function(){
   var m = $('#mailBooking'), avviso = $('#copiato');
-  m.textContent = DATI.booking; m.href = 'mailto:'+DATI.booking;
-  var cta = $('#ctaBooking');
-  if (cta) cta.href = 'mailto:'+DATI.booking+'?subject='+encodeURIComponent('Data — '+DATI.nome);
-  $('#cMgmt').textContent   = DATI.management; $('#cMgmt').href = 'mailto:'+DATI.management;
-  $('#cPress').textContent  = DATI.stampa; $('#cPress').href = 'mailto:'+DATI.stampa;
+  /* i tasti tengono la loro parola: l'indirizzo sta sotto, uno solo, quello
+     che serve davvero. Gli altri due li apre il tocco. */
+  m.href = 'mailto:'+DATI.booking;
+  $('#cMgmt').href = 'mailto:'+DATI.management;
+  $('#cPress').href = 'mailto:'+DATI.stampa;
+  var ind = $('#indirizzo');
+  if (ind) ind.textContent = DATI.booking + '  ·  tocca per copiare';
 
   var social = DATI.social.map(function(s){
     return '<a href="'+s.href+'" '+(s.href!=='#'?'target="_blank" rel="noopener"':'')+'>'+s.nm+'</a>';
@@ -1300,11 +1355,51 @@ function Bolle(box, cop){
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(rileggiCop);
   document.addEventListener('entrati', rileggiCop);
 
-  /* IL BLU E' SOLO LA FINE. Qui non c'e' piu' nessuna massa fra copertina e
-     testo: la maschera si monta e resta a disposizione di chi la chiama, e
-     oggi la chiama un pezzo solo — la schermata finale. Il montaggio serve
-     comunque, perche' e' lui a creare i due contesti e a tenere i canvas
-     pronti. */
+  /* TRE ZONE, UN MOTORE SOLO — e una regola che vale piu' di tutte:
+     FUORI DALLE ZONE LA MASCHERA SI SPEGNE. I canvas non si cancellano da
+     soli: se si smette di chiamarla senza spegnerla, l'ultimo fotogramma
+     resta disegnato. Con il finale acceso, quell'ultimo fotogramma e' lo
+     schermo pieno — e tutta la pagina resta blu. E' successo.
+
+     1 · LA MASSA IN COPERTINA. Sta a cavallo fra il girato e il testo, e si
+         scioglie mentre si scorre.
+     2 · IL FINALE. Comincia come fondo pieno della sezione "Scrivi" e finisce
+         come schermo tutto blu con il nome: una cosa sola, un progresso solo,
+         dall'arrivo di "Scrivi" alla fine dell'ultima schermata.
+     3 · IN MEZZO non c'e' niente, ed e' voluto: il blu non e' un colore di
+         fondo, e' due momenti. */
+  var contatti = $('#contatti'), firma = $('#firma');
+
+  function guarda(){
+    var vh = window.innerHeight;
+
+    /* 1 · la massa della copertina */
+    var bordo = (copFondo - window.scrollY) / vh;
+    var diss = clamp((0.68 - bordo) / 0.46, 0, 1);
+    if (diss < 0.999){ mask.massa(bordo, diss); return; }
+
+    /* 2 · il finale: da quando "Scrivi" si affaccia a quando l'ultima
+           schermata ha finito di attraversare */
+    if (contatti && firma){
+      var a = contatti.getBoundingClientRect(), b = firma.getBoundingClientRect();
+      /* Comincia quando "Scrivi" e' gia' incollata in alto e ha lo schermo
+         tutto per se': partendo prima, il fondo blu — che e' a tutto schermo —
+         si prendeva anche la tracklist sopra. */
+      var da = a.top + window.scrollY - vh*0.10;
+      var fin = b.top + window.scrollY + b.height - vh;
+      if (window.scrollY > da && window.scrollY < fin + vh){
+        mask.finale(clamp((window.scrollY - da) / Math.max(fin - da, 1), 0, 1));
+        return;
+      }
+    }
+
+    /* 3 · fuori: spenta */
+    mask.spegni();
+  }
+  window.addEventListener('scroll', function(){ alFrame(guarda); }, {passive:true});
+  window.addEventListener('resize', function(){ alFrame(guarda); });
+  document.addEventListener('entrati', guarda);
+  guarda();
 })();
 
 /* --------------------------------------------------------------------------

@@ -492,36 +492,26 @@ body.giu #apri{transform:translate3d(0,-115%,0)}
   clip-path:inset(0 100% 0 0);will-change:clip-path}
 #chi .acc{color:var(--acc)}
 
-/* --- 13 contatti --------------------------------------------------------- */
-#contatti{background:var(--nero);color:var(--osso);position:relative;overflow:hidden;
-  padding-block:clamp(80px,16vw,150px)}
-#contatti .in{position:relative;z-index:2}
-#contatti .occhiello{border-color:rgba(243,236,210,.2)}
-#contatti .tit{color:var(--osso)}
-#contatti .azione{margin:clamp(30px,6vw,52px) 0 clamp(18px,4vw,28px)}
-#contatti .azione .btn{border-color:var(--blu);background:var(--blu);color:var(--osso);
-  font-size:.78rem;padding:1.15rem 1.6rem}
-#contatti .azione .btn::before{background:var(--osso)}
-#contatti .azione .btn:hover,#contatti .azione .btn:active{color:var(--nero)}
-#contatti .mail{
-  display:block;font-family:var(--disp);font-weight:700;text-transform:none;
-  font-size:clamp(1.05rem,5.2vw,2.2rem);line-height:1.06;letter-spacing:-.025em;
-  color:var(--blu-l);word-break:break-word;margin:0 0 .45em;
-  transition:color .3s,transform .5s var(--e);
+/* --- 13 scrivi ----------------------------------------------------------
+   Il fondo di questa sezione e' la massa blu, quindi qui NON si scrive
+   bianco: il testo e' scuro su carta come dappertutto, ed e' la maschera a
+   invertirlo. E' l'unica sezione che si progetta guardandola in negativo.
+   L'altezza serve alla massa: e' lei che ha bisogno di scroll per esserci. */
+#contatti{position:relative;min-height:150vh;padding-block:clamp(60px,14vw,130px)}
+#contatti .in{position:sticky;top:0;height:100svh;min-height:100dvh;
+  display:flex;flex-direction:column;justify-content:center}
+#contatti .tit-s{
+  font-family:var(--disp);font-weight:800;text-transform:uppercase;
+  line-height:.82;letter-spacing:-.05em;margin:0 0 .28em;
 }
-#contatti .mail:hover,#contatti .mail:active{color:var(--osso)}
-#contatti .altri{list-style:none;margin-top:2.2rem;border-top:1px solid rgba(243,236,210,.16)}
-#contatti .altri li{display:flex;justify-content:space-between;align-items:baseline;gap:1rem;
-  padding:.8rem 0;border-bottom:1px solid rgba(243,236,210,.16)}
-#contatti .altri a{font-size:.92rem;color:var(--osso);text-align:right;word-break:break-word}
-#contatti .altri a:hover{color:var(--blu-l)}
-#copiato{
-  position:fixed;left:50%;bottom:2rem;transform:translate3d(-50%,20px,0);z-index:135;
-  background:var(--blu);color:var(--osso);padding:.7rem 1.1rem;opacity:0;
-  font-family:var(--mono);font-size:.64rem;letter-spacing:.2em;text-transform:uppercase;
-  transition:opacity .3s,transform .4s var(--e);pointer-events:none;
+#contatti .tasti{display:flex;flex-wrap:wrap;gap:.6rem}
+#contatti .tasto{
+  font-family:var(--mono);font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;
+  border:1px solid var(--linea-f);padding:.9rem 1.2rem;
+  transition:border-color .3s var(--e);
 }
-#copiato.on{opacity:1;transform:translate3d(-50%,0,0)}
+#contatti .tasto:hover,#contatti .tasto:active{border-color:var(--testo)}
+#contatti .mono{margin-top:clamp(22px,5vw,40px)}
 
 /* --- 13b la fine --------------------------------------------------------
    L'ultima schermata. Il testo qui e' nero su carta e NON cambia colore da

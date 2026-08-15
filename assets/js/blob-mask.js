@@ -500,12 +500,17 @@ function monta(opz){
     }
   }
 
-  /* La griglia si impila dalla cima: la goccia i sta alla riga i/col. Il suo
-     turno viene da quanto e' in alto — le prime a fermarsi sono quelle che
-     staranno piu' su, se no la macchia crescerebbe dal basso invece che
-     riempirsi dall'alto. Le irregolarita' sono deterministiche (seno
-     dell'indice): a ogni fotogramma la stessa disposizione, se no vibra. */
-  function disponiRiempi(v){
+  /* IL FINALE, IN UN GESTO SOLO.
+     A v=0 le gocce sono una griglia che copre tutto: e' il fondo blu della
+     sezione "Scrivi". Man mano che v cresce si staccano — prima quelle in
+     basso — salgono e si impilano in alto, dove il raggio cresce: quello che
+     si vede e' il blu che si scorpora, si ritira verso l'alto e poi si
+     richiude coprendo di nuovo tutto.
+     Il raggio che cresce non e' un vezzo: impilate in mezzo schermo, con il
+     raggio di partenza lascerebbero scoperta la meta' di sotto.
+     Le irregolarita' sono deterministiche (seno dell'indice): a ogni
+     fotogramma la stessa disposizione, se no vibra invece di stare ferma. */
+  function disponiFinale(v){
     var n = gocce.length;
     /* LA GRIGLIA SBORDA. Deve coprire piu' dello schermo, se no in fondo
        resta una striscia di carta: le file arrivano fino a -0.18, cioe' un
@@ -620,8 +625,8 @@ function monta(opz){
        va da 0 a 1: ognuna parte da sotto lo schermo e va al suo posto in una
        griglia che si impila dalla CIMA verso il basso, e ognuna parte al suo
        turno — cosi' e' una sfilza che sale, non un blocco che compare. */
-    if (modo === 'riempi'){
-      disponiRiempi(CONFIG._riempi || 0);
+    if (modo === 'finale'){
+      disponiFinale(CONFIG._finale || 0);
       scrivi();
       lInv.disegna(data, W, H, A, warp, velo);
       if (lTin && CONFIG.mode === 'tinta') lTin.disegna(data, W, H, A, warp, velo);
@@ -688,17 +693,33 @@ function monta(opz){
       }
     },
     semina: semina,
-    /* v da 0 a 1: quanto e' riempito lo schermo dall'alto */
-    riempi: function(v){
-      if (modo !== 'riempi'){
-        modo = 'riempi';
+    /* v da 0 a 1: 0 = fondo pieno della sezione, 1 = tutto blu in cima */
+    finale: function(v){
+      if (modo !== 'finale'){
+        modo = 'finale';
         CONFIG._massa = true;      /* usa il warp forte della massa: e' una massa */
         CONFIG._gonfio = 1;
         CONFIG._sotto = -1;
         acceso = true;
       }
-      CONFIG._riempi = clamp01(v);
-      obiettivo = 1; velo = 1;
+      CONFIG._finale = clamp01(v);
+      /* solo l'obiettivo: il velo lo insegue in una decina di fotogrammi, e
+         il blu entra in dissolvenza invece che di colpo */
+      obiettivo = 1;
+    },
+    /* SPEGNERE E' OBBLIGATORIO, e per un motivo che e' gia' costato caro: i
+       canvas non si cancellano da soli. Se si smette di chiamare la maschera
+       senza spegnerla, l'ultimo fotogramma resta disegnato — e se l'ultimo
+       fotogramma era lo schermo pieno, tutta la pagina resta blu. */
+    spegni: function(){
+      if (modo === 'fermo') return;
+      modo = 'fermo';
+      CONFIG._massa = false; CONFIG._sotto = -1;
+      obiettivo = 0; velo = 0; acceso = false;
+      for (var i=0;i<gocce.length;i++) gocce[i].r = 0;
+      scrivi();
+      lInv.disegna(data, W, H, A, warp, 0);
+      if (lTin && CONFIG.mode === 'tinta') lTin.disegna(data, W, H, A, warp, 0);
     },
     /* Le manda tutte sotto al bordo con una spinta grossa e le lascia
        andare. Non tocca `speed`: quella e' la velocita' di crociera delle
