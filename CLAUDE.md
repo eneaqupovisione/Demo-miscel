@@ -142,6 +142,23 @@ servito da un server statico.
   torna la larghezza della colonna e **tutte le righe vengono uguali**. Si
   misura la `<i>`. Nelle chiuse invece le `<i>` sono in linea e lo span in
   `nowrap` sborda: lì si misura lo span.
+- **Il secondo movimento** (`#dire`) è la stessa voce che continua di lato:
+  schermata ferma, la frase corre in orizzontale comandata dallo scroll
+  verticale. Niente numero e niente occhiello, apposta: un secondo titolo
+  direbbe che sono due idee. Il progresso lì **non** è quello della
+  traversata come nelle altre scene, è `-top / (altezza - schermata)`, che
+  vale 0 quando il pin si inchioda e 1 quando lascia — con la traversata la
+  frase correrebbe mentre la sezione sta ancora salendo, due movimenti
+  insieme. **L'altezza della sezione decide la velocità**: a 300vh venivano
+  3,5 px di testo per px di dito (illeggibile), a 420vh sono 1,7. Se allunghi
+  la frase, alza l'altezza.
+- **Niente letture di layout dentro ai cicli.** `getBoundingClientRect` e
+  `getComputedStyle` costringono il browser a rifare layout e stili: le bolle
+  ne facevano due per fotogramma (`misuraBox` e `bocca`) e la maschera una, e
+  mentre si scorre — due shader a schermo intero, la sequenza d'acqua, sedici
+  ritagli di testo — bastavano a far perdere fotogrammi. Adesso si leggono al
+  ridimensionamento e si tengono in cache. Se aggiungi una scena, fai lo
+  stesso.
 - **Finita la frase entrano le gocce**, e da lì vanno da sole: è la lavalamp
   della specifica (`livello()`), non un'altra cosa. Il passaggio fra i due
   modi della maschera lo decide un solo posto in `sito.js` — massa finché non

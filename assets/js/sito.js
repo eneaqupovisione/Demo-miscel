@@ -580,13 +580,6 @@ var Sequenza = (function(){
   var ctx = cv.getContext('2d', { alpha:true });
   var W=0,H=0,DPR=1, pT=0, p=0, dentro=false;
 
-  /* ogni riga dentro alla sua feritoia: lo span taglia, la <i> scorre */
-  var dire = $('[data-righe]', sez);
-  var righe = $$('[data-righe] > span', sez);
-  righe.forEach(function(sp,i){
-    sp.innerHTML = '<i style="--d:'+(120 + i*130)+'ms">'+sp.innerHTML+'</i>';
-  });
-
   /* LA MISURA E' PER RIGA, E POI SI SCALA TUTTO INSIEME.
      Ogni riga prende il corpo piu' grande che la fa toccare i due margini:
      righe corte vengono grandi, righe lunghe piccole, e le dimensioni
@@ -595,19 +588,13 @@ var Sequenza = (function(){
      inchiodata — quindi il blocco riempie sempre lo schermo, e le
      proporzioni fra le righe restano quelle su qualunque telefono.
 
-     La nota di prima diceva che righe di corpi diversi sono «un manifesto,
-     non una frase». Vero, ed e' il motivo per cui adesso e' cosi': qui
-     serve un manifesto. */
-  /* La riga da misurare non e' sempre lo <span>. Nelle righe della frase
-     dentro c'e' una <i> a display:block per la feritoia: quella e' larga
-     quanto la colonna, quindi lo scrollWidth dello span torna la larghezza
-     del contenitore e tutte le righe risultano uguali. Si misura la <i>.
-     Nelle chiuse invece le <i> sono in linea e lo span in nowrap sborda:
-     li' lo scrollWidth dello span e' proprio la lunghezza della riga. */
-  var COLONNA = righe.map(function(sp){ return { riga: sp, campione: sp.firstChild }; })
-    .concat($$('[data-scrive] > span', sez).map(function(sp){
-      return { riga: sp, campione: sp };
-    }));
+     Le righe sono `nowrap` con dentro le parole in linea: lo scrollWidth
+     dello span e' proprio la lunghezza della riga. (Quando le righe della
+     frase avevano dentro una <i> a display:block per la feritoia, lo
+     scrollWidth tornava la larghezza della colonna e venivano tutte uguali.
+     La feritoia non c'e' piu': adesso si scrivono anche loro.) */
+  var dire = $('.dire', sez);
+  var COLONNA = $$('[data-scrive] > span', sez);
 
   function misuraRighe(){
     var cont = dire.parentElement, cs = getComputedStyle(cont);
@@ -615,15 +602,15 @@ var Sequenza = (function(){
     if (largo <= 0) return;
     var vh = window.innerHeight, i, mis = [], somma = 0;
     for (i=0;i<COLONNA.length;i++){
-      COLONNA[i].riga.style.fontSize = '100px';
-      var w = COLONNA[i].campione.scrollWidth;
+      COLONNA[i].style.fontSize = '100px';
+      var w = COLONNA[i].scrollWidth;
       var s = w ? largo / w * 100 * 0.995 : 20;
       mis.push(s); somma += s;
     }
     /* quello che resta dopo occhiello, nota e margini fra i due blocchi */
     var resta = vh - 200;
     var k = somma * 0.94 > resta ? resta / (somma * 0.94) : 1;
-    for (i=0;i<COLONNA.length;i++) COLONNA[i].riga.style.fontSize = (mis[i]*k).toFixed(2) + 'px';
+    for (i=0;i<COLONNA.length;i++) COLONNA[i].style.fontSize = (mis[i]*k).toFixed(2) + 'px';
   }
   misuraRighe();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(misuraRighe);
@@ -658,8 +645,8 @@ var Sequenza = (function(){
      ancora salendo, prima che la schermata si inchiodi: scorrere svela da
      subito invece di far aspettare. FETTA corta = la singola parola scatta.
      L'ultima finisce a 0.45, e da li' in poi c'e' spazio per le gocce. */
-  var DA = 0.08, FETTA = 0.012, PASSO = 0.040;
-  var FINE = DA + 9*PASSO + FETTA;
+  var DA = 0.06, FETTA = 0.012, PASSO = 0.038;
+  var FINE = DA + (parole.length-1)*PASSO + FETTA;
 
   function scriviChiuse(){
     for (var i=0;i<parole.length;i++){
@@ -729,6 +716,48 @@ var Sequenza = (function(){
 })();
 
 /* --------------------------------------------------------------------------
+   le sue parole, di seguito: la frase che corre di lato
+   Il secondo movimento di "Chi e'". La schermata sta ferma e la frase si
+   muove in orizzontale, comandata dallo scroll verticale.
+
+   Il progresso qui NON e' quello della traversata come nelle altre scene:
+   e' -top / (altezza - schermata), che vale esattamente 0 quando il pin si
+   inchioda e 1 quando lascia. Con la traversata la frase comincerebbe a
+   correre mentre la sezione sta ancora salendo, cioe' mentre la si vede
+   scorrere: due movimenti insieme, e non si capisce piu' chi comanda.
+   -------------------------------------------------------------------------- */
+(function(){
+  var sez = $('#dire'); if (!sez) return;
+  var riga = $('[data-oriz]', sez);
+  var pT = 0, p = 0, dentro = false, corsa = 0;
+
+  function misura(){
+    /* quanto deve scorrere: tutta la lunghezza del testo meno lo schermo */
+    corsa = Math.max(0, riga.scrollWidth - window.innerWidth);
+  }
+  function daScroll(){
+    var r = sez.getBoundingClientRect(), vh = window.innerHeight;
+    pT = clamp(-r.top / Math.max(r.height - vh, 1), 0, 1);
+    dentro = r.top < vh && r.bottom > 0;
+  }
+  function rendi(){
+    riga.style.transform = 'translate3d(' + (-corsa*p).toFixed(1) + 'px,0,0)';
+  }
+  (function giro(){
+    requestAnimationFrame(giro);
+    if (!dentro && Math.abs(p - pT) < .0004) return;
+    p += (pT - p) * (CALMO ? 1 : .09);
+    rendi();
+  })();
+
+  window.addEventListener('scroll', function(){ alFrame(daScroll); }, {passive:true});
+  window.addEventListener('resize', function(){ alFrame(function(){ misura(); daScroll(); }); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(misura);
+  document.addEventListener('entrati', function(){ misura(); daScroll(); });
+  misura(); daScroll(); rendi();
+})();
+
+/* --------------------------------------------------------------------------
    i pulsanti-bolla
    Escono all'altezza della bocca del volto in copertina e salgono, piano.
    Quando escono dal bordo alto vengono risputati dopo un paio di secondi, e
@@ -777,18 +806,28 @@ function Bolle(box, cop){
       SMORZO     = 14,   /* mangia la velocita' relativa, se no oscillano */
       STRAPPO    = 16;   /* il rinculo di quando un collo si spezza */
 
-  function misuraBox(){
+  /* MISURE IN CACHE, E NON E' UN'OTTIMIZZAZIONE PREMATURA.
+     `getBoundingClientRect` costringe il browser a rifare il conto del
+     layout, e `getComputedStyle` quello degli stili: erano chiamate DUE
+     VOLTE per fotogramma, dentro al ciclo. Mentre si scorre — con la
+     maschera che disegna due shader a schermo intero, la sequenza d'acqua e
+     sedici ritagli di testo — bastava a far perdere fotogrammi alle bolle,
+     che e' esattamente il "si fermano quando scrollo".
+     La copertina cambia misura solo al ridimensionamento, quindi qui si
+     leggono solo li'. */
+  var DIM = { w:0, h:0 }, BOCCA = { x:0, y:0 };
+  function rileggi(){
     var r = cop.getBoundingClientRect();
-    return { w: r.width, h: r.height };
-  }
-
-  /* il punto di emissione arriva dal CSS: --bocca-x e --bocca-y su #cop */
-  function bocca(dim){
+    DIM.w = r.width; DIM.h = r.height;
+    /* il punto di emissione arriva dal CSS: --bocca-x e --bocca-y su #cop */
     var cs = getComputedStyle(cop);
     var fx = parseFloat(cs.getPropertyValue('--bocca-x')) || 66;
     var fy = parseFloat(cs.getPropertyValue('--bocca-y')) || 46;
-    return { x: dim.w * fx/100, y: dim.h * fy/100 };
+    BOCCA.x = DIM.w * fx/100; BOCCA.y = DIM.h * fy/100;
   }
+  rileggi();
+  function misuraBox(){ return DIM; }
+  function bocca(){ return BOCCA; }
 
   function nasce(i, dim, subito){
     var b = bocca(dim);
@@ -826,10 +865,11 @@ function Bolle(box, cop){
          vedono tutte da subito invece di uscire una alla volta */
       y: subito ? b.y - i * b.y * .30 : b.y,
       vx: 0, vy: 0,
-      /* dai dieci ai quindici secondi per attraversare: abbastanza lente da
-         poterle premere, non tanto da sembrare ferme. Scalate per indice,
-         se no dopo un giro escono all'unisono. */
-      vel: 24 + i*6 + Math.random()*7,
+      /* Sei-otto secondi per attraversare, non piu' dodici: da ferme
+         sembravano lente, e mentre la pagina scorre sembravano proprio
+         piantate. Restano abbastanza lente da poterle premere. Scalate per
+         indice, se no dopo un giro escono all'unisono. */
+      vel: 42 + i*10 + Math.random()*12,
       amp: 14 + Math.random()*16,
       freq: 0.09 + Math.random()*0.09,
       fase: Math.random()*Math.PI*2,
@@ -877,6 +917,7 @@ function Bolle(box, cop){
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(vesti);
 
   window.addEventListener('resize', function(){ alFrame(function(){
+    rileggi();
     var d = misuraBox();
     for (var i=0;i<n;i++){
       var b = bocca(d), vecchio = stato[i];
@@ -1245,9 +1286,20 @@ function Bolle(box, cop){
      di scriversi — il valore glielo passa quella sezione.
      Gira a ogni fotogramma e non solo allo scroll: il livello delle gocce
      cambia anche a pagina ferma, mentre la scrittura finisce di inseguire. */
+  /* Il fondo della copertina in coordinate di documento: si legge al
+     ridimensionamento e basta. Leggerlo a ogni fotogramma vuol dire
+     costringere il browser a rifare il layout mentre si scorre, ed e' un
+     costo che si paga in fotogrammi persi altrove. */
+  var copFondo = 0;
+  function rileggiCop(){ copFondo = cop.getBoundingClientRect().bottom + window.scrollY; }
+  rileggiCop();
+  window.addEventListener('resize', function(){ alFrame(rileggiCop); });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(rileggiCop);
+  document.addEventListener('entrati', rileggiCop);
+
   function guarda(){
     var vh = window.innerHeight;
-    var bordo = cop.getBoundingClientRect().bottom / vh;
+    var bordo = (copFondo - window.scrollY) / vh;
     var diss = clamp((0.68 - bordo) / 0.46, 0, 1);
     if (diss < 0.999){ mask.massa(bordo, diss); return; }
     mask.livello(GOCCE.v);

@@ -329,6 +329,30 @@ body.giu #apri{transform:translate3d(0,-115%,0)}
 @keyframes ago{0%{transform:translateY(-100%)}60%,100%{transform:translateY(100%)}}
 #cop .hud{position:absolute;left:var(--gut);top:24vh;writing-mode:vertical-rl}
 
+/* --- 12b le sue parole, di seguito ---------------------------------------
+   Il secondo movimento di "Chi e'": la schermata sta ferma e la frase corre
+   di lato. Lo scroll verticale non scorre la pagina, muove il testo — e'
+   l'unico posto del sito dove il dito fa una cosa diversa da quella che
+   sembra, quindi la frase dev'essere corta abbastanza da finire prima che
+   uno si chieda cosa stia succedendo.
+   `overflow` sta sul pin e non sulla sezione: su un antenato spezza lo
+   sticky del figlio. */
+/* L'altezza decide QUANTO VELOCE corre la frase: la corsa orizzontale e' la
+   lunghezza del testo meno lo schermo, spalmata sullo scroll che resta dopo
+   il pin. A 300vh venivano 3,5 px di testo per ogni px di dito — illeggibile.
+   A 420vh sono 1,7: si legge scorrendo. Se allunghi la frase, alza questa. */
+#dire{position:relative;height:420vh}
+#dire .pin{
+  position:sticky;top:0;height:100svh;min-height:100dvh;overflow:hidden;
+  display:flex;align-items:center;
+}
+#dire .riga{
+  font-family:var(--disp);font-weight:800;text-transform:uppercase;
+  font-size:clamp(1.8rem,10vw,5rem);line-height:1;letter-spacing:-.045em;
+  white-space:nowrap;will-change:transform;padding-inline:var(--gut);
+  margin:0;
+}
+
 /* --- 10 ascolta ---------------------------------------------------------- */
 .uscite{margin-top:clamp(20px,5vw,42px);border-top:1px solid var(--linea)}
 .uscita{
@@ -457,16 +481,10 @@ body.giu #apri{transform:translate3d(0,-115%,0)}
   font-family:var(--disp);font-weight:800;text-transform:uppercase;
   line-height:.94;letter-spacing:-.05em;margin:.14em 0 0;
 }
-#chi .dire span{display:block;overflow:hidden;white-space:nowrap}
-#chi .dire span > *,#chi .dire span{will-change:transform}
-#chi .dire em{font-style:normal;color:var(--acc)}
-/* ogni riga entra da sinistra dentro alla sua feritoia */
-#chi .dire i{display:block;font-style:normal;
-  transform:translate3d(-102%,0,0);
-  transition:transform 1s cubic-bezier(.16,.84,.28,1);transition-delay:var(--d,0ms)}
-#chi.svelato .dire i{transform:none}
+#chi .dire span{display:block;white-space:nowrap}
+#chi .acc{color:var(--acc)}
 
-/* LE CHIUSE, PAROLA PER PAROLA
+/* TUTTE LE PAROLE, UNA ALLA VOLTA
    Ogni parola ha la sua fetta di scroll e si scopre da sinistra: il taglio
    passa DENTRO la lettera, quindi si legge «scritto» e non «digitato».
    Perche' `clip-path` e non `width`: animando la larghezza il testo va a capo
@@ -479,7 +497,7 @@ body.giu #apri{transform:translate3d(0,-115%,0)}
 /* nowrap: la riga deve stare su una riga, se no la misura per riga non vuol
    dire niente e l'altezza della colonna diventa imprevedibile */
 #chi .segue span{display:block;white-space:nowrap}
-#chi .segue i{display:inline-block;font-style:normal;
+#chi .dire i,#chi .segue i{display:inline-block;font-style:normal;
   clip-path:inset(0 100% 0 0);will-change:clip-path}
 #chi .nota{margin-top:clamp(22px,5vw,42px);color:var(--tenue)}
 
@@ -530,12 +548,15 @@ body.giu #apri{transform:translate3d(0,-115%,0)}
   /* "Chi e'" si apre subito e le righe stanno ferme: il taglio che scorre e'
      proprio il tipo di movimento che qui va tolto */
   #chi .sfondo{clip-path:none}
-  #chi .dire i{transform:none}
   /* niente schermata inchiodata: senza la scrittura, quei due schermi e mezzo
      sarebbero solo scroll a vuoto */
   #chi{height:auto}
   #chi .pin{position:static;height:auto;min-height:0;padding-block:clamp(60px,12vw,120px)}
   /* le chiuse non si scrivono: sono gia' scritte. La frase resta intera, che
      e' l'unica cosa che conta */
-  #chi .segue i{clip-path:none !important}
+  #chi .dire i,#chi .segue i{clip-path:none !important}
+  /* la corsa orizzontale non c'e': la frase torna un paragrafo che va a capo */
+  #dire{height:auto}
+  #dire .pin{position:static;height:auto;min-height:0;padding-block:clamp(60px,12vw,120px)}
+  #dire .riga{white-space:normal;transform:none !important}
 }

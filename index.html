@@ -19,11 +19,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Archivo:wght@300;400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-<link rel="preload" as="image" href="assets/media/copertina.jpg?v=58">
+<link rel="preload" as="image" href="assets/media/copertina.jpg?v=60">
 <!-- il ?v= serve: GitHub Pages tiene i file in cache dieci minuti, e chi
      ha gia' aperto il sito continuerebbe a vedere la versione vecchia.
      Si alza il numero a ogni pubblicazione. -->
-<link rel="stylesheet" href="assets/css/sito.css?v=58">
+<link rel="stylesheet" href="assets/css/sito.css?v=60">
 </head>
 <body>
 
@@ -46,7 +46,7 @@
 <!-- la lastra a raggi X delle uscite -->
 <div id="lastra" aria-hidden="true">
   <i class="scan"></i>
-  <img src="assets/media/colonna.jpg?v=58" alt="">
+  <img src="assets/media/colonna.jpg?v=60" alt="">
   <div class="c"><span class="k">lastra · 001</span><div class="h"></div></div>
 </div>
 
@@ -91,9 +91,9 @@
 <!-- ========================== 01 · COPERTINA ========================== -->
 <section id="cop">
   <div class="med">
-    <video id="vCop" poster="assets/media/copertina.jpg?v=58" muted loop playsinline autoplay preload="auto"
+    <video id="vCop" poster="assets/media/copertina.jpg?v=60" muted loop playsinline autoplay preload="auto"
            disablepictureinpicture aria-hidden="true">
-      <source src="assets/media/copertina.mp4?v=58" type="video/mp4">
+      <source src="assets/media/copertina.mp4?v=60" type="video/mp4">
     </video>
   </div>
 
@@ -139,25 +139,22 @@
            riga PIU' LUNGA, quindi righe corte = corpo grande. Con questo
            carattere «mescola» e' la parola piu' larga della frase, e da sola
            mette il tetto a tutte le altre. -->
-      <!-- LA MISURA E' PER RIGA, NON UNA PER TUTTE. Righe corte vengono
-           grandi, righe lunghe piccole: le dimensioni diverse non sono
-           decise a mano, le decide quanto e' lunga la riga. Poi il copione
-           scala tutto insieme finche' la colonna sta nella schermata.
-           (La nota vecchia diceva che righe di corpi diversi sono «un
-           manifesto, non una frase». Un manifesto e' esattamente quello che
-           serve qui.) -->
-      <p class="dire" data-righe>
-        <span>Un</span>
-        <span>cuore</span>
-        <span>puro</span>
-        <span>che si</span>
-        <span><em>mescola</em></span>
+      <!-- TUTTO si scrive, parola per parola: una parola per <i>, e lo spazio
+           resta fuori dalla maschera — dentro sarebbe tagliato anche lui e le
+           parole si toccherebbero.
+           LA MISURA E' PER RIGA, non una per tutte: ogni riga prende il corpo
+           che la fa toccare i due margini, quindi righe corte vengono grandi e
+           righe lunghe piccole. Le dimensioni diverse escono dal testo, non da
+           una scelta a mano. Poi il copione scala tutto insieme finche' la
+           colonna sta nella schermata. -->
+      <p class="dire" data-scrive>
+        <span><i>Un</i></span>
+        <span><i>cuore</i></span>
+        <span><i>puro</i></span>
+        <span><i>che</i> <i>si</i></span>
+        <span class="acc"><i>mescola</i></span>
       </p>
 
-      <!-- Una parola per <i>, e lo spazio resta fuori dalla maschera: dentro
-           sarebbe tagliato anche lui e le parole si toccherebbero. Il
-           raggruppamento in righe e' una scelta di composizione: «con la»
-           sta insieme perche' da sola una preposizione non fa una riga. -->
       <p class="segue" data-scrive>
         <span><i>con</i> <i>la</i></span>
         <span><i>delicatezza,</i></span>
@@ -169,6 +166,18 @@
 
       <p class="mono nota rev">Voce e chitarra &nbsp;·&nbsp; niente altro</p>
     </div>
+  </div>
+</section>
+
+<!-- ============ 02b · LE SUE PAROLE, DI SEGUITO ============
+     Non e' una sezione nuova: e' il secondo movimento di "Chi e'". La frase
+     finisce di scriversi in verticale e riparte di lato — lo scroll verticale
+     comanda una corsa orizzontale, e la schermata sta ferma. Niente numero e
+     niente occhiello apposta: un secondo titolo qui vorrebbe dire che sono
+     due idee, e invece e' una che continua. -->
+<section id="dire" aria-label="Le sue parole, di seguito">
+  <div class="pin">
+    <p class="riga" data-oriz>In fondo siamo esseri umani e quanti sbagli, sensi di colpa, ripenso quegli anni ho la pelle d'oca, col dolore del passato si diventa grandi</p>
   </div>
 </section>
 
@@ -216,7 +225,7 @@
   </div>
 </footer>
 
-<script src="assets/js/blob-mask.js?v=58"></script>
-<script src="assets/js/sito.js?v=58"></script>
+<script src="assets/js/blob-mask.js?v=60"></script>
+<script src="assets/js/sito.js?v=60"></script>
 </body>
 </html>
