@@ -130,6 +130,25 @@ servito da un server statico.
 - Per guardare cosa disegna un canvas WebGL **non serve** `drawImage` né
   `readPixels` da fuori del frame: senza `preserveDrawingBuffer` tornano
   sempre neri, e sembra che l'effetto non ci sia. Si guarda a schermo.
+- La sezione **«Chi è» è un manifesto che si completa**: ogni riga ha il suo
+  corpo, calcolato dal copione su quanto è lunga (corte grandi, lunghe
+  piccole), e poi tutta la colonna si scala finché sta nella schermata
+  inchiodata. Le dimensioni diverse **escono dal testo**, non da una scelta a
+  mano: cambiare una parola cambia il corpo della sua riga. La nota vecchia
+  diceva che righe di corpi diversi sono «un manifesto, non una frase» — qui
+  un manifesto è esattamente quello che serve.
+  Trappola già pagata: le righe della frase hanno dentro una `<i>` a
+  `display:block` per la feritoia, quindi lo `scrollWidth` dello `<span>`
+  torna la larghezza della colonna e **tutte le righe vengono uguali**. Si
+  misura la `<i>`. Nelle chiuse invece le `<i>` sono in linea e lo span in
+  `nowrap` sborda: lì si misura lo span.
+- **Finita la frase entrano le gocce**, e da lì vanno da sole: è la lavalamp
+  della specifica (`livello()`), non un'altra cosa. Il passaggio fra i due
+  modi della maschera lo decide un solo posto in `sito.js` — massa finché non
+  è sciolta, poi gocce — e il livello glielo passa la sezione attraverso
+  `GOCCE.v`. In `blob-mask.js`, `livello()` **rimette il modo a 'gocce' e
+  risemina**: senza, dopo una `massa()` il modo restava quello per sempre e
+  le gocce non risalivano più.
 - **Quanto dura la massa in scroll** si decide in un posto solo: la finestra
   di `diss` in `sito.js` (`(0.68 - bordo) / 0.46`). Da un capo all'altro sono
   otto decimi di schermata. È l'unico numero da toccare per farla durare di

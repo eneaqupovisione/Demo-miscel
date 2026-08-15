@@ -59,6 +59,11 @@ var mappa = function(v,a,b){ return clamp((v-a)/(b-a),0,1); };
 var smorza = function(t){ return t*t*(3-2*t); };
 
 var CALMO = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* Quanto vogliono essere accese le gocce. Lo scrive la sezione "Chi e'"
+   quando la frase ha finito di scriversi, lo legge chi comanda la maschera:
+   sono due pezzi lontani nel file e questo e' il filo che li tiene. */
+var GOCCE = { v: 0 };
 /* clip-path: path() non c'e' ovunque. Dove manca si torna al border-radius,
    che e' piu' tondo ma vivo. */
 var SUPPORTA_RITAGLIO = !!(window.CSS && CSS.supports && CSS.supports('clip-path','path("M0,0 L1,0 Z")'));
@@ -582,21 +587,43 @@ var Sequenza = (function(){
     sp.innerHTML = '<i style="--d:'+(120 + i*130)+'ms">'+sp.innerHTML+'</i>';
   });
 
-  /* Una sola misura per tutte le righe, decisa dalla piu' lunga: righe di
-     corpi diversi sarebbero un manifesto, non una frase.
-     Il terzo vincolo e' l'ALTEZZA dello schermo, e senza di lui su un monitor
-     largo quattro righe di corpo massimo non ci stavano nella schermata
-     inchiodata — e quello che non ci sta lo taglia il pin. */
+  /* LA MISURA E' PER RIGA, E POI SI SCALA TUTTO INSIEME.
+     Ogni riga prende il corpo piu' grande che la fa toccare i due margini:
+     righe corte vengono grandi, righe lunghe piccole, e le dimensioni
+     diverse escono dal testo invece che da una scelta a mano. Poi si somma
+     l'altezza e si scala l'intera colonna finche' sta nella schermata
+     inchiodata — quindi il blocco riempie sempre lo schermo, e le
+     proporzioni fra le righe restano quelle su qualunque telefono.
+
+     La nota di prima diceva che righe di corpi diversi sono «un manifesto,
+     non una frase». Vero, ed e' il motivo per cui adesso e' cosi': qui
+     serve un manifesto. */
+  /* La riga da misurare non e' sempre lo <span>. Nelle righe della frase
+     dentro c'e' una <i> a display:block per la feritoia: quella e' larga
+     quanto la colonna, quindi lo scrollWidth dello span torna la larghezza
+     del contenitore e tutte le righe risultano uguali. Si misura la <i>.
+     Nelle chiuse invece le <i> sono in linea e lo span in nowrap sborda:
+     li' lo scrollWidth dello span e' proprio la lunghezza della riga. */
+  var COLONNA = righe.map(function(sp){ return { riga: sp, campione: sp.firstChild }; })
+    .concat($$('[data-scrive] > span', sez).map(function(sp){
+      return { riga: sp, campione: sp };
+    }));
+
   function misuraRighe(){
-    var p = dire.parentElement, cs = getComputedStyle(p);
-    var largo = p.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
+    var cont = dire.parentElement, cs = getComputedStyle(cont);
+    var largo = cont.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
     if (largo <= 0) return;
-    dire.style.fontSize = '100px';
-    var max = 0;
-    righe.forEach(function(sp){ max = Math.max(max, sp.firstChild.scrollWidth); });
-    if (!max) return;
-    dire.style.fontSize = Math.min(100 * largo / max * .99, 132,
-                                   window.innerHeight * 0.105).toFixed(2) + 'px';
+    var vh = window.innerHeight, i, mis = [], somma = 0;
+    for (i=0;i<COLONNA.length;i++){
+      COLONNA[i].riga.style.fontSize = '100px';
+      var w = COLONNA[i].campione.scrollWidth;
+      var s = w ? largo / w * 100 * 0.995 : 20;
+      mis.push(s); somma += s;
+    }
+    /* quello che resta dopo occhiello, nota e margini fra i due blocchi */
+    var resta = vh - 200;
+    var k = somma * 0.94 > resta ? resta / (somma * 0.94) : 1;
+    for (i=0;i<COLONNA.length;i++) COLONNA[i].riga.style.fontSize = (mis[i]*k).toFixed(2) + 'px';
   }
   misuraRighe();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(misuraRighe);
@@ -626,16 +653,13 @@ var Sequenza = (function(){
      L'altra meta' del rimedio e' l'inerzia, qui sotto: il valore che insegue
      lo scroll e' piu' lento, quindi dopo una scorsa veloce le parole
      continuano ad arrivare per un secondo buono. E' quello che si sente. */
-  var parole = [];
-  $$('[data-scrive] > span', sez).forEach(function(sp){
-    /* una parola per <i>, e lo spazio resta fuori: dentro sarebbe tagliato
-       via anche lui e le parole si toccherebbero */
-    sp.innerHTML = sp.textContent.trim().split(/\s+/).map(function(w){
-      return '<i>' + w + '</i>';
-    }).join(' ');
-    $$('i', sp).forEach(function(el){ parole.push(el); });
-  });
-  var DA = 0.28, FETTA = 0.026, PASSO = 0.046;
+  var parole = $$('[data-scrive] i', sez);
+  /* DA cosi' basso vuol dire che la prima parola parte mentre la sezione sta
+     ancora salendo, prima che la schermata si inchiodi: scorrere svela da
+     subito invece di far aspettare. FETTA corta = la singola parola scatta.
+     L'ultima finisce a 0.45, e da li' in poi c'e' spazio per le gocce. */
+  var DA = 0.08, FETTA = 0.012, PASSO = 0.040;
+  var FINE = DA + 9*PASSO + FETTA;
 
   function scriviChiuse(){
     for (var i=0;i<parole.length;i++){
@@ -656,6 +680,11 @@ var Sequenza = (function(){
   function rendi(){
     Sequenza.disegna(ctx, W, H, p, null, Sequenza.RESPIRO);
     scriviChiuse();
+    /* Finita la frase entrano le gocce, e da li' in poi vanno da sole: e' la
+       lavalamp della specifica, non un'altra cosa. Si spengono mentre la
+       sezione se ne va — oltre non sono state chieste, e una pagina intera
+       di inversioni sopra ai contatti e' un'altra decisione. */
+    GOCCE.v = mappa(p, FINE, FINE + .05) * (1 - mappa(p, .88, 1));
   }
   scriviChiuse();
 
@@ -1210,21 +1239,20 @@ function Bolle(box, cop){
   var mask = BlobMask.monta({ palco: palco, invert: inv, tint: tin });
   if (!mask) return;            /* niente WebGL: i canvas restano vuoti */
 
+  /* DUE MODI, UN MOTORE SOLO.
+     Finche' la massa non e' sciolta comanda lei. Da li' in poi comandano le
+     gocce, che pero' si accendono solo quando la frase di "Chi e'" ha finito
+     di scriversi — il valore glielo passa quella sezione.
+     Gira a ogni fotogramma e non solo allo scroll: il livello delle gocce
+     cambia anche a pagina ferma, mentre la scrittura finisce di inseguire. */
   function guarda(){
     var vh = window.innerHeight;
-    /* il confine e' il fondo della copertina, in frazioni di schermo */
     var bordo = cop.getBoundingClientRect().bottom / vh;
-    /* Quanto dura la massa, in scroll. Comincia a sciogliersi quando il
-       confine passa i due terzi dello schermo e ha finito quando arriva al
-       quinto: da un capo all'altro sono otto decimi di schermata, contro
-       la schermata e un terzo di prima. E' l'unico posto da toccare per
-       farla durare di piu' o di meno. */
     var diss = clamp((0.68 - bordo) / 0.46, 0, 1);
-    mask.massa(bordo, diss);
+    if (diss < 0.999){ mask.massa(bordo, diss); return; }
+    mask.livello(GOCCE.v);
   }
-  window.addEventListener('scroll', function(){ alFrame(guarda); }, {passive:true});
-  window.addEventListener('resize', function(){ alFrame(guarda); });
-  guarda();
+  (function giro(){ requestAnimationFrame(giro); guarda(); })();
 })();
 
 /* --------------------------------------------------------------------------

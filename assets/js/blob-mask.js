@@ -585,6 +585,18 @@ function monta(opz){
     /* v da 0 a 1: sotto una certa soglia il motore si ferma del tutto */
     livello: function(v){
       obiettivo = v < 0 ? 0 : (v > 1 ? 1 : v);
+      /* SI TORNA DALLA MASSA ALLE GOCCE. Senza questo, una volta chiamata
+         `massa()` il modo restava quello per sempre e chiamare `livello()`
+         non accendeva niente: le gocce restavano disposte a griglia sul
+         confine invece di risalire. Si riseminano, se no ripartono da dove
+         la massa le aveva lasciate — cioe' a meta' schermo, tutte insieme. */
+      if (obiettivo > 0 && modo !== 'gocce'){
+        modo = 'gocce';
+        CONFIG._massa = false;
+        CONFIG._sotto = -1;
+        semina();
+        ultimo = performance.now();
+      }
       if (obiettivo > 0){
         /* SOLO alla transizione. Rimettere l'orologio a ogni chiamata voleva
            dire azzerare il dt a ogni evento di scroll — e siccome la soglia

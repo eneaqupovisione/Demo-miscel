@@ -19,11 +19,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Archivo:wght@300;400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-<link rel="preload" as="image" href="assets/media/copertina.jpg?v=56">
+<link rel="preload" as="image" href="assets/media/copertina.jpg?v=58">
 <!-- il ?v= serve: GitHub Pages tiene i file in cache dieci minuti, e chi
      ha gia' aperto il sito continuerebbe a vedere la versione vecchia.
      Si alza il numero a ogni pubblicazione. -->
-<link rel="stylesheet" href="assets/css/sito.css?v=56">
+<link rel="stylesheet" href="assets/css/sito.css?v=58">
 </head>
 <body>
 
@@ -46,7 +46,7 @@
 <!-- la lastra a raggi X delle uscite -->
 <div id="lastra" aria-hidden="true">
   <i class="scan"></i>
-  <img src="assets/media/colonna.jpg?v=56" alt="">
+  <img src="assets/media/colonna.jpg?v=58" alt="">
   <div class="c"><span class="k">lastra · 001</span><div class="h"></div></div>
 </div>
 
@@ -91,9 +91,9 @@
 <!-- ========================== 01 · COPERTINA ========================== -->
 <section id="cop">
   <div class="med">
-    <video id="vCop" poster="assets/media/copertina.jpg?v=56" muted loop playsinline autoplay preload="auto"
+    <video id="vCop" poster="assets/media/copertina.jpg?v=58" muted loop playsinline autoplay preload="auto"
            disablepictureinpicture aria-hidden="true">
-      <source src="assets/media/copertina.mp4?v=56" type="video/mp4">
+      <source src="assets/media/copertina.mp4?v=58" type="video/mp4">
     </video>
   </div>
 
@@ -139,6 +139,13 @@
            riga PIU' LUNGA, quindi righe corte = corpo grande. Con questo
            carattere «mescola» e' la parola piu' larga della frase, e da sola
            mette il tetto a tutte le altre. -->
+      <!-- LA MISURA E' PER RIGA, NON UNA PER TUTTE. Righe corte vengono
+           grandi, righe lunghe piccole: le dimensioni diverse non sono
+           decise a mano, le decide quanto e' lunga la riga. Poi il copione
+           scala tutto insieme finche' la colonna sta nella schermata.
+           (La nota vecchia diceva che righe di corpi diversi sono «un
+           manifesto, non una frase». Un manifesto e' esattamente quello che
+           serve qui.) -->
       <p class="dire" data-righe>
         <span>Un</span>
         <span>cuore</span>
@@ -147,12 +154,17 @@
         <span><em>mescola</em></span>
       </p>
 
-      <!-- si scrivono con lo scroll, PAROLA PER PAROLA e nell'ordine in cui
-           stanno qui: la fetta di scroll di ognuna la calcola il copione -->
+      <!-- Una parola per <i>, e lo spazio resta fuori dalla maschera: dentro
+           sarebbe tagliato anche lui e le parole si toccherebbero. Il
+           raggruppamento in righe e' una scelta di composizione: «con la»
+           sta insieme perche' da sola una preposizione non fa una riga. -->
       <p class="segue" data-scrive>
-        <span>con la delicatezza,</span>
-        <span>o con la rabbia,</span>
-        <span>ai traumi d'infanzia.</span>
+        <span><i>con</i> <i>la</i></span>
+        <span><i>delicatezza,</i></span>
+        <span><i>o</i> <i>con</i> <i>la</i></span>
+        <span><i>rabbia,</i></span>
+        <span><i>ai</i> <i>traumi</i></span>
+        <span><i>d'infanzia.</i></span>
       </p>
 
       <p class="mono nota rev">Voce e chitarra &nbsp;·&nbsp; niente altro</p>
@@ -204,7 +216,7 @@
   </div>
 </footer>
 
-<script src="assets/js/blob-mask.js?v=56"></script>
-<script src="assets/js/sito.js?v=56"></script>
+<script src="assets/js/blob-mask.js?v=58"></script>
+<script src="assets/js/sito.js?v=58"></script>
 </body>
 </html>
