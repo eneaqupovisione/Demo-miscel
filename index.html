@@ -19,11 +19,11 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Archivo:wght@300;400;500&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-<link rel="preload" as="image" href="assets/media/copertina.jpg?v=52">
+<link rel="preload" as="image" href="assets/media/copertina.jpg?v=55">
 <!-- il ?v= serve: GitHub Pages tiene i file in cache dieci minuti, e chi
      ha gia' aperto il sito continuerebbe a vedere la versione vecchia.
      Si alza il numero a ogni pubblicazione. -->
-<link rel="stylesheet" href="assets/css/sito.css?v=52">
+<link rel="stylesheet" href="assets/css/sito.css?v=55">
 </head>
 <body>
 
@@ -46,7 +46,7 @@
 <!-- la lastra a raggi X delle uscite -->
 <div id="lastra" aria-hidden="true">
   <i class="scan"></i>
-  <img src="assets/media/colonna.jpg?v=52" alt="">
+  <img src="assets/media/colonna.jpg?v=55" alt="">
   <div class="c"><span class="k">lastra · 001</span><div class="h"></div></div>
 </div>
 
@@ -91,9 +91,9 @@
 <!-- ========================== 01 · COPERTINA ========================== -->
 <section id="cop">
   <div class="med">
-    <video id="vCop" poster="assets/media/copertina.jpg?v=52" muted loop playsinline autoplay preload="auto"
+    <video id="vCop" poster="assets/media/copertina.jpg?v=55" muted loop playsinline autoplay preload="auto"
            disablepictureinpicture aria-hidden="true">
-      <source src="assets/media/copertina.mp4?v=52" type="video/mp4">
+      <source src="assets/media/copertina.mp4?v=55" type="video/mp4">
     </video>
   </div>
 
@@ -120,31 +120,43 @@
      sue, prese da un suo pezzo. La frase che apre sta ferma ed e' li' da
      subito; le tre chiuse si scrivono mentre si scende, una alla volta.
      Dietro, il respiro: la scena d'acqua che entra dal lato. -->
-<section id="chi" class="sez">
-  <div class="sfondo" aria-hidden="true">
-    <canvas id="cvChi"></canvas>
-    <div class="velo"></div>
-  </div>
-
-  <div class="wrap in">
-    <div class="occhiello rev">
-      <span class="mono n">02</span><span class="mono">Chi è</span>
+<section id="chi">
+  <!-- La schermata sta inchiodata mentre le parole arrivano: se scorresse,
+       le ultime si scriverebbero fuori dallo schermo. L'altezza della
+       sezione E' la durata della scrittura. -->
+  <div class="pin">
+    <div class="sfondo" aria-hidden="true">
+      <canvas id="cvChi"></canvas>
+      <div class="velo"></div>
     </div>
 
-    <p class="dire" data-righe>
-      <span>Un cuore puro</span>
-      <span>che si <em>mescola</em></span>
-    </p>
+    <div class="wrap in">
+      <div class="occhiello rev">
+        <span class="mono n">02</span><span class="mono">Chi è</span>
+      </div>
 
-    <!-- si scrivono con lo scroll, una alla volta e nell'ordine in cui
-         stanno qui: la fetta di scroll di ognuna la calcola il copione -->
-    <p class="segue" data-scrive>
-      <span>con la delicatezza,</span>
-      <span>o con la rabbia,</span>
-      <span>ai traumi d'infanzia.</span>
-    </p>
+      <!-- Cinque righe cortissime, e non e' un vezzo: la misura la decide la
+           riga PIU' LUNGA, quindi righe corte = corpo grande. Con questo
+           carattere «mescola» e' la parola piu' larga della frase, e da sola
+           mette il tetto a tutte le altre. -->
+      <p class="dire" data-righe>
+        <span>Un</span>
+        <span>cuore</span>
+        <span>puro</span>
+        <span>che si</span>
+        <span><em>mescola</em></span>
+      </p>
 
-    <p class="mono nota rev">Voce e chitarra &nbsp;·&nbsp; niente altro</p>
+      <!-- si scrivono con lo scroll, PAROLA PER PAROLA e nell'ordine in cui
+           stanno qui: la fetta di scroll di ognuna la calcola il copione -->
+      <p class="segue" data-scrive>
+        <span>con la delicatezza,</span>
+        <span>o con la rabbia,</span>
+        <span>ai traumi d'infanzia.</span>
+      </p>
+
+      <p class="mono nota rev">Voce e chitarra &nbsp;·&nbsp; niente altro</p>
+    </div>
   </div>
 </section>
 
@@ -192,7 +204,7 @@
   </div>
 </footer>
 
-<script src="assets/js/blob-mask.js?v=52"></script>
-<script src="assets/js/sito.js?v=52"></script>
+<script src="assets/js/blob-mask.js?v=55"></script>
+<script src="assets/js/sito.js?v=55"></script>
 </body>
 </html>

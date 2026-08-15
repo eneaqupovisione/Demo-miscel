@@ -582,8 +582,11 @@ var Sequenza = (function(){
     sp.innerHTML = '<i style="--d:'+(120 + i*130)+'ms">'+sp.innerHTML+'</i>';
   });
 
-  /* una sola misura per tutte le righe, decisa dalla piu' lunga: righe di
-     corpi diversi sarebbero un manifesto, non una frase */
+  /* Una sola misura per tutte le righe, decisa dalla piu' lunga: righe di
+     corpi diversi sarebbero un manifesto, non una frase.
+     Il terzo vincolo e' l'ALTEZZA dello schermo, e senza di lui su un monitor
+     largo quattro righe di corpo massimo non ci stavano nella schermata
+     inchiodata — e quello che non ci sta lo taglia il pin. */
   function misuraRighe(){
     var p = dire.parentElement, cs = getComputedStyle(p);
     var largo = p.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight);
@@ -592,33 +595,45 @@ var Sequenza = (function(){
     var max = 0;
     righe.forEach(function(sp){ max = Math.max(max, sp.firstChild.scrollWidth); });
     if (!max) return;
-    dire.style.fontSize = Math.min(100 * largo / max * .99, 132).toFixed(2) + 'px';
+    dire.style.fontSize = Math.min(100 * largo / max * .99, 132,
+                                   window.innerHeight * 0.105).toFixed(2) + 'px';
   }
   misuraRighe();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(misuraRighe);
   window.addEventListener('resize', function(){ alFrame(misuraRighe); });
 
-  /* --- le chiuse che si scrivono ------------------------------------------
-     La frase che apre sta ferma. Le chiuse arrivano una alla volta mentre si
-     scende, e il taglio passa DENTRO alla lettera invece che carattere per
-     carattere: e' la differenza fra scritto e digitato.
+  /* --- le chiuse che si scrivono, PAROLA PER PAROLA ------------------------
+     La frase che apre sta ferma. Le chiuse arrivano una parola alla volta
+     mentre si scende, e dentro alla parola il taglio passa DENTRO alla
+     lettera invece che carattere per carattere: e' la differenza fra scritto
+     e digitato.
 
      Il tempo non c'entra: la maschera la comanda lo scroll. Un'animazione a
      tempo si scriverebbe da sola mentre uno guarda altrove, e chi torna su
-     la trova gia' fatta. Cosi' invece la riga si scrive quando la si sta
+     la trova gia' fatta. Cosi' invece la parola arriva quando la si sta
      leggendo, e chi risale la vede tornare indietro.
 
-     Le fette sono strette e si sovrappongono appena: una riga finisce di
-     scriversi mentre la successiva comincia, che e' come si legge. */
-  var chiuse = $$('[data-scrive] > span', sez);
-  chiuse.forEach(function(sp){ sp.innerHTML = '<i>' + sp.innerHTML + '</i>'; });
-  var DA = 0.30, FETTA = 0.15, PASSO = 0.115;
+     Le fette: FETTA e' quanto scroll ci mette UNA parola a scriversi — corta,
+     se no la parola si spalma; PASSO e' ogni quanto ne arriva un'altra, e
+     dev'essere piu' lungo della fetta, se no si accavallano e non si sente
+     piu' il ritmo. Con la sezione alta 240vh, un passo vale piu' o meno un
+     pollice di scroll. */
+  var parole = [];
+  $$('[data-scrive] > span', sez).forEach(function(sp){
+    /* una parola per <i>, e lo spazio resta fuori: dentro sarebbe tagliato
+       via anche lui e le parole si toccherebbero */
+    sp.innerHTML = sp.textContent.trim().split(/\s+/).map(function(w){
+      return '<i>' + w + '</i>';
+    }).join(' ');
+    $$('i', sp).forEach(function(el){ parole.push(el); });
+  });
+  var DA = 0.335, FETTA = 0.020, PASSO = 0.034;
 
   function scriviChiuse(){
-    for (var i=0;i<chiuse.length;i++){
+    for (var i=0;i<parole.length;i++){
       var da = DA + i*PASSO;
       var k = CALMO ? 1 : smorza(mappa(p, da, da + FETTA));
-      chiuse[i].firstChild.style.clipPath = 'inset(0 ' + ((1-k)*100).toFixed(1) + '% 0 0)';
+      parole[i].style.clipPath = 'inset(0 ' + ((1-k)*100).toFixed(1) + '% 0 0)';
     }
   }
 
